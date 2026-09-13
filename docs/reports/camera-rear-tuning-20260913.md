@@ -27,7 +27,9 @@ active but delivered no frames, so the preset was removed rather than risking
 more HAL state changes.
 
 The known-good AUTO request now feeds a small Ubuntu-native I420 filter before
-GStreamer. It applies 0.92× red and 1.25× blue in BT.601 space only to the rear
+GStreamer. The first physical trial at 0.92× red and 1.25× blue was reported as
+much improved but still slightly yellow, so the current profile applies 0.90×
+red and 1.32× blue in BT.601 space only to the rear
 source. A deterministic 2×2 yellow test moved U/V from 90/150 to 98/144 while
 keeping its four luma values within two levels. Live aggregate chroma also moved
 away from yellow. Physical judgment of the final color remains the acceptance

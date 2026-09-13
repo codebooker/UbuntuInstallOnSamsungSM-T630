@@ -100,7 +100,7 @@ metadata reports `awb_state=0` and gains `1.391,1.000,1.000,2.469`. The HAL
 advertises every standard white-balance preset, but an incandescent-preset
 trial entered an active session without delivering a frame. The bridge therefore
 keeps the known-good AUTO request and passes only rear I420 through the small
-source-built `t630-yuv-tune` filter. Its current 0.92× red and 1.25× blue gains
+source-built `t630-yuv-tune` filter. Its current 0.90× red and 1.32× blue gains
 move the measured chroma away from yellow while leaving luma essentially
 unchanged; final visual tuning is still in progress.
 

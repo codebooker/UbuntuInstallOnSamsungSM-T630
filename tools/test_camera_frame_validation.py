@@ -112,7 +112,7 @@ class CameraFrameValidationTests(unittest.TestCase):
         self.assertIn("image_filter=", front)
         self.assertNotIn("gamma=", front)
         self.assertIn("gamma gamma=2.5", rear)
-        self.assertIn("t630-yuv-tune 640 480 920 1250", rear)
+        self.assertIn("t630-yuv-tune 640 480 900 1320", rear)
         self.assertIn('color_filter=(cat)', front)
 
     def test_rear_color_filter_is_bounded_and_streaming(self):

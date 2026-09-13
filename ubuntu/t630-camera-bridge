@@ -30,7 +30,7 @@ case "$camera" in
         # exposure is used. Apply a modest, deterministic cool correction in
         # userspace without sending fragile preset requests to the HAL.
         test -x /usr/local/sbin/t630-yuv-tune
-        color_filter=(/usr/local/sbin/t630-yuv-tune 640 480 920 1250)
+        color_filter=(/usr/local/sbin/t630-yuv-tune 640 480 900 1320)
         ;;
     *) echo "usage: $0 [front|rear]" >&2; exit 2 ;;
 esac

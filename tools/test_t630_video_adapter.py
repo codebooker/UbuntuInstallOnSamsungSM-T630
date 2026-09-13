@@ -14,6 +14,52 @@ class VideoAdapterTests(unittest.TestCase):
         self.assertIn("ION_SYSTEM_HEAP_ID 25", source)
         self.assertIn("y_scanlines = (height + 511U) & ~511U", source)
         self.assertIn("memmove", source)
+        self.assertIn(
+            "T630_V4L2_GSTREAMER",
+            source,
+        )
+
+    def test_broken_frame_size_enumeration_is_bounded(self):
+        source = (ROOT / "tools/t630_v4l2_probe.c").read_text()
+        self.assertIn("request == VIDIOC_ENUM_FRAMESIZES", source)
+        self.assertIn("if (sizes->index != 0)", source)
+        self.assertIn("sizes->stepwise.min_width = 96", source)
+        self.assertIn("sizes->stepwise.max_width = max_width", source)
+        self.assertIn("max_width = 1920", source)
+
+    def test_default_ubwc_capture_is_changed_to_linear_nv12(self):
+        source = (ROOT / "tools/t630_v4l2_probe.c").read_text()
+        self.assertIn("request == VIDIOC_G_FMT", source)
+        self.assertIn("get_linear_capture_format", source)
+        self.assertIn("format->fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12", source)
+        self.assertIn("V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE", source)
+        self.assertIn("format->fmt.pix_mp.width = output.fmt.pix_mp.width", source)
+
+    def test_gstreamer_probe_does_not_reconfigure_live_decoder(self):
+        source = (ROOT / "tools/t630_v4l2_probe.c").read_text()
+        self.assertIn("emulate_gstreamer_try_format", source)
+        self.assertIn("pixels->width > 4096", source)
+        self.assertIn("pixels->height > 4096", source)
+        block = source.split("static int emulate_gstreamer_try_format", 1)[1]
+        block = block.split("static struct decoder_state", 1)[0]
+        self.assertNotIn("VIDIOC_S_FMT", block)
+
+    def test_gstreamer_sees_one_nv12_plane_not_qualcomm_extradata(self):
+        source = (ROOT / "tools/t630_v4l2_probe.c").read_text()
+        self.assertIn("format->fmt.pix_mp.num_planes = 1", source)
+        self.assertIn(
+            "buffer->type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE ?\n"
+            "                     1 : num_planes",
+            source,
+        )
+
+    def test_capture_dequeue_reports_compact_nv12_extent(self):
+        source = (ROOT / "tools/t630_v4l2_probe.c").read_text()
+        block = source.split("static int translate_dqbuf", 1)[1]
+        block = block.split("__attribute__((constructor))", 1)[0]
+        self.assertIn(
+            "planes[0].bytesused = target_offset + chroma_size", block
+        )
 
     def test_player_uses_adapter_with_software_fallback(self):
         launcher = (ROOT / "ubuntu/t630-video-player").read_text()

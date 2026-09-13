@@ -1,6 +1,7 @@
 /* Process-local compatibility adapter for the SM-T630 stock decoder.
- * Samsung's msm_vidc node lacks TRY_FMT and only accepts Qualcomm's
- * ION-backed V4L2_MEMORY_USERPTR convention. Never preload this globally.
+ * Samsung's msm_vidc node lacks a usable TRY_FMT and MMAP ABI and only accepts
+ * Qualcomm's ION-backed V4L2_MEMORY_USERPTR convention. Never preload this
+ * globally. Set T630_V4L2_GSTREAMER=1 only for a GStreamer process.
  */
 #define _GNU_SOURCE
 #include <dlfcn.h>
@@ -66,6 +67,12 @@ static void *(*next_mmap)(void *, size_t, int, int, int, off_t);
 static int (*next_munmap)(void *, size_t);
 static int (*next_close)(int);
 
+static int gstreamer_compat(void)
+{
+    const char *value = getenv("T630_V4L2_GSTREAMER");
+    return value && strcmp(value, "1") == 0;
+}
+
 static void resolve_symbols(void)
 {
     if (!next_ioctl)
@@ -84,6 +91,126 @@ static int exact_decoder(int fd)
     return next_ioctl(fd, VIDIOC_QUERYCAP, &caps) == 0 &&
            strcmp((const char *)caps.driver, "msm_vidc_driver") == 0 &&
            strcmp((const char *)caps.card, "msm_vidc_vdec") == 0;
+}
+
+static int emulate_enum_framesizes(int fd, struct v4l2_frmsizeenum *sizes)
+{
+    unsigned int max_width = 4096;
+    unsigned int max_height = 4096;
+
+    if (!exact_decoder(fd))
+        return 1;
+    /* Samsung's yupik driver forgets to reject nonzero indexes and returns a
+     * successful, all-zero stepwise range forever. That breaks GStreamer's
+     * capability probing and can make generic enumerators spin indefinitely.
+     * Use the common bounds of the DZE3 yupik v0/v1 capability tables. */
+    if (sizes->index != 0) {
+        errno = EINVAL;
+        return -1;
+    }
+    switch (sizes->pixel_format) {
+    case V4L2_PIX_FMT_H264:
+    case V4L2_PIX_FMT_HEVC:
+    case V4L2_PIX_FMT_VP9:
+        break;
+    case V4L2_PIX_FMT_MPEG2:
+        max_width = 1920;
+        max_height = 1088;
+        break;
+    default:
+        errno = EINVAL;
+        return -1;
+    }
+    memset(&sizes->stepwise, 0, sizeof(sizes->stepwise));
+    sizes->type = V4L2_FRMSIZE_TYPE_STEPWISE;
+    sizes->stepwise.min_width = 96;
+    sizes->stepwise.max_width = max_width;
+    sizes->stepwise.step_width = 1;
+    sizes->stepwise.min_height = 96;
+    sizes->stepwise.max_height = max_height;
+    sizes->stepwise.step_height = 1;
+    return 0;
+}
+
+static int get_linear_capture_format(int fd, struct v4l2_format *format)
+{
+    struct v4l2_format output = {
+        .type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
+    };
+    int result = next_ioctl(fd, VIDIOC_G_FMT, format);
+
+    if (result < 0 ||
+        format->type != V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE)
+        return result;
+    if (format->fmt.pix_mp.pixelformat != V4L2_PIX_FMT_NV12) {
+        /* The stock decoder defaults capture to Qualcomm UBWC (Q128), which
+         * generic userspace cannot import. Select the driver's linear NV12
+         * mode; the dequeue path below removes its 512-line chroma padding. */
+        format->fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12;
+        /* The stock capture default is also a stale 320x240. Before its first
+         * source-change event, use the compressed queue dimensions that
+         * userspace has already set from the stream caps. */
+        if (next_ioctl(fd, VIDIOC_G_FMT, &output) == 0 &&
+            output.fmt.pix_mp.width && output.fmt.pix_mp.height) {
+            format->fmt.pix_mp.width = output.fmt.pix_mp.width;
+            format->fmt.pix_mp.height = output.fmt.pix_mp.height;
+        }
+        result = next_ioctl(fd, VIDIOC_S_FMT, format);
+    }
+    /* Plane 1 is Qualcomm decoder extradata, not NV12 chroma. GStreamer
+     * interprets every advertised V4L2 plane as an image plane, so present the
+     * contiguous NV12 allocation as one plane and keep extradata internal. */
+    if (result == 0 && gstreamer_compat()) {
+        format->fmt.pix_mp.num_planes = 1;
+        memset(&format->fmt.pix_mp.plane_fmt[1], 0,
+               sizeof(format->fmt.pix_mp.plane_fmt[1]));
+    }
+    if (result == 0 && getenv("T630_V4L2_DEBUG"))
+        dprintf(STDERR_FILENO,
+                "t630-v4l2: gfmt type=%u %ux%u fourcc=%.4s planes=%u bpl=%u size=%u\n",
+                format->type, format->fmt.pix_mp.width,
+                format->fmt.pix_mp.height,
+                (char *)&format->fmt.pix_mp.pixelformat,
+                format->fmt.pix_mp.num_planes,
+                format->fmt.pix_mp.plane_fmt[0].bytesperline,
+                format->fmt.pix_mp.plane_fmt[0].sizeimage);
+    return result;
+}
+
+static int emulate_gstreamer_try_format(struct v4l2_format *format)
+{
+    struct v4l2_pix_format_mplane *pixels = &format->fmt.pix_mp;
+
+    if (format->type != V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE &&
+        format->type != V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (pixels->width < 96)
+        pixels->width = 96;
+    if (pixels->height < 96)
+        pixels->height = 96;
+    if (pixels->width > 4096)
+        pixels->width = 4096;
+    if (pixels->height > 4096)
+        pixels->height = 4096;
+    if (format->type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE) {
+        pixels->pixelformat = V4L2_PIX_FMT_NV12;
+        pixels->num_planes = 1;
+    } else {
+        switch (pixels->pixelformat) {
+        case V4L2_PIX_FMT_H264:
+        case V4L2_PIX_FMT_HEVC:
+        case V4L2_PIX_FMT_VP9:
+        case V4L2_PIX_FMT_MPEG2:
+            break;
+        default:
+            errno = EINVAL;
+            return -1;
+        }
+        pixels->num_planes = 1;
+    }
+    return 0;
 }
 
 static struct decoder_state *find_decoder(int fd, int create)
@@ -176,7 +303,8 @@ static int emulate_querybuf(int fd, struct v4l2_buffer *buffer,
     }
     slot = &queue->buffers[buffer->index];
     slot->num_planes = num_planes;
-    buffer->length = num_planes;
+    buffer->length = buffer->type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE ?
+                     1 : num_planes;
     buffer->memory = V4L2_MEMORY_MMAP;
     for (unsigned int p = 0; p < num_planes; p++) {
         struct plane_state *plane = &slot->planes[p];
@@ -227,11 +355,15 @@ static int translate_qbuf(int fd, struct v4l2_buffer *original,
         return -1;
     }
     slot = &queue->buffers[original->index];
-    if (!slot->num_planes || !original->length) {
+    if (!slot->num_planes || !original->length ||
+        original->length > slot->num_planes ||
+        original->length > VIDEO_MAX_PLANES) {
         errno = EINVAL;
         return -1;
     }
-    memcpy(planes, original->m.planes, sizeof(planes));
+    memset(planes, 0, sizeof(planes));
+    memcpy(planes, original->m.planes,
+           original->length * sizeof(original->m.planes[0]));
     translated.memory = V4L2_MEMORY_USERPTR;
     translated.length = slot->num_planes;
     translated.m.planes = planes;
@@ -296,18 +428,34 @@ static int translate_dqbuf(int fd, struct v4l2_buffer *original,
             size_t chroma_size = stride * ((height + 1U) / 2U);
 
             if (image->address && source_offset + chroma_size <= image->length &&
-                target_offset + chroma_size <= image->length)
+                target_offset + chroma_size <= image->length) {
                 memmove((char *)image->address + target_offset,
                         (char *)image->address + source_offset, chroma_size);
+                /* The Samsung driver reports the entire padded allocation as
+                 * bytesused. Generic buffer pools resize GstMemory to that
+                 * value, but their negotiated NV12 memory only covers the
+                 * compact image. Report the compact image extent after moving
+                 * chroma so it cannot exceed the negotiated frame. */
+                planes[0].bytesused = target_offset + chroma_size;
+            }
         }
     }
     *original = translated;
     original->memory = V4L2_MEMORY_MMAP;
     original->m.planes = original_planes;
-    memcpy(original_planes, planes, sizeof(planes));
+    original->length = translated.type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE ?
+                       1 : translated.length;
+    memcpy(original_planes, planes,
+           original->length * sizeof(original_planes[0]));
     for (unsigned int p = 0; p < original->length; p++)
         original_planes[p].m.mem_offset =
             queue->buffers[original->index].planes[p].fake_offset;
+    if (getenv("T630_V4L2_DEBUG"))
+        dprintf(STDERR_FILENO,
+                "t630-v4l2: dq-out type=%u index=%u planes=%u bytes=%u/%u\n",
+                original->type, original->index, original->length,
+                original_planes[0].bytesused,
+                original->length > 1 ? original_planes[1].bytesused : 0);
     return 0;
 }
 
@@ -339,6 +487,11 @@ int ioctl(int fd, unsigned long request, ...)
             translated.memory = V4L2_MEMORY_USERPTR;
             result = next_ioctl(fd, request, &translated);
             saved = errno;
+            if (getenv("T630_V4L2_DEBUG"))
+                dprintf(STDERR_FILENO,
+                        "t630-v4l2: reqbufs type=%u requested=%u returned=%u result=%d errno=%d\n",
+                        original->type, original->count, translated.count,
+                        result, saved);
             if (result == 0) {
                 if (!original->count)
                     free_queue(queue);
@@ -355,8 +508,16 @@ int ioctl(int fd, unsigned long request, ...)
         }
     }
     if (decoder && request == VIDIOC_QUERYBUF) {
+        struct v4l2_buffer *buffer = arg;
         result = emulate_querybuf(fd, arg, decoder);
         saved = errno;
+        if (getenv("T630_V4L2_DEBUG"))
+            dprintf(STDERR_FILENO,
+                    "t630-v4l2: querybuf type=%u index=%u length=%u plane0=%u offset=%u result=%d errno=%d\n",
+                    buffer->type, buffer->index, buffer->length,
+                    buffer->length ? buffer->m.planes[0].length : 0,
+                    buffer->length ? buffer->m.planes[0].m.mem_offset : 0,
+                    result, saved);
         pthread_mutex_unlock(&state_lock);
         errno = saved;
         return result;
@@ -376,6 +537,15 @@ int ioctl(int fd, unsigned long request, ...)
         return result;
     }
     pthread_mutex_unlock(&state_lock);
+    if (request == VIDIOC_ENUM_FRAMESIZES) {
+        result = emulate_enum_framesizes(fd, arg);
+        if (result <= 0)
+            return result;
+    }
+    if (request == VIDIOC_TRY_FMT && gstreamer_compat() && exact_decoder(fd))
+        return emulate_gstreamer_try_format(arg);
+    if (request == VIDIOC_G_FMT && exact_decoder(fd))
+        return get_linear_capture_format(fd, arg);
     result = next_ioctl(fd, request, arg);
     if (result == -1 && errno == ENOTTY && request == VIDIOC_TRY_FMT) {
         struct v4l2_capability caps = {0};
@@ -421,6 +591,10 @@ static void *translated_mmap(void *address, size_t length, int prot, int flags,
                                        plane->ion_fd, 0);
                     if (result != MAP_FAILED)
                         plane->address = result;
+                    if (getenv("T630_V4L2_DEBUG"))
+                        dprintf(STDERR_FILENO,
+                                "t630-v4l2: mmap offset=%lld length=%zu result=%p errno=%d\n",
+                                (long long)offset, length, result, errno);
                     pthread_mutex_unlock(&state_lock);
                     return result;
                 }

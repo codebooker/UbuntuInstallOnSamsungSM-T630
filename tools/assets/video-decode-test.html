@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SM-T630 hardware video decode test</title>
+<style>
+  html, body { margin: 0; background: #111; color: #eee; font: 24px sans-serif; }
+  main { display: grid; min-height: 100vh; place-content: center; gap: 1rem; }
+  video { width: min(90vw, 1280px); border: 2px solid #888; }
+</style>
+<main>
+  <div id="status">Starting local H.264 playback…</div>
+  <video autoplay muted loop playsinline src="test.mp4"></video>
+</main>
+<script>
+  const video = document.querySelector("video");
+  const status = document.querySelector("#status");
+  video.addEventListener("playing", () => status.textContent = "H.264 playing");
+  video.addEventListener("error", () => status.textContent = "Playback error");
+  video.play().catch(error => status.textContent = error.message);
+</script>

@@ -1,4 +1,6 @@
 #include <android/binder_ibinder.h>
+#include <android/binder_parcel.h>
+#include <android/binder_status.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -19,8 +21,24 @@ static binder_status_t transact_service(AIBinder *binder, transaction_code_t cod
                                         const AParcel *input, AParcel *output) {
     (void)binder;
     (void)input;
-    (void)output;
     fprintf(stderr, "placeholder transaction %u\n", code);
+
+    /*
+     * Android 15's AIDL ISurfaceComposer transaction 2 is
+     * createDisplayEventConnection(). CameraService asks for one while it
+     * builds its dummy BufferQueue. There is no display scheduler in this
+     * compatibility environment, so return a valid successful AIDL reply with
+     * a nullable (null) connection instead of UNKNOWN_TRANSACTION. The null
+     * object is explicitly allowed by the interface.
+     */
+    if (code == 2 && output != NULL) {
+        AStatus *status = AStatus_newOk();
+        if (status == NULL) return STATUS_NO_MEMORY;
+        binder_status_t result = AParcel_writeStatusHeader(output, status);
+        AStatus_delete(status);
+        if (result != STATUS_OK) return result;
+        return AParcel_writeStrongBinder(output, NULL);
+    }
     return STATUS_UNKNOWN_TRANSACTION;
 }
 
@@ -40,11 +58,11 @@ int main(int argc, char **argv) {
     }
     binder_status_t status = AServiceManager_addService(binder, service_name);
     if (status != STATUS_OK) {
-        fprintf(stderr, "cannot register %s: %dd\n", service_name, status);
+        fprintf(stderr, "cannot register %s: %d\n", service_name, status);
         AIBinder_decStrong(binder);
         return 1;
     }
-    fprintf(stderr, "registered placeholder %s (%s\n", service_name, descriptor);
+    fprintf(stderr, "registered placeholder %s (%s)\n", service_name, descriptor);
     ABinderProcess_setThreadPoolMaxThreadCount(4);
     ABinderProcess_startThreadPool();
     ABinderProcess_joinThreadPool();

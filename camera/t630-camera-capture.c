@@ -16,6 +16,7 @@ void ABinderProcess_setThreadPoolMaxThreadCount(uint32_t num_threads);
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t condition = PTHREAD_COND_INITIALIZER;
 static int frame_result = 0;
+static int frame_claimed = 0;
 static const char *output_path;
 
 static void finish(int result) {
@@ -35,6 +36,18 @@ static void image_available(void *context, AImageReader *reader) {
         fprintf(stderr, "acquire image failed: %d\n", status);
         return;
     }
+
+    /* More than one Binder worker may receive an image callback before the
+     * main thread closes the repeating request. Claim exactly one frame so
+     * concurrent callbacks cannot truncate and rewrite the same output. */
+    pthread_mutex_lock(&lock);
+    if (frame_claimed || frame_result != 0) {
+        pthread_mutex_unlock(&lock);
+        AImage_delete(image);
+        return;
+    }
+    frame_claimed = 1;
+    pthread_mutex_unlock(&lock);
 
     int32_t width = 0, height = 0, row_stride = 0, pixel_stride = 0;
     uint8_t *data = NULL;
@@ -91,16 +104,91 @@ static void camera_error(void *context, ACameraDevice *device, int error) {
 static void session_closed(void *context, ACameraCaptureSession *session) {
     (void)context;
     (void)session;
+    fprintf(stderr, "session closed\n");
 }
 
 static void session_ready(void *context, ACameraCaptureSession *session) {
     (void)context;
     (void)session;
+    fprintf(stderr, "session ready\n");
 }
 
 static void session_active(void *context, ACameraCaptureSession *session) {
     (void)context;
     (void)session;
+    fprintf(stderr, "session active\n");
+}
+
+static void capture_started(void *context, ACameraCaptureSession *session,
+                            const ACaptureRequest *request, int64_t timestamp) {
+    (void)context;
+    (void)session;
+    (void)request;
+    fprintf(stderr, "capture started at %lld\n", (long long)timestamp);
+}
+
+static void capture_progressed(void *context, ACameraCaptureSession *session,
+                               ACaptureRequest *request,
+                               const ACameraMetadata *result) {
+    (void)context;
+    (void)session;
+    (void)request;
+    (void)result;
+    fprintf(stderr, "capture progressed\n");
+}
+
+static void capture_completed(void *context, ACameraCaptureSession *session,
+                              ACaptureRequest *request,
+                              const ACameraMetadata *result) {
+    (void)context;
+    (void)session;
+    (void)request;
+    (void)result;
+    fprintf(stderr, "capture completed\n");
+}
+
+static void capture_failed(void *context, ACameraCaptureSession *session,
+                           ACaptureRequest *request,
+                           ACameraCaptureFailure *failure) {
+    (void)context;
+    (void)session;
+    (void)request;
+    fprintf(stderr,
+            "capture failed: frame=%lld reason=%d sequence=%d image=%d\n",
+            (long long)failure->frameNumber, failure->reason,
+            failure->sequenceId, failure->wasImageCaptured);
+    finish(-1);
+}
+
+static void capture_sequence_completed(void *context,
+                                       ACameraCaptureSession *session,
+                                       int sequence_id, int64_t frame_number) {
+    (void)context;
+    (void)session;
+    fprintf(stderr, "capture sequence %d completed at frame %lld\n",
+            sequence_id, (long long)frame_number);
+}
+
+static void capture_sequence_aborted(void *context,
+                                     ACameraCaptureSession *session,
+                                     int sequence_id) {
+    (void)context;
+    (void)session;
+    fprintf(stderr, "capture sequence %d aborted\n", sequence_id);
+    finish(-1);
+}
+
+static void capture_buffer_lost(void *context,
+                                ACameraCaptureSession *session,
+                                ACaptureRequest *request,
+                                ANativeWindow *window,
+                                int64_t frame_number) {
+    (void)context;
+    (void)session;
+    (void)request;
+    (void)window;
+    fprintf(stderr, "capture buffer lost at frame %lld\n",
+            (long long)frame_number);
 }
 
 static int check_status(const char *operation, camera_status_t status) {
@@ -180,8 +268,16 @@ int main(int argc, char **argv) {
     camera_status = ACameraDevice_createCaptureSession(device, outputs, &session_callbacks, &session);
     if (check_status("create capture session", camera_status) != 0) goto cleanup_camera;
 
-    ACameraCaptureSession_captureCallbacks capture_callbacks;
-    memset(&capture_callbacks, 0, sizeof(capture_callbacks));
+    ACameraCaptureSession_captureCallbacks capture_callbacks = {
+        .context = NULL,
+        .onCaptureStarted = capture_started,
+        .onCaptureProgressed = capture_progressed,
+        .onCaptureCompleted = capture_completed,
+        .onCaptureFailed = capture_failed,
+        .onCaptureSequenceCompleted = capture_sequence_completed,
+        .onCaptureSequenceAborted = capture_sequence_aborted,
+        .onCaptureBufferLost = capture_buffer_lost,
+    };
     int sequence_id = 0;
     camera_status = ACameraCaptureSession_setRepeatingRequest(session, &capture_callbacks, 1, &request, &sequence_id);
     if (check_status("start capture", camera_status) != 0) goto cleanup_camera;

@@ -225,6 +225,18 @@ int t630_permission_check(void)
     __asm__("_ZN7android10permission17PermissionChecker15checkPermissionERKNS_8String16ERKNS_7content22AttributionSourceStateES4_bbbi");
 int t630_permission_check(void) { return 0; }
 
+/* CameraService's administrative Binder entry points use libbinder's older
+ * checkCallingPermission helpers rather than PermissionChecker. Grant these
+ * too so the lab launcher can disable the Android watchdog before opening a
+ * device. Both functions return C++ bool (0/1). */
+int t630_check_calling_permission(void)
+    __asm__("_ZN7android22checkCallingPermissionERKNS_8String16E");
+int t630_check_calling_permission(void) { return 1; }
+
+int t630_check_calling_permission_ids(void)
+    __asm__("_ZN7android22checkCallingPermissionERKNS_8String16EPiS3_");
+int t630_check_calling_permission_ids(void) { return 1; }
+
 void t630_permission_finish(void)
     __asm__("_ZN7android10permission17PermissionChecker32finishDataDeliveryFromDatasourceEiRKNS_7content22AttributionSourceStateE");
 void t630_permission_finish(void) {}

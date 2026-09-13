@@ -21,7 +21,7 @@ SM-T630 on the exact `T630XXSBDZE3` baseline.
 | System suspend | Experimental | Guarded manual shallow suspend and wake passed; automatic idle suspend remains disabled |
 | GPU | Experimental | Turnip/Zink can render GNOME, but a KGSL fault was reproduced; software fallback is retained |
 | Video | Partial | Stock decoder adapter passed tested H.264 and VP9 playback; browser integration is absent |
-| Camera | In progress | Stock camera kernel module, Android provider, CameraService, calibration, and stream configuration run; first output-frame plumbing is still being completed |
+| Camera | Partial | Front S5K4HA captures real 640x480 frames through the stock HAL; normal desktop bridge and color output remain. Rear S5K3L6 is blocked by HAL EEPROM CRC/module validation |
 | Security | Lab configuration | GNOME password lock works, but the retained recovery compositor and USB root console mean this is not a hardened full-device login boundary |
 
 ## Known limitations
@@ -34,8 +34,9 @@ SM-T630 on the exact `T630XXSBDZE3` baseline.
 - GPU acceleration is opt-in; software rendering is the safe fallback.
 - Automatic idle system suspend is disabled while power behavior is still being
   characterized.
-- Camera support is a source-level experiment and currently depends on
-  proprietary files extracted from the owner's matching stock firmware. Those
-  files cannot be redistributed here.
+- Camera support is a source-level experiment. The front camera has delivered
+  real frames, but there is no normal desktop camera device yet. It depends on
+  proprietary files extracted from the owner's matching stock firmware; those
+  files cannot be redistributed here. See [CAMERA.md](CAMERA.md).
 
 For the complete test history, see the dated files in `docs/reports/`.

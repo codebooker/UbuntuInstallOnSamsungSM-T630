@@ -30,7 +30,7 @@ full-screen GNOME desktop from internal storage.
 | GPU rendering | Experimental; software fallback retained |
 | Stock hardware video decoding | Working for tested H.264/VP9 desktop playback |
 | Browser video acceleration | Not integrated |
-| Cameras | In active development; no normal desktop camera yet |
+| Cameras | Front sensor captures frames; desktop camera bridge in development |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).
 
@@ -54,7 +54,8 @@ be treated as a porting task, not as a reason to remove those checks.
 2. Read the [architecture](docs/ARCHITECTURE.md) to understand what is stock,
    rebuilt, and Ubuntu-native.
 3. Check [STATUS.md](docs/STATUS.md) before relying on a hardware feature.
-4. Use the chronological [bring-up reports](docs/reports/) for measurements,
+4. Read the current [camera bring-up notes](docs/CAMERA.md) for that experimental stack.
+5. Use the chronological [bring-up reports](docs/reports/) for measurements,
    regressions, and recovery details.
 
 At present the repository can reproduce the conservative diagnostic boot image

@@ -37,9 +37,11 @@ button behavior.
 - GPU experiments use Mesa Turnip/Zink through KGSL, with health checks and an
   automatic software-rendered fallback.
 - Video playback has a process-scoped adapter to the stock Qualcomm decoder.
-- Camera development currently runs the stock camera HAL in an isolated Android
-  Binder/VNDK compatibility environment. Proprietary binaries are never part of
-  this repository.
+- Camera development runs the stock camera HAL in an isolated Android
+  Binder/VNDK compatibility environment with stock assets mounted read-only.
+  The front sensor now delivers frames to a source-built NDK client;
+  PipeWire/Video4Linux exposure is the next integration layer. Proprietary
+  binaries are never part of this repository.
 
 ## Safety model
 

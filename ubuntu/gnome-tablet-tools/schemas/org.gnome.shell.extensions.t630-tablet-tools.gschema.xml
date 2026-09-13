@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.t630-tablet-tools" path="/org/gnome/shell/extensions/t630-tablet-tools/">
+    <key name="toggle-keyboard" type="as">
+      <default>['XF86Launch5']</default>
+      <summary>Show or hide the tablet keyboard</summary>
+      <description>The Active key is mapped to this otherwise unused keysym.</description>
+    </key>
+  </schema>
+</schemalist>

@@ -1,0 +1,19 @@
+#!/bin/busybox sh
+# Stop prototype services before unmounting. Never force an unclean restart.
+set -eu
+test "${1:-}" = reboot
+touch /run/t630-stopping
+for name in weston-terminal weston weston-keyboard weston-desktop-shell NetworkManager wpa_supplicant chronyd seatd systemd-udevd dbus-daemon; do
+    chroot /run/ubuntu /usr/bin/pkill -TERM -x "$name" || true
+done
+sleep 3
+sync
+umount /run/ubuntu/dev/shm
+umount /run/ubuntu/dev/pts
+umount /run/ubuntu/dev
+umount /run/ubuntu/proc
+umount /run/ubuntu/sys
+umount /run/ubuntu/run
+umount /run/ubuntu
+sync
+reboot -f

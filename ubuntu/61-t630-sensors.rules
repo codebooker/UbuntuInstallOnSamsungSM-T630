@@ -1,0 +1,5 @@
+# The SM-T630 exposes Samsung's downstream FastRPC node rather than the
+# upstream fastrpc-adsp name. Offer every compiled SSC driver to the node.
+ACTION=="remove", GOTO="t630_ssc_end"
+SUBSYSTEM=="fastrpc", KERNEL=="adsprpc-smd-secure", ENV{IIO_SENSOR_PROXY_TYPE}="ssc-accel ssc-light ssc-compass ssc-proximity"
+LABEL="t630_ssc_end"

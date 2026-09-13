@@ -1,0 +1,2 @@
+# Apply before Weston/libinput opens the device and caches its supported keys.
+ACTION=="add", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="gpio_keys", RUN+="/usr/local/sbin/t630-red-button"

@@ -1,0 +1,88 @@
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -304,6 +304,54 @@ static int send_hci_ibs_cmd(u8 cmd, stru
+ 	return err;
+ }
+ 
++/*
++ * Samsung's WCN6850 transport wakes the controller receiver by pulsing RXD
++ * before it sends IBS_WAKE_IND.  The pulse is a zero byte at 38400 baud with
++ * RTS deasserted and hardware flow control disabled.  Without it, the SM-T630
++ * controller enters IBS sleep but never sees the host's subsequent WAKE_IND.
++ */
++static void qca_t630_rxd_wakeup(struct hci_uart *hu)
++{
++	struct tty_struct *tty = hu->tty;
++	struct ktermios normal, wake;
++	u8 zero = 0;
++	int ret;
++
++	if (!tty || !tty->ops || !tty->ops->write ||
++	    !tty->driver || !tty->driver->ops ||
++	    !tty->driver->ops->tiocmset)
++		return;
++
++	/* Finish any preceding traffic before temporarily changing the port. */
++	tty_wait_until_sent(tty, msecs_to_jiffies(100));
++
++	/* Match HciUartTransport::SocRxDWakeup() in Samsung's QTI HAL. */
++	ret = tty->driver->ops->tiocmset(tty, 0, TIOCM_RTS);
++	if (ret)
++		BT_ERR("SM-T630 failed to clear RTS for RXD wake: %d", ret);
++
++	normal = tty->termios;
++	wake = normal;
++	wake.c_cflag &= ~CRTSCTS;
++	tty_termios_encode_baud_rate(&wake, 38400, 38400);
++	ret = tty_set_termios(tty, &wake);
++	if (ret)
++		BT_ERR("SM-T630 failed to set RXD wake baud: %d", ret);
++
++	ret = tty->ops->write(tty, &zero, 1);
++	if (ret != 1)
++		BT_ERR("SM-T630 failed to send RXD wake pulse: %d", ret);
++	tty_wait_until_sent(tty, msecs_to_jiffies(100));
++
++	ret = tty_set_termios(tty, &normal);
++	if (ret)
++		BT_ERR("SM-T630 failed to restore UART settings: %d", ret);
++
++	ret = tty->driver->ops->tiocmset(tty, TIOCM_RTS, 0);
++	if (ret)
++		BT_ERR("SM-T630 failed to restore RTS after RXD wake: %d", ret);
++}
++
+ static void qca_wq_awake_device(struct work_struct *work)
+ {
+ 	struct qca_data *qca = container_of(work, struct qca_data,
+@@ -317,6 +365,10 @@ static void qca_wq_awake_device(struct w
+ 	/* Vote for serial clock */
+ 	serial_clock_vote(HCI_IBS_TX_VOTE_CLOCK_ON, hu);
+ 
++	if (!hu->serdev && hu->tty &&
++	    !strcmp(hu->tty->name, "ttyHS0"))
++		qca_t630_rxd_wakeup(hu);
++
+ 	spin_lock_irqsave(&qca->hci_ibs_lock, flags);
+ 
+ 	/* Send wake indication to device */
+@@ -1255,16 +1307,10 @@ static int qca_setup(struct hci_uart *hu
+ 		hci_uart_set_baudrate(hu, 3200000);
+ 
+ 		set_bit(HCI_QUIRK_SIMULTANEOUS_DISCOVERY, &hdev->quirks);
+-		/*
+-		 * WCN6850 sends receive-side IBS notifications, so retain the QCA
+-		 * parser.  This board does not acknowledge host WAKE_IND reliably,
+-		 * however, and gating the command queue on that acknowledgement
+-		 * stalls HCI initialization.  Keep QCA_IBS_ENABLED clear: outgoing
+-		 * HCI frames are sent immediately while incoming IBS control bytes
+-		 * are still consumed by qca_recv().
+-		 */
++		/* The board-specific RXD pulse above makes host IBS wake reliable. */
++		set_bit(QCA_IBS_ENABLED, &qca->flags);
+ 		qca_debugfs_init(hdev);
+-		bt_dev_info(hdev, "using SM-T630 userspace firmware handoff");
++		bt_dev_info(hdev, "using SM-T630 firmware handoff with RXD wake");
+ 		return 0;
+ 	}
+ 

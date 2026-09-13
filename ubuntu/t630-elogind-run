@@ -1,0 +1,10 @@
+#!/bin/sh
+# Record lifetime/exit status without logging authentication conversations.
+set -u
+export SYSTEMD_LOG_TARGET=console SYSTEMD_LOG_LEVEL=info
+date -u '+elogind starting %FT%TZ'
+/opt/t630/elogind-255.27/libexec/elogind
+result=$?
+date -u '+elogind stopped %FT%TZ'
+echo "elogind exit status: $result"
+exit "$result"

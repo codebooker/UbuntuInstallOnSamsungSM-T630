@@ -1,0 +1,21 @@
+#!/bin/sh
+# Opt-in Adreno rendering. Keep the default desktop's llvmpipe fallback intact.
+set -eu
+test "$#" -gt 0
+test -r /dev/kgsl-3d0 && test -w /dev/kgsl-3d0
+test -r /dev/ion && test -w /dev/ion
+export VK_DRIVER_FILES=/opt/t630/mesa-25.2.8-kgsl/share/vulkan/icd.d/freedreno_icd.aarch64.json
+test -r "$VK_DRIVER_FILES"
+unset LIBGL_ALWAYS_SOFTWARE
+export GALLIUM_DRIVER=zink MESA_LOADER_DRIVER_OVERRIDE=zink
+# GPU rendering with CPU-copy presentation into the software compositor.
+# Direct dmabuf presentation currently SIGBUSes in this legacy-kernel setup.
+export MESA_VK_WSI_DEBUG=sw LIBGL_KOPPER_DRI2=1
+# A lost Vulkan device cannot keep rendering. Exit the opted-in process so its
+# supervisor can recover, rather than leaving a live but frozen desktop.
+export MESA_VK_ABORT_ON_DEVICE_LOSS=1
+# Reversible conservative rendering mode, scoped to opted-in GPU processes.
+if [ -f /etc/t630/gpu-sysmem.enabled ]; then
+    export TU_DEBUG="${TU_DEBUG:+$TU_DEBUG,}sysmem"
+fi
+exec "$@"

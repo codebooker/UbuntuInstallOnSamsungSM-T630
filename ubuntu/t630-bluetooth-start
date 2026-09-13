@@ -1,0 +1,132 @@
+#!/bin/sh
+# Bring up the SM-T630's Qualcomm UART controller without systemd.
+set -eu
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
+firmware=/usr/local/lib/firmware/t630-bluetooth
+loader=/usr/local/libexec/t630-bluetooth/t630_qca_bt.py
+address=/var/lib/t630-bluetooth/address
+
+test "$(id -u)" = 0
+test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
+test -c /dev/ttyHS0
+test -x "$loader"
+test -r "$address"
+test -r "$firmware/hpbtfw10.tlv"
+test -r "$firmware/hpnv10.bin"
+test -r "$firmware/bt_nvm_loading.xml"
+
+# Only one process may own the UART and its HCI line discipline.  Reuse an
+# existing healthy loader when this launcher itself is restarted.
+loader_pid=
+daemon_pid=
+daemon_owned=false
+if ! pgrep -f "^(python3|/usr/bin/python3) $loader " >/dev/null; then
+    python3 "$loader" --firmware-dir "$firmware" --address-file "$address" \
+        >>/var/log/t630-bluetooth-loader.log 2>&1 &
+    loader_pid=$!
+fi
+cleanup() {
+    if [ "$daemon_owned" = true ] && [ -n "$daemon_pid" ]; then
+        kill "$daemon_pid" 2>/dev/null || true
+        wait "$daemon_pid" 2>/dev/null || true
+    fi
+    if [ -n "$loader_pid" ]; then
+        kill "$loader_pid" 2>/dev/null || true
+        wait "$loader_pid" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT INT TERM HUP
+
+attempt=0
+while [ ! -d /sys/class/bluetooth/hci0 ]; do
+    if [ -n "$loader_pid" ] && ! kill -0 "$loader_pid" 2>/dev/null; then
+        wait "$loader_pid"
+        exit 1
+    fi
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 30
+    sleep 1
+done
+
+# Bring the adapter up before BlueZ claims it.  This avoids a startup race in
+# which Adapter1 exists on D-Bus but is not ready to accept Powered=true yet.
+timeout 20 hciconfig hci0 up
+
+# This WCN6850 can miss Linux's first Write LE Host Supported command while
+# settling after firmware handoff.  hciconfig still brings hci0 up, but the
+# missing reply leaves LE disabled and can strand BlueZ's first management
+# request.  Retry the standard command here and verify its exact success event
+# before BlueZ opens its management socket.
+attempt=0
+le_host_ready=false
+while [ "$attempt" -lt 5 ]; do
+    le_host_reply=$(timeout 8 hcitool -i hci0 cmd 0x03 0x006d 0x01 0x00 2>&1 || true)
+    if printf '%s\n' "$le_host_reply" | grep -q '01 6D 0C 00'; then
+        le_host_ready=true
+        break
+    fi
+    attempt=$((attempt + 1))
+    sleep 1
+done
+if [ "$le_host_ready" != true ]; then
+    printf '%s\n' "$le_host_reply" >&2
+    echo "SM-T630 Bluetooth controller did not enable LE" >&2
+    exit 1
+fi
+
+# bluetoothd exposes the controller to GNOME Settings and handles pairing.
+# A D-Bus activation attempt can briefly create bluetoothd before this script
+# reaches this point.  Reuse it only if it already exposes a healthy adapter;
+# otherwise remove the stray process and launch the supervised daemon here.
+daemon_pid=$(pgrep -xo bluetoothd 2>/dev/null || true)
+if [ -n "$daemon_pid" ]; then
+    attempt=0
+    while ! busctl --no-pager introspect org.bluez /org/bluez/hci0 \
+            org.bluez.Adapter1 >/dev/null 2>&1; do
+        if ! kill -0 "$daemon_pid" 2>/dev/null; then
+            daemon_pid=
+            break
+        fi
+        attempt=$((attempt + 1))
+        if [ "$attempt" -ge 5 ]; then
+            kill "$daemon_pid" 2>/dev/null || true
+            daemon_pid=
+            sleep 1
+            break
+        fi
+        sleep 1
+    done
+fi
+
+if [ -z "$daemon_pid" ]; then
+    /usr/libexec/bluetooth/bluetoothd --nodetach &
+    daemon_pid=$!
+    daemon_owned=true
+    attempt=0
+    until busctl introspect org.bluez /org/bluez/hci0 org.bluez.Adapter1 >/dev/null 2>&1; do
+        if ! kill -0 "$daemon_pid" 2>/dev/null; then
+            wait "$daemon_pid"
+            exit 1
+        fi
+        attempt=$((attempt + 1))
+        test "$attempt" -lt 20
+        sleep 1
+    done
+fi
+
+# Keep the UART owner and Bluetooth daemon together for the life of the boot.
+while kill -0 "$daemon_pid" 2>/dev/null; do
+    if [ -n "$loader_pid" ] && ! kill -0 "$loader_pid" 2>/dev/null; then
+        wait "$loader_pid"
+        exit 1
+    fi
+    sleep 2
+done
+
+if [ "$daemon_owned" = true ]; then
+    wait "$daemon_pid"
+fi
+exit 1

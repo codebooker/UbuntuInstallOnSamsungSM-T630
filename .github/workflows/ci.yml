@@ -1,0 +1,30 @@
+name: Source checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile Python sources
+        run: python -m compileall -q tools ubuntu
+      - name: Run hardware-independent tests
+        run: python -m unittest discover -s tools -p 'test*.py' -v
+      - name: Check shell syntax
+        run: |
+          find initramfs persistent tools ubuntu -type f \( -name '*.sh' -o -perm -u+x \) -print0 |
+            while IFS= read -r -d '' file; do
+              case "$file" in
+                *.py|*.c|*.cpp) continue ;;
+              esac
+              sh -n "$file"
+            done

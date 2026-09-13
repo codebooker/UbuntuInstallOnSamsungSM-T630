@@ -1,0 +1,10 @@
+#!/bin/busybox sh
+export PATH=/bin:/sbin HOME=/root TERM=vt100
+echo
+echo 'SM-T630 native Linux bring-up v0.1'
+echo 'RAM-only diagnostic shell, not an Ubuntu desktop yet.'
+echo 'Internal storage is not mounted. Do not run formatting or flash commands.'
+echo 'Logs: /run/bringup.log and /run/dmesg.txt'
+uname -a
+export PS1='t630-ram-test# '
+exec /bin/busybox sh -i

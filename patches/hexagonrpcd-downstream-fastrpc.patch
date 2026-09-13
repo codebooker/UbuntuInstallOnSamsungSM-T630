@@ -1,0 +1,261 @@
+Use the Qualcomm downstream FastRPC ioctl ABI found in Samsung's 5.4 kernel.
+
+The SM-T630 exposes /dev/adsprpc-smd from the older downstream driver. Its
+ioctl numbers and argument layout predate the upstream /dev/fastrpc-* ABI.
+
+diff --git a/include/libhexagonrpc/fastrpc-legacy.h b/include/libhexagonrpc/fastrpc-legacy.h
+new file mode 100644
+index 0000000..172a52e
+--- /dev/null
++++ b/include/libhexagonrpc/fastrpc-legacy.h
+@@ -0,0 +1,58 @@
++#ifndef LIBHEXAGONRPC_FASTRPC_LEGACY_H
++#define LIBHEXAGONRPC_FASTRPC_LEGACY_H
++
++#include <stddef.h>
++#include <stdint.h>
++#include <sys/ioctl.h>
++
++struct fastrpc_legacy_remote_buf {
++	void *pv;
++	size_t len;
++};
++
++struct fastrpc_legacy_remote_dma_handle {
++	int fd;
++	uint32_t offset;
++};
++
++union fastrpc_legacy_remote_arg {
++	struct fastrpc_legacy_remote_buf buf;
++	struct fastrpc_legacy_remote_dma_handle dma;
++	uint32_t h;
++};
++
++struct fastrpc_legacy_invoke {
++	uint32_t handle;
++	uint32_t sc;
++	union fastrpc_legacy_remote_arg *pra;
++};
++
++struct fastrpc_legacy_init {
++	uint32_t flags;
++	uintptr_t file;
++	uint32_t filelen;
++	int32_t filefd;
++	uintptr_t mem;
++	uint32_t memlen;
++	int32_t memfd;
++};
++
++struct fastrpc_legacy_mmap {
++	int fd;
++	uint32_t flags;
++	uintptr_t vaddrin;
++	size_t size;
++	uintptr_t vaddrout;
++};
++
++#define FASTRPC_LEGACY_INIT_ATTACH 0
++#define FASTRPC_LEGACY_INIT_ATTACH_SENSORS 3
++
++#define FASTRPC_LEGACY_IOCTL_INVOKE \
++	_IOWR('R', 1, struct fastrpc_legacy_invoke)
++#define FASTRPC_LEGACY_IOCTL_MMAP \
++	_IOWR('R', 2, struct fastrpc_legacy_mmap)
++#define FASTRPC_LEGACY_IOCTL_INIT \
++	_IOWR('R', 6, struct fastrpc_legacy_init)
++#define FASTRPC_LEGACY_IOCTL_GETINFO \
++	_IOWR('R', 8, uint32_t)
++
++#endif
+diff --git a/libhexagonrpc/fastrpc.c b/libhexagonrpc/fastrpc.c
+index 7679cbf..8d73a91 100644
+--- a/libhexagonrpc/fastrpc.c
++++ b/libhexagonrpc/fastrpc.c
+@@ -18,6 +18,7 @@
+  */
+ 
+ #include <libhexagonrpc/fastrpc.h>
++#include <libhexagonrpc/fastrpc-legacy.h>
+ #include <misc/fastrpc.h>
+ #include <stdarg.h>
+ #include <stdint.h>
+@@ -27,7 +28,7 @@
+ #include <stdio.h>
+ 
+ static void allocate_first_inbuf(const struct fastrpc_function_def_interp2 *def,
+-				 struct fastrpc_invoke_args *arg,
++				 union fastrpc_legacy_remote_arg *arg,
+ 				 uint32_t **inbuf)
+ {
+ 	uint32_t *buf;
+@@ -42,14 +43,12 @@ static void allocate_first_inbuf(const struct fastrpc_function_def_interp2 *def,
+ 	*inbuf = buf;
+ 
+ 	if (buf != NULL) {
+-		arg->ptr = (__u64) buf;
+-		arg->length = len;
+-		arg->fd = -1;
++		arg->buf.pv = buf;
++		arg->buf.len = len;
+ 	}
+ }
+ 
+ static void allocate_first_outbuf(const struct fastrpc_function_def_interp2 *def,
+-				  struct fastrpc_invoke_args *arg,
++				  union fastrpc_legacy_remote_arg *arg,
+ 				  uint32_t **outbuf)
+ {
+ 	uint32_t *buf;
+@@ -64,9 +63,8 @@ static void allocate_first_outbuf(const struct fastrpc_function_def_interp2 *def,
+ 	*outbuf = buf;
+ 
+ 	if (buf != NULL) {
+-		arg->ptr = (__u64) buf;
+-		arg->length = len;
+-		arg->fd = -1;
++		arg->buf.pv = buf;
++		arg->buf.len = len;
+ 	}
+ }
+@@ -86,7 +84,7 @@ static void allocate_first_outbuf(const struct fastrpc_function_def_interp2 *def,
+  * used it causes undefined behavior.
+  */
+ static void prepare_outbufs(const struct fastrpc_function_def_interp2 *def,
+-			    struct fastrpc_invoke_args *args,
++			    union fastrpc_legacy_remote_arg *args,
+ 			    uint8_t out_count,
+ 			    uint32_t *inbuf,
+ 			    uint32_t **outbuf,
+@@ -105,9 +103,8 @@ static void prepare_outbufs(const struct fastrpc_function_def_interp2 *def,
+ 	for (i = 0; i < def->out_bufs; i++) {
+ 		size = va_arg(peek, uint32_t);
+ 
+-		args[off + i].ptr = (__u64) va_arg(peek, void *);
+-		args[off + i].length = size;
+-		args[off + i].fd = -1;
++		args[off + i].buf.pv = va_arg(peek, void *);
++		args[off + i].buf.len = size;
+ 
+ 		inbuf[i] = size;
+ 	}
+@@ -152,8 +149,8 @@ int vfastrpc2(const struct fastrpc_function_def_interp2 *def,
+ 	      int fd, uint32_t handle, va_list arg_list)
+ {
+ 	va_list peek;
+-	struct fastrpc_invoke invoke;
+-	struct fastrpc_invoke_args *args;
++	struct fastrpc_legacy_invoke invoke;
++	union fastrpc_legacy_remote_arg *args;
+ 	uint32_t *inbuf;
+ 	uint32_t *outbuf;
+ 	uint8_t in_count;
+@@ -184,9 +181,8 @@ int vfastrpc2(const struct fastrpc_function_def_interp2 *def,
+ 	for (i = 0; i < def->in_bufs; i++) {
+ 		size = va_arg(arg_list, uint32_t);
+ 
+-		args[i + 1].ptr = (__u64) va_arg(arg_list, void *);
+-		args[i + 1].length = size;
+-		args[i + 1].fd = -1;
++		args[i + 1].buf.pv = va_arg(arg_list, void *);
++		args[i + 1].buf.len = size;
+ 
+ 		inbuf[def->in_nums + i] = size;
+ 	}
+@@ -202,9 +198,9 @@ int vfastrpc2(const struct fastrpc_function_def_interp2 *def,
+ 
+ 	invoke.handle = handle;
+ 	invoke.sc = REMOTE_SCALARS_MAKE(def->msg_id, in_count, out_count);
+-	invoke.args = (__u64) args;
++	invoke.pra = args;
+ 
+-	ret = ioctl(fd, FASTRPC_IOCTL_INVOKE, (__u64) &invoke);
++	ret = ioctl(fd, FASTRPC_LEGACY_IOCTL_INVOKE, &invoke);
+ 
+ 	for (i = 0; i < def->out_nums; i++)
+ 		*va_arg(arg_list, uint32_t *) = outbuf[i];
+diff --git a/hexagonrpcd/apps_mem.c b/hexagonrpcd/apps_mem.c
+index 7d47585..d9a511c 100644
+--- a/hexagonrpcd/apps_mem.c
++++ b/hexagonrpcd/apps_mem.c
+@@ -20,6 +20,7 @@
+  */
+ 
+ #include <inttypes.h>
++#include <libhexagonrpc/fastrpc-legacy.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -55,7 +56,7 @@ static uint32_t apps_mem_request_map64(void *data,
+ 	struct {
+ 		uint64_t vapps;
+ 		uint64_t vadsp;
+ 	} *first_out = outbufs[0].p;
+-	struct fastrpc_req_mmap mmap;
++	struct fastrpc_legacy_mmap mmap;
+ 	int ret;
+ 
+ 	if (!(first_in->rflags & ADSP_MMAP_ADD_PAGES)) {
+@@ -68,7 +69,7 @@ static uint32_t apps_mem_request_map64(void *data,
+ 	mmap.vaddrin = 0;
+ 	mmap.size = first_in->len;
+ 
+-	ret = ioctl(ctx->fd, FASTRPC_IOCTL_MMAP, &mmap);
++	ret = ioctl(ctx->fd, FASTRPC_LEGACY_IOCTL_MMAP, &mmap);
+ 	if (ret == -1) {
+ 		perror("Memory map failed");
+ 		return AEE_EFAILED;
+diff --git a/hexagonrpcd/rpcd.c b/hexagonrpcd/rpcd.c
+index 7817de4..79448c9 100644
+--- a/hexagonrpcd/rpcd.c
++++ b/hexagonrpcd/rpcd.c
+@@ -20,6 +20,7 @@
+  */
+ 
+ #include <errno.h>
++#include <libhexagonrpc/fastrpc-legacy.h>
+ #include <fcntl.h>
+ #include <libhexagonrpc/fastrpc.h>
+ #include <libhexagonrpc/interfaces/remotectl.def>
+@@ -419,6 +420,11 @@ int main(int argc, char* argv[])
+ 	size_t n_progs = 0;
+ 	int fd, ret, opt;
+ 	bool attach_sns = false;
++	uint32_t legacy_domain = 0;
++	struct fastrpc_legacy_init legacy_init = {
++		.filefd = -1,
++		.memfd = -1,
++	};
++
+ 
+ 	progs = malloc(sizeof(const char *) * argc);
+ 	if (progs == NULL) {
+@@ -476,12 +483,22 @@ int main(int argc, char* argv[])
+ 		goto err_free_pids;
+ 	}
+ 
++	ret = ioctl(fd, FASTRPC_LEGACY_IOCTL_GETINFO, &legacy_domain);
++	if (ret) {
++		fprintf(stderr, "Could not select the ADSP FastRPC domain: %s\n",
++			strerror(errno));
++		goto err_close_dev;
++	}
++
+-	if (attach_sns)
+-		ret = ioctl(fd, FASTRPC_IOCTL_INIT_ATTACH_SNS, NULL);
+-	else if (create_shell != NULL)
++	if (create_shell != NULL) {
+ 		ret = create_shell_pd(fd, create_shell);
+-	else
+-		ret = ioctl(fd, FASTRPC_IOCTL_INIT_ATTACH, NULL);
++	} else {
++		legacy_init.flags = attach_sns
++			? FASTRPC_LEGACY_INIT_ATTACH_SENSORS
++			: FASTRPC_LEGACY_INIT_ATTACH;
++		ret = ioctl(fd, FASTRPC_LEGACY_IOCTL_INIT, &legacy_init);
++	}
++
+ 	if (ret) {
+ 		fprintf(stderr, "Could not attach to FastRPC node: %s\n", strerror(errno));
+ 		goto err_close_dev;

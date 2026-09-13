@@ -1,0 +1,55 @@
+#!/bin/busybox sh
+# Stop prototype services before unmounting. Never force an unclean restart.
+set -eu
+test "${1:-}" = reboot
+# An SSH-side redirect may have opened /dev/null through Ubuntu's bind mount.
+# Reopen it after entering the outer root so this helper cannot pin that mount.
+cd /
+exec </dev/null
+touch /run/t630-stopping
+for name in sshd t630-screen gdm gdm3 elogind weston-terminal weston weston-keyboard NetworkManager wpa_supplicant chronyd seatd systemd-udevd dbus-daemon; do
+    chroot /run/ubuntu /usr/bin/pkill -TERM -x "$name" || true
+done
+# Desktop apps can be launched after boot. Stop only processes rooted in this
+# exact Ubuntu mount; leave the outer recovery shell and PID 1 untouched.
+for proc in /proc/[0-9]*; do
+    if [ "$(readlink "$proc/root" 2>/dev/null || true)" = /run/ubuntu ]; then
+        kill -TERM "${proc##*/}" 2>/dev/null || true
+    fi
+done
+attempt=0
+while :; do
+    remaining=0
+    for proc in /proc/[0-9]*; do
+        if [ "$(readlink "$proc/root" 2>/dev/null || true)" = /run/ubuntu ]; then
+            remaining=1
+        fi
+    done
+    [ "$remaining" = 1 ] || break
+    attempt=$((attempt + 1))
+    if [ "$attempt" -ge 30 ]; then
+        echo 'Ubuntu processes are still exiting; refusing forced restart.'
+        exit 1
+    fi
+    sleep 1
+done
+sync
+for target in /run/ubuntu/run/user/1000/doc /run/ubuntu/run/user/1000/gvfs \
+              /run/ubuntu/run/user/105/doc /run/ubuntu/run/user/105/gvfs \
+              /run/ubuntu/run/user/1000 /run/ubuntu/run/user/105 \
+              /run/ubuntu/sys/fs/cgroup/elogind /run/ubuntu/sys/fs/cgroup \
+              /run/ubuntu/dev/shm /run/ubuntu/dev/pts /run/ubuntu/dev \
+              /run/ubuntu/proc /run/ubuntu/sys /run/ubuntu/run /run/ubuntu; do
+    attempt=0
+    while grep -q " $target " /proc/mounts; do
+        if umount "$target"; then break; fi
+        attempt=$((attempt + 1))
+        if [ "$attempt" -ge 30 ]; then
+            echo "Mount still busy: $target; refusing forced restart."
+            exit 1
+        fi
+        sleep 1
+    done
+done
+sync
+reboot -f

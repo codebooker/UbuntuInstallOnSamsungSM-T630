@@ -1,0 +1,9 @@
+--- a/daemon/gdm-manager.c
++++ b/daemon/gdm-manager.c
+@@ -2673,3 +2673,5 @@
+-        if (!manager->xdmcp_enabled || manager->show_local_greeter) {
++        /* Honor an explicitly disabled local greeter even without XDMCP.
++         * Authentication and reauthentication checks are unchanged. */
++        if (manager->show_local_greeter) {
+                 gdm_display_factory_start (GDM_DISPLAY_FACTORY (manager->local_factory));
+         }

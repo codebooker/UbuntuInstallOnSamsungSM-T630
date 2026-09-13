@@ -1,0 +1,8 @@
+// The hand-built GNOME session is registered with elogind rather than GDM.
+// Permit only its dedicated unprivileged account to consume read-only sensors.
+polkit.addRule(function(action, subject) {
+    if (action.id == "net.hadess.SensorProxy.claim-sensor" &&
+        subject.user == "tablet") {
+        return polkit.Result.YES;
+    }
+});

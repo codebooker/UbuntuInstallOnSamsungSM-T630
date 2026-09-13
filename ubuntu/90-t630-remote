@@ -1,0 +1,10 @@
+#!/bin/sh
+case "$2" in
+    up|dhcp4-change)
+        # udev may rename wlan0; accept actual wireless interfaces only.
+        case "$1" in ''|*/*|.|..) exit 0 ;; esac
+        if [ -d "/sys/class/net/$1/wireless" ]; then
+            /usr/local/sbin/t630-remote-start
+        fi
+        ;;
+esac

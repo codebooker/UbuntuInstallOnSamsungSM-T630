@@ -1,0 +1,96 @@
+#!/bin/sh
+# Weston starts this once. Failure must leave the recovery desktop running.
+set -eu
+test "$(id -u)" = 0
+test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
+if [ -e /etc/t630/desktop-autostart.disabled ]; then
+    exit 0
+fi
+test -x /usr/local/bin/t630-gnome-preview
+test -x /usr/local/libexec/t630-gnome-session
+test -r /usr/local/lib/t630-cogl-sync.so
+test -d /home/tablet
+case "${1:-}" in
+    --check) exit 0 ;;
+    '') ;;
+    *) exit 2 ;;
+esac
+exec >/run/t630-gnome-autostart.log 2>&1
+# Independent of audio/login; failure never blocks the recovery desktop.
+if [ -x /usr/local/sbin/t630-ipa-start ] && [ ! -e /etc/t630/ipa.disabled ]; then
+    nohup /usr/local/sbin/t630-ipa-start </dev/null >>/var/log/t630-ipa-start.log 2>&1 &
+fi
+attempt=0
+until [ -S /run/user/0/wayland-0 ] && [ -S /run/dbus/system_bus_socket ]; do
+    attempt=$((attempt + 1))
+    if [ "$attempt" -ge 30 ]; then
+        echo 'GNOME prerequisites unavailable; keeping recovery desktop.'
+        exit 1
+    fi
+    sleep 1
+done
+# The initramfs opens its recovery terminal immediately after the same socket
+# appears. Let it map first so it cannot cover GNOME's fullscreen host window.
+sleep 3
+managed_session=0
+login_requested=0
+if [ -f /etc/t630/login.enabled ]; then
+    login_requested=1
+fi
+if [ -f /etc/t630/login-next-boot ]; then
+    mv /etc/t630/login-next-boot /run/t630-login-test-consumed
+    login_requested=1
+fi
+if [ "$login_requested" = 1 ] && [ ! -e /etc/t630/login.disabled ]; then
+    if /usr/local/sbin/t630-login-start; then
+        managed_session=1
+    else
+        echo 'Login integration test unavailable; keeping the existing lab desktop.'
+    fi
+fi
+if [ "$managed_session" = 1 ] && [ -x /usr/local/sbin/t630-power-button ]; then
+    if ! pgrep -x t630-power-key >/dev/null; then
+        nohup setsid /usr/local/sbin/t630-power-button </dev/null >>/var/log/t630-power-button.log 2>&1 &
+    fi
+fi
+if [ -x /usr/local/sbin/t630-red-button ]; then
+    /usr/local/sbin/t630-red-button || echo 'Active-key mapping failed; continuing desktop startup.'
+fi
+if [ -x /usr/local/sbin/t630-audio-start ] && [ ! -e /etc/t630/audio.disabled ]; then
+    nohup /usr/local/sbin/t630-audio-start </dev/null >>/var/log/t630-audio-start.log 2>&1 &
+fi
+if [ -x /usr/local/sbin/t630-bluetooth-start ] && [ ! -e /etc/t630/bluetooth.disabled ]; then
+    nohup /usr/local/sbin/t630-bluetooth-start </dev/null >>/var/log/t630-bluetooth-start.log 2>&1 &
+fi
+if [ -x /usr/local/sbin/t630-sensors-start ] && [ ! -e /etc/t630/sensors.disabled ]; then
+    nohup /usr/local/sbin/t630-sensors-start </dev/null >>/var/log/t630-sensors-start.log 2>&1 &
+fi
+gpu_renderer=0
+if [ -f /etc/t630/gpu.enabled ]; then
+    gpu_renderer=1
+fi
+if [ -f /etc/t630/gpu-next-boot ]; then
+    # Preserve explicit one-shot testing when persistent acceleration is off.
+    mv /etc/t630/gpu-next-boot /run/t630-gpu-boot-consumed
+    gpu_renderer=1
+fi
+if [ -e /etc/t630/gpu.disabled ]; then
+    gpu_renderer=0
+fi
+if [ -f /etc/t630/software-next-boot ]; then
+    mv /etc/t630/software-next-boot /run/t630-software-test-consumed
+    gpu_renderer=0
+fi
+# In particular, do not inherit Weston's DRM compatibility preload or the
+# fallback keyboard's input-method overrides into GNOME.
+if [ "$gpu_renderer" = 1 ]; then
+    if /usr/bin/env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8 \
+        HOME=/root T630_GNOME_FULLSCREEN=1 T630_GPU_RENDERER=1 T630_MANAGED_SESSION="$managed_session" \
+        /usr/local/bin/t630-gnome-preview; then
+        exit 0
+    fi
+    echo 'GPU session failed; retrying GNOME with the software renderer.'
+fi
+exec /usr/bin/env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8 \
+    HOME=/root T630_GNOME_FULLSCREEN=1 T630_GPU_RENDERER=0 T630_MANAGED_SESSION="$managed_session" \
+    /usr/local/bin/t630-gnome-preview

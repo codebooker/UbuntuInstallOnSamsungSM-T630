@@ -1,0 +1,40 @@
+# Minimal linker namespace map for the preserved SM-T630 Android camera HAL.
+# It keeps Android 15 LLNDK libraries and vendor API 30 VNDK libraries in
+# separate namespaces, matching the stock Android linker arrangement.
+
+dir.system = /system/bin/
+dir.vendor = /vendor/bin/
+
+[system]
+namespace.default.isolated = false
+namespace.default.search.paths = /system/${LIB}/bootstrap
+namespace.default.search.paths += /system/${LIB}
+namespace.default.search.paths += /apex/com.android.i18n/${LIB}
+# cameraserver loads Qualcomm's mapper HAL as a passthrough implementation.
+# Its private display dependencies therefore have to be visible from the
+# system process's default namespace as they are on stock Android's sphal link.
+namespace.default.search.paths += /vendor/${LIB}
+namespace.default.search.paths += /vendor/${LIB}/hw
+namespace.default.search.paths += /dev/t630-vndk30/${LIB}
+
+[vendor]
+additional.namespaces = system,vndk
+
+namespace.default.isolated = false
+namespace.default.search.paths = /vendor/${LIB}
+namespace.default.search.paths += /vendor/${LIB}/hw
+namespace.default.search.paths += /vendor/${LIB}/camera
+namespace.default.links = vndk,system
+namespace.default.link.vndk.allow_all_shared_libs = true
+namespace.default.link.system.allow_all_shared_libs = true
+
+namespace.vndk.isolated = false
+namespace.vndk.search.paths = /dev/t630-vndk30/${LIB}
+namespace.vndk.links = system,default
+namespace.vndk.link.system.allow_all_shared_libs = true
+namespace.vndk.link.default.allow_all_shared_libs = true
+
+namespace.system.isolated = false
+namespace.system.search.paths = /system/${LIB}/bootstrap
+namespace.system.search.paths += /system/${LIB}
+namespace.system.search.paths += /apex/com.android.i18n/${LIB}

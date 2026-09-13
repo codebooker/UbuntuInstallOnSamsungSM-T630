@@ -1,0 +1,183 @@
+#!/bin/sh
+set -eu
+# Keep the preview isolated from the working desktop's IM bridge and session bus.
+unset LD_PRELOAD GTK_IM_MODULE GTK_IM_MODULE_FILE QT_IM_MODULE GTK_THEME
+cd "$HOME"
+mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME"
+exec 9>"$XDG_RUNTIME_DIR/t630-gnome-preview.lock"
+flock -n 9 || exit 0
+gsettings set org.gnome.desktop.interface enable-animations false
+gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+gsettings set org.gnome.desktop.interface scaling-factor 1
+gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us')]"
+gsettings set org.gnome.desktop.background picture-options none
+gsettings set org.gnome.desktop.background primary-color '#241331'
+gsettings set org.gnome.desktop.session idle-delay 0
+if [ "${T630_LOGIN_SESSION_WRAPPED:-0}" = 1 ]; then
+    gsettings set org.gnome.desktop.screensaver lock-enabled true
+    # The root, power-key-only helper locks before touching the backlight.
+    gsettings set org.gnome.settings-daemon.plugins.power power-button-action nothing
+    gsettings set org.gnome.settings-daemon.plugins.media-keys power-static '[]'
+    # System suspend remains an explicit Power-button action with an RTC
+    # safety net; do not let gsd-power introduce a second idle policy.
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type nothing
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type nothing
+else
+    gsettings set org.gnome.desktop.screensaver lock-enabled false
+fi
+gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true
+gsettings set org.gnome.shell favorite-apps "['firefox.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Software.desktop', 'org.gnome.TextEditor.desktop', 'org.gnome.Terminal.desktop', 'org.gnome.Settings.desktop']"
+# Mutter 46's nested backend uses X11. A private rootful Xwayland window
+# provides that without restarting Weston or enabling any network listener.
+test ! -e /tmp/.X11-unix/X3
+test ! -e /tmp/.X3-lock
+export DISPLAY=:3
+XAUTHORITY=$(mktemp "$XDG_RUNTIME_DIR/t630-gnome-auth.XXXXXX")
+export XAUTHORITY
+cookie=$(mcookie)
+printf 'add :3 . %s\n' "$cookie" | xauth -f "$XAUTHORITY" source -
+unset cookie
+export XWAYLAND_NO_GLAMOR=1
+if [ "${T630_GNOME_FULLSCREEN:-0}" = 1 ]; then
+    set -- -geometry 1920x1200 -fullscreen
+else
+    set -- -geometry 1600x1000 -decorate
+fi
+Xwayland :3 -auth "$XAUTHORITY" -nolisten tcp -noreset "$@" -shm -extension MIT-SHM &
+xwayland_pid=$!
+shell_pid=
+auth_watch_pid=
+media_keys_pid=
+power_pid=
+session_manager_pid=
+cleanup() {
+    trap - EXIT INT TERM
+    if [ -n "$shell_pid" ]; then kill -TERM "$shell_pid" 2>/dev/null || true; fi
+    if [ -n "$auth_watch_pid" ]; then kill -TERM "$auth_watch_pid" 2>/dev/null || true; fi
+    if [ -n "$media_keys_pid" ]; then kill -TERM "$media_keys_pid" 2>/dev/null || true; fi
+    if [ -n "$power_pid" ]; then kill -TERM "$power_pid" 2>/dev/null || true; fi
+    if [ -n "$session_manager_pid" ]; then kill -TERM "$session_manager_pid" 2>/dev/null || true; fi
+    kill -TERM "$xwayland_pid" 2>/dev/null || true
+    wait "$xwayland_pid" 2>/dev/null || true
+    rm -f "$XAUTHORITY"
+}
+trap cleanup EXIT
+trap 'exit 0' INT TERM
+if [ -x /usr/local/libexec/t630-session-manager ]; then
+    /usr/local/libexec/t630-session-manager >"$XDG_RUNTIME_DIR/t630-session-manager.log" 2>&1 &
+    session_manager_pid=$!
+    attempt=0
+    until gdbus call --session --dest org.gnome.SessionManager --object-path /org/gnome/SessionManager --method org.freedesktop.DBus.Properties.Get org.gnome.SessionManager SessionIsActive 2>/dev/null | grep -q true; do
+        kill -0 "$session_manager_pid"
+        attempt=$((attempt + 1))
+        test "$attempt" -lt 10
+        sleep 1
+    done
+fi
+attempt=0
+until xdpyinfo >/dev/null 2>&1; do
+    kill -0 "$xwayland_pid"
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 15
+    sleep 1
+done
+if [ -x /usr/local/libexec/t630-auth-watch ]; then
+    /usr/local/libexec/t630-auth-watch &
+    auth_watch_pid=$!
+fi
+export LD_PRELOAD=/usr/local/lib/t630-cogl-sync.so
+# Only this shell uses the guarded keyboard resource. Distro files stay intact.
+if [ -r /usr/local/share/t630/gnome-resource-overlay/keyboard.js ]; then
+    # Do not silently shadow a newer keyboard implementation after upgrades.
+    keyboard_source_sha=$(gresource extract /usr/lib/gnome-shell/libshell-14.so \
+        /org/gnome/shell/ui/keyboard.js | sha256sum | cut -d ' ' -f 1)
+    unlock_source_sha=$(gresource extract /usr/lib/gnome-shell/libshell-14.so \
+        /org/gnome/shell/ui/unlockDialog.js | sha256sum | cut -d ' ' -f 1)
+    if [ "$keyboard_source_sha" = ca04df3bd982c4034e35c1fdb83a2744be03bf41ac04db3eb98e4129f79af575 ] && \
+       [ "$unlock_source_sha" = d456126f998cd0fb2d4e3e70cd58bde7c5bfbd326623c8ee1a4ab79d6e47ecdb ]; then
+        export G_RESOURCE_OVERLAYS=/org/gnome/shell/ui=/usr/local/share/t630/gnome-resource-overlay
+    else
+        echo 'GNOME keyboard updated: old tablet overlay disabled pending review.'
+    fi
+fi
+if [ "${T630_RENDER_PROBE:-0}" = 1 ]; then
+    export LD_PRELOAD=/run/t630-gnome-probe.so
+fi
+if [ "${T630_GPU_RENDERER:-0}" = 1 ]; then
+    # Only the GNOME renderer is opted in; the host Xwayland stays in SHM mode.
+    set -- /usr/local/libexec/t630-gpu-session-watch /usr/local/bin/t630-gpu-env
+else
+    set --
+fi
+if [ "${T630_GNOME_BACKEND:-wayland}" = x11 ]; then
+    unset WAYLAND_DISPLAY
+    export GDK_BACKEND=x11 XDG_SESSION_TYPE=x11
+    "$@" /usr/bin/gnome-shell --x11 &
+else
+    "$@" /usr/bin/gnome-shell --nested --wayland --wayland-display=t630-gnome-0 &
+fi
+shell_pid=$!
+if [ "${T630_GNOME_BACKEND:-wayland}" != x11 ]; then
+    # There is no gnome-session daemon to update D-Bus activation for us.
+    # Keep service-activated GTK apps inside GNOME, not on the parent Weston.
+    attempt=0
+    until [ -S "$XDG_RUNTIME_DIR/t630-gnome-0" ]; do
+        kill -0 "$shell_pid"
+        attempt=$((attempt + 1))
+        test "$attempt" -lt 20
+        sleep 1
+    done
+    env -u LD_PRELOAD -u G_RESOURCE_OVERLAYS \
+        WAYLAND_DISPLAY=t630-gnome-0 GDK_BACKEND=wayland \
+        dbus-update-activation-environment WAYLAND_DISPLAY GDK_BACKEND
+fi
+if [ -x /usr/libexec/gsd-media-keys ]; then
+    (
+        # The nested shell must publish its display before GTK initializes.
+        if [ "${T630_GNOME_BACKEND:-wayland}" != x11 ]; then
+            attempt=0
+            until [ -S "$XDG_RUNTIME_DIR/t630-gnome-0" ]; do
+                kill -0 "$shell_pid"
+                attempt=$((attempt + 1))
+                test "$attempt" -lt 20
+                sleep 1
+            done
+            export WAYLAND_DISPLAY=t630-gnome-0 GDK_BACKEND=wayland
+        fi
+        unset LD_PRELOAD
+        exec /usr/libexec/gsd-media-keys
+    ) &
+    media_keys_pid=$!
+fi
+if [ -x /usr/libexec/gsd-power ]; then
+    (
+        # iio-sensor-proxy publishes its bus name before asynchronous SSC
+        # discovery finishes. Start the consumer only after that discovery so
+        # automatic brightness cannot cache an early "no sensor" result.
+        attempt=0
+        while [ ! -e /run/t630-sensors-ready ] && [ ! -e /etc/t630/sensors.disabled ]; do
+            attempt=$((attempt + 1))
+            if [ "$attempt" -ge 45 ]; then
+                break
+            fi
+            sleep 1
+        done
+        if [ "${T630_GNOME_BACKEND:-wayland}" != x11 ]; then
+            attempt=0
+            until [ -S "$XDG_RUNTIME_DIR/t630-gnome-0" ]; do
+                kill -0 "$shell_pid"
+                attempt=$((attempt + 1))
+                test "$attempt" -lt 20
+                sleep 1
+            done
+            export WAYLAND_DISPLAY=t630-gnome-0 GDK_BACKEND=wayland
+        fi
+        unset LD_PRELOAD
+        exec /usr/libexec/gsd-power
+    ) >"$XDG_RUNTIME_DIR/t630-gsd-power.log" 2>&1 &
+    power_pid=$!
+fi
+if [ "${T630_LOGIN_SESSION_WRAPPED:-0}" = 1 ] && [ -f /etc/t630/lock-on-start ]; then
+    /usr/local/libexec/t630-lock-on-start
+fi
+wait "$shell_pid"

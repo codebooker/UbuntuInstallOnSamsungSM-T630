@@ -1,0 +1,101 @@
+#!/bin/busybox sh
+set -eu
+export PATH=/bin:/sbin
+root=/run/ubuntu
+test "$(uname -r)" = '5.4.274-qgki-31225846-abT630XXSBDZE3'
+attempt=0
+while [ ! -b /dev/sda34 ] && [ "$attempt" -lt 60 ]; do
+    mdev -s
+    sleep 1
+    attempt=$((attempt + 1))
+done
+grep -qx 'PARTNAME=userdata' /sys/class/block/sda34/uevent
+test "$(cat /sys/class/block/sda34/size)" = 226918360
+# Refuse any unexpected or unprovisioned filesystem, without repair or format.
+# This minimal BusyBox has no blkid. Read only the ext superblock's magic and
+# UUID bytes; mounting below performs the actual filesystem validation.
+test "$(dd if=/dev/sda34 bs=1 skip=1080 count=2 2>/dev/null | od -An -tx1 | tr -d ' \n')" = 53ef
+test "$(dd if=/dev/sda34 bs=1 skip=1128 count=16 2>/dev/null | od -An -tx1 | tr -d ' \n')" = 64de854453ea4fdc8946d6b07e238630
+mkdir -p "$root"
+mount -t ext4 -o noatime,errors=remount-ro /dev/sda34 "$root"
+test "$(cat "$root/etc/t630-install-id")" = 'SM-T630-T630XXSBDZE3-Ubuntu-v1'
+mkdir -p "$root/dev" "$root/proc" "$root/sys" "$root/run" "$root/tmp"
+chmod 755 "$root" "$root/run"
+chmod 1777 "$root/tmp"
+mount --bind /dev "$root/dev"
+mount --bind /dev/pts "$root/dev/pts"
+mount --bind /proc "$root/proc"
+mount --bind /sys "$root/sys"
+mount -t tmpfs -o mode=0755,nosuid,nodev,size=128m tmpfs "$root/run"
+mkdir -p "$root/dev/shm"
+mount -t tmpfs -o mode=1777,nosuid,nodev,size=256m tmpfs "$root/dev/shm"
+mkdir -p "$root/run/user/0" "$root/run/dbus" "$root/run/udev" "$root/var/log/chrony"
+chmod 700 "$root/run/user/0"
+chmod 755 "$root/run/dbus" "$root/run/udev"
+ln -s "$root/opt/t630/vendor" /vendor
+mkdir -p /run/input-firmware
+for name in tsp_stm w9019_gtact4pro.bin qca6490 wlan; do
+    ln -s "$root/opt/t630/vendor/firmware/$name" "/run/input-firmware/$name"
+done
+printf '%s' /run/input-firmware >/sys/module/firmware_class/parameters/path
+for name in sec_tsp_log sec_cmd sec_common_fn sec_secure_touch sec_tclm_v2 sec_tsp_dumpkey stm_ts_fts1b90a w9019; do
+    [ -d "/sys/module/$name" ] || insmod "$root/opt/t630/vendor/lib/modules/$name.ko"
+done
+mdev -s
+# Ensure conventional DRM paths exist before udev enumerates this old kernel.
+mkdir -p /dev/dri
+for name in card0 renderD128; do
+    if [ ! -c "/dev/dri/$name" ]; then
+        numbers=$(cat "/sys/class/drm/$name/dev")
+        mknod "/dev/dri/$name" c "${numbers%:*}" "${numbers#*:}"
+    fi
+done
+chroot "$root" /usr/lib/systemd/systemd-udevd --daemon
+chroot "$root" /usr/bin/env SYSTEMD_IGNORE_CHROOT=1 /usr/bin/udevadm trigger --action=add --subsystem-match=drm
+chroot "$root" /usr/bin/env SYSTEMD_IGNORE_CHROOT=1 /usr/bin/udevadm trigger --action=add --subsystem-match=input
+chroot "$root" /usr/bin/env SYSTEMD_IGNORE_CHROOT=1 /usr/bin/udevadm trigger --action=add --subsystem-match=net
+chroot "$root" /usr/bin/udevadm settle --timeout=10 || true
+# Supervise only this prototype's services; a stop marker prevents respawn.
+service() {
+    name=$1
+    shift
+    (
+        while [ ! -e /run/t630-stopping ]; do
+            chroot "$root" "$@" >>"/run/$name.log" 2>&1 || true
+            sleep 2
+        done
+    ) &
+}
+service dbus /usr/bin/dbus-daemon --system --nofork --nopidfile
+attempt=0
+while [ ! -S "$root/run/dbus/system_bus_socket" ] && [ "$attempt" -lt 20 ]; do
+    sleep 1
+    attempt=$((attempt + 1))
+done
+service seatd /usr/bin/env SEATD_VTBOUND=0 /usr/sbin/seatd -l info
+service wpa /usr/sbin/wpa_supplicant -u -s
+service network /usr/sbin/NetworkManager --no-daemon --log-level=INFO
+service clock /usr/sbin/chronyd -d -f /etc/chrony/t630.conf
+# Qualcomm firmware init can take time. It must not block the desktop/fallback.
+(
+    for name in cnss_prealloc cnss_nl cnss_utils device_management_service_v01 wlan_firmware_service_v01 cnss2 qca_cld3_wlan; do
+        loaded=$name
+        [ "$name" != qca_cld3_wlan ] || loaded=wlan
+        [ -d "/sys/module/$loaded" ] || insmod "$root/opt/t630/vendor/lib/modules/$name.ko"
+    done
+    mdev -s
+) >/run/wifi-load.log 2>&1 &
+attempt=0
+while [ ! -S "$root/run/seatd.sock" ] && [ "$attempt" -lt 20 ]; do
+    sleep 1
+    attempt=$((attempt + 1))
+done
+service weston /usr/bin/env HOME=/root TERM=xterm-256color XDG_RUNTIME_DIR=/run/user/0 LIBSEAT_BACKEND=seatd LD_PRELOAD=/usr/local/lib/t630-drm-compat.so WESTON_DISABLE_GBM_MODIFIERS=1 /usr/bin/weston --backend=drm-backend.so --renderer=pixman --config=/root/.config/weston.ini --log=/run/weston.log --socket=wayland-0
+attempt=0
+while [ ! -S "$root/run/user/0/wayland-0" ] && [ "$attempt" -lt 30 ]; do
+    sleep 1
+    attempt=$((attempt + 1))
+done
+chroot "$root" /usr/bin/env HOME=/root TERM=xterm-256color XDG_RUNTIME_DIR=/run/user/0 WAYLAND_DISPLAY=wayland-0 /usr/bin/weston-terminal --font-size=20 --shell=/bin/bash >/run/terminal.log 2>&1 &
+echo 'T630_PERSISTENT: Ubuntu startup dispatched'
+wait

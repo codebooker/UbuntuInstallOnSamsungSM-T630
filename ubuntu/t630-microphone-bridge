@@ -1,0 +1,39 @@
+#!/bin/sh
+# Feed the SM-T630 capture PCM to PipeWire only while an application records.
+set -eu
+PATH=/usr/local/bin:/usr/bin:/bin
+export PATH
+
+test "$(id -u)" = 1000
+test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
+
+fifo=/run/user/1000/t630-mic.pipe
+capture_pid=
+
+stop_capture() {
+    if [ -n "$capture_pid" ]; then
+        kill "$capture_pid" 2>/dev/null || true
+        wait "$capture_pid" 2>/dev/null || true
+        capture_pid=
+    fi
+}
+
+trap 'stop_capture; rm -f /run/user/1000/t630-microphone-bridge.pid' EXIT INT TERM HUP
+echo $$ >/run/user/1000/t630-microphone-bridge.pid
+
+while :; do
+    state=$(pactl list short sources 2>/dev/null | \
+        awk '$2 == "t630_microphone" {print $NF; exit}')
+    case "$state" in
+        RUNNING)
+            if [ -z "$capture_pid" ] || ! kill -0 "$capture_pid" 2>/dev/null; then
+                arecord -q -D hw:0,0 -f S16_LE -r 48000 -c 1 -t raw >"$fifo" 2>>/run/user/1000/t630-microphone-capture.log &
+                capture_pid=$!
+            fi
+            ;;
+        *)
+            stop_capture
+            ;;
+    esac
+    sleep 0.2
+done

@@ -1,0 +1,15 @@
+Welcome to your Ubuntu tablet
+
+The buttons at the top left open Tablet controls, Files, Text editor and Terminal.
+Tablet controls shows battery, Wi-Fi, storage and a brightness slider.
+
+Your documents belong in /home/tablet/Documents.
+Everyday apps run as the tablet user. Administration remains available over SSH.
+For local sudo access, choose "Set local password / enable sudo" in Tablet
+controls, then open a NEW Terminal window. SSH password login remains disabled.
+
+The on-screen keyboard appears when a supported app's text field has focus.
+Use Space or Enter to finish a word. ABC toggles capitals; ?123 shows symbols.
+
+This is still a prototype: graphics are software-rendered. Audio and suspend
+have not been validated. Keep it charging during setup.

@@ -1,0 +1,26 @@
+Discover Samsung's downstream FastRPC class.
+
+The SM-T630 kernel exposes /dev/adsprpc-smd-secure in the fastrpc subsystem,
+not the upstream misc subsystem, so include both during discovery and watches.
+
+diff --git a/src/iio-sensor-proxy.c b/src/iio-sensor-proxy.c
+index 2c7433d..1b33378 100644
+--- a/src/iio-sensor-proxy.c
++++ b/src/iio-sensor-proxy.c
+@@ -136,6 +136,8 @@ find_sensors (GUdevClient *client,
+ #ifdef HAS_LIBSSC
+ 	GList *fastrpc;
+ 	fastrpc = g_udev_client_query_by_subsystem (client, "misc");
++	fastrpc = g_list_concat (fastrpc,
++		g_udev_client_query_by_subsystem (client, "fastrpc"));
+ 	devices = g_list_concat (devices, fastrpc);
+ #endif
+ 
+@@ -718,6 +720,7 @@ bus_acquired_handler (GDBusConnection *connection,
+ 		"platform",
+ #ifdef HAS_LIBSSC
+ 		"misc",
++		"fastrpc",
+ #endif
+ 		NULL
+     };

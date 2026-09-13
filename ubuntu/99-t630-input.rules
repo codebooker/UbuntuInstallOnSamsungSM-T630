@@ -1,0 +1,8 @@
+# Kernel supplies Wacom coordinates in 100 units/mm but omits resolution.
+ACTION!="remove", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="sec_e-pen", ENV{EVDEV_ABS_00}="::100", ENV{EVDEV_ABS_01}="::100", RUN{builtin}+="keyboard"
+# Samsung exposes Android-only key/mouse capability bits on its touchscreen.
+ACTION!="remove", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="sec_touchscreen", ENV{ID_INPUT_KEYBOARD}="", ENV{ID_INPUT_MOUSE}="", ENV{ID_INPUT_TOUCHSCREEN}="1", ENV{WL_OUTPUT}="DSI-1"
+ACTION!="remove", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="sec_touchscreen", ENV{LIBINPUT_CALIBRATION_MATRIX}="-1 0 1 0 -1 1"
+# Virtual DeX touchpad and motion metadata are not separate physical inputs.
+ACTION!="remove", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="sec_touchpad", ENV{LIBINPUT_IGNORE_DEVICE}="1"
+ACTION!="remove", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="meta_event", ENV{LIBINPUT_IGNORE_DEVICE}="1"

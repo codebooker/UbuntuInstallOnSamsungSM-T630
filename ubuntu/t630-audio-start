@@ -1,0 +1,117 @@
+#!/bin/sh
+# Non-blocking boot companion; failure must not stop the desktop or networking.
+set -eu
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+test "$(id -u)" = 0
+test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
+test ! -e /etc/t630/audio.disabled || exit 0
+exec 9>/run/t630-audio-start.lock
+flock -n 9 || exit 0
+python3 /usr/local/share/t630/t630-device-permissions.py
+if ! grep -q lahaina-yupikidp-snd-card /proc/asound/cards; then
+    # The first-load script refuses any unsafe attempt to unload/reorder drivers.
+    sh /usr/local/share/t630/test-audio-cold-order.sh 9>&-
+fi
+python3 /usr/local/share/t630/t630-sound-nodes.py
+attempt=0
+until /usr/local/bin/t630-gnome-run true >/dev/null 2>&1; do
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 45
+    sleep 1
+done
+if [ -e /run/t630-audio-ready ]; then
+    if /usr/local/bin/t630-gnome-run timeout 3 pactl list short sinks 2>/dev/null | \
+        awk '$2 == "t630_speakers" {found=1} END {exit !found}' && \
+       /usr/local/bin/t630-gnome-run timeout 3 pactl list short sources 2>/dev/null | \
+        awk '$2 == "t630_microphone" {found=1} END {exit !found}' && \
+       test -s /run/user/1000/t630-microphone-bridge.pid && \
+       kill -0 "$(cat /run/user/1000/t630-microphone-bridge.pid)" 2>/dev/null; then
+        exit 0
+    fi
+    # elogind may recreate the runtime directory after a desktop restart.
+    # Old user servers can survive with sockets that no longer have a pathname.
+    python3 /usr/local/share/t630/t630-audio-session-cleanup.py
+    unlink /run/t630-audio-ready
+fi
+old_bridge=$(cat /run/user/1000/t630-microphone-bridge.pid 2>/dev/null || true)
+if [ -n "$old_bridge" ]; then
+    kill "$old_bridge" 2>/dev/null || true
+fi
+old_capture=$(pgrep -u 1000 -x arecord || true)
+if [ -n "$old_capture" ]; then
+    kill $old_capture 2>/dev/null || true
+fi
+if ! pgrep -u 1000 -x pipewire >/dev/null; then
+    nohup /usr/local/bin/t630-gnome-run pipewire 9>&- </dev/null >/var/log/t630-pipewire.log 2>&1 &
+fi
+attempt=0
+until /usr/local/bin/t630-gnome-run timeout 2 pw-cli info 0 >/dev/null 2>&1; do
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 20
+    sleep 1
+done
+for process in pipewire-pulse wireplumber; do
+    if ! pgrep -u 1000 -x "$process" >/dev/null; then
+        nohup /usr/local/bin/t630-gnome-run "$process" 9>&- </dev/null >"/var/log/t630-$process.log" 2>&1 &
+    fi
+done
+attempt=0
+until /usr/local/bin/t630-gnome-run pactl info >/dev/null 2>&1; do
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 20
+    sleep 1
+done
+# Recreate the PCM route before the new user server negotiates hw_params, but
+# keep the physical amps off until that sink is present, muted, and at30%.
+python3 /usr/local/share/t630/t630-speaker-route.py off
+python3 /usr/local/share/t630/t630-speaker-route.py prepare
+python3 /usr/local/share/t630/t630-microphone-route.py off
+python3 /usr/local/share/t630/t630-microphone-route.py on
+if ! /usr/local/bin/t630-gnome-run pactl list short sinks | awk '$2 == "t630_speakers" {found=1} END {exit !found}'; then
+    /usr/local/bin/t630-gnome-run pactl load-module module-alsa-sink \
+        sink_name=t630_speakers device=hw:0,0 format=s16le rate=48000 channels=2 \
+        channel_map=front-left,front-right mmap=false tsched=false \
+        sink_properties=device.description=Tablet_Speakers
+fi
+# PipeWire's ALSA adapter stalls on this Qualcomm PCM.  Samsung's PCM is
+# reliable through arecord, so bridge it through a FIFO and start the
+# hardware only while an application is actively recording.
+for module in $(/usr/local/bin/t630-gnome-run pactl list short modules | \
+    awk '($2 == "module-alsa-source" || $2 == "module-pipe-source") && \
+         /source_name=t630_microphone/ {print $1}'); do
+    /usr/local/bin/t630-gnome-run pactl unload-module "$module"
+done
+rm -f /run/user/1000/t630-mic.pipe
+mkfifo /run/user/1000/t630-mic.pipe
+chown 1000:1000 /run/user/1000/t630-mic.pipe
+nohup /usr/local/bin/t630-gnome-run sh -c \
+    'exec arecord -q -D hw:0,0 -f S16_LE -r 48000 -c 1 -t raw > /run/user/1000/t630-mic.pipe' \
+    9>&- </dev/null >>/var/log/t630-microphone-bridge.log 2>&1 &
+bootstrap_capture=$!
+/usr/local/bin/t630-gnome-run pactl load-module module-pipe-source \
+    source_name=t630_microphone file=/run/user/1000/t630-mic.pipe \
+    format=s16le rate=48000 channels=1 channel_map=mono \
+    source_properties=device.description=Tablet_Microphone
+kill "$bootstrap_capture" 2>/dev/null || true
+wait "$bootstrap_capture" 2>/dev/null || true
+nohup /usr/local/bin/t630-gnome-run /usr/local/bin/t630-microphone-bridge \
+    9>&- </dev/null >>/var/log/t630-microphone-bridge.log 2>&1 &
+# No amplifier output until the normal user volume server is configured.
+attempt=0
+until /usr/local/bin/t630-gnome-run pactl set-sink-mute t630_speakers 1; do
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 20
+    sleep 1
+done
+trap '/usr/local/bin/t630-gnome-run pactl set-sink-mute t630_speakers 1 || true; bridge=$(cat /run/user/1000/t630-microphone-bridge.pid 2>/dev/null || true); test -z "$bridge" || kill "$bridge" 2>/dev/null || true; python3 /usr/local/share/t630/t630-speaker-route.py off || true; python3 /usr/local/share/t630/t630-microphone-route.py off || true' EXIT
+/usr/local/bin/t630-gnome-run pactl set-sink-volume t630_speakers 30%
+/usr/local/bin/t630-gnome-run pactl set-default-sink t630_speakers
+/usr/local/bin/t630-gnome-run pactl set-source-volume t630_microphone 100%
+/usr/local/bin/t630-gnome-run pactl set-source-mute t630_microphone 0
+/usr/local/bin/t630-gnome-run pactl set-default-source t630_microphone
+python3 /usr/local/share/t630/t630-speaker-route.py on
+/usr/local/bin/t630-gnome-run pactl set-sink-mute t630_speakers 0
+touch /run/t630-audio-ready
+trap - EXIT
+echo 'Tablet speakers and built-in microphone ready through the normal user audio server.'

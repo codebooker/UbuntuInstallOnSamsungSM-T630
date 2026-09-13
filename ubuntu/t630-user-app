@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+test "$(/usr/bin/id -un)" = tablet
+export GTK_IM_MODULE=t630-wayland
+export GTK_IM_MODULE_FILE=/usr/local/share/t630/gtk-immodules.cache
+exec 9>"$XDG_RUNTIME_DIR/t630-session-start.lock"
+/usr/bin/flock 9
+if ! /usr/bin/dbus-send --session --dest=org.freedesktop.DBus --type=method_call --print-reply / org.freedesktop.DBus.ListNames >/dev/null 2>&1; then
+    /usr/bin/dbus-daemon --session --fork --address="$DBUS_SESSION_BUS_ADDRESS" 9>&-
+fi
+/usr/bin/flock -u 9
+exec 9>&-
+cd /home/tablet
+case "${1:-}" in
+    files) exec /usr/bin/thunar /home/tablet/Documents ;;
+    editor) exec /usr/bin/mousepad ;;
+    terminal) exec /usr/bin/xfce4-terminal --disable-server --default-working-directory=/home/tablet ;;
+    *) exit 2 ;;
+esac

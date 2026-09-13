@@ -1,0 +1,8 @@
+{
+  "uuid": "t630-tablet-tools@local",
+  "name": "Tablet Controls",
+  "description": "Tablet keyboard, screen brightness and automatic screen-off controls.",
+  "settings-schema": "org.gnome.shell.extensions.t630-tablet-tools",
+  "shell-version": ["46"],
+  "version": 3
+}

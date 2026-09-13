@@ -1,0 +1,28 @@
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -1237,6 +1237,25 @@ static int qca_setup(struct hci_uart *hu)
+ 	int ret;
+ 	int soc_ver = 0;
+ 
++	/*
++	 * The SM-T630's WCN6850 is powered and configured by the Samsung-style
++	 * userspace TLV loader before the line discipline is attached.  The
++	 * generic non-serdev QCA setup path assumes an older Rome controller,
++	 * changes the port back to 115200 baud and requests incompatible firmware.
++	 *
++	 * Keep the QCA transport for its required in-band sleep handshake, but do
++	 * not repeat controller setup after the exact board firmware, calibration
++	 * and Bluetooth address have already been installed by userspace.
++	 */
++	if (!hu->serdev && hu->tty &&
++	    !strcmp(hu->tty->name, "ttyHS0")) {
++		set_bit(HCI_QUIRK_SIMULTANEOUS_DISCOVERY, &hdev->quirks);
++		set_bit(QCA_IBS_ENABLED, &qca->flags);
++		qca_debugfs_init(hdev);
++		bt_dev_info(hdev, "using SM-T630 userspace firmware handoff");
++		return 0;
++	}
++
+ 	ret = qca_check_speeds(hu);
+ 	if (ret)
+ 		return ret;

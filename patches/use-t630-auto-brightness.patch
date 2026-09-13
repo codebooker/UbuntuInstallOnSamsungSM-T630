@@ -1,0 +1,17 @@
+Select Samsung's auto_brightness SSC stream on the SM-T630.
+
+This package is built specifically for the Tab Active4 Pro, whose stock
+sensor stack requests auto_brightness rather than ambient_light.
+
+diff --git a/src/libssc-sensor-light.c b/src/libssc-sensor-light.c
+index 2e425b0..55903fe 100644
+--- a/src/libssc-sensor-light.c
++++ b/src/libssc-sensor-light.c
+@@ -274,7 +274,7 @@ ssc_sensor_light_new (GCancellable *cancellable, GAsyncReadyCallback callback,
+ 			cancellable,
+ 			callback,
+ 			user_data,
+-			SSC_SENSOR_DATA_TYPE, "ambient_light",
++			SSC_SENSOR_DATA_TYPE, "auto_brightness",
+ 			NULL);
+ }

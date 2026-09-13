@@ -1,0 +1,45 @@
+#!/bin/sh
+# Alternate, nested GNOME session. Never replaces the physical compositor.
+set -eu
+test "$(id -u)" = 0
+# The root-only one-boot trial marker is the saved disable flag itself. Restore
+# it before any risky initialization; this selected attempt still uses GPU=1,
+# while the next reboot returns to the ordinary software default.
+if [ "${T630_GPU_RENDERER:-0}" = 1 ] && [ -f /etc/t630/gpu-trial-restore-software ]; then
+    test ! -e /etc/t630/gpu.disabled
+    mv /etc/t630/gpu-trial-restore-software /etc/t630/gpu.disabled
+fi
+test -S /run/user/0/wayland-0
+if [ "${T630_MANAGED_SESSION:-0}" = 1 ] && [ "${T630_LOGIN_SESSION_WRAPPED:-0}" != 1 ]; then
+    exec /usr/local/libexec/t630-managed-session /usr/local/bin/t630-gnome-preview
+fi
+python3 /usr/local/share/t630/t630-device-permissions.py
+/usr/local/libexec/t630-x11-recovery
+sh /usr/local/share/t630/stage-video-firmware.sh >/run/t630-video-firmware.sha256
+if [ "${T630_GPU_RENDERER:-0}" = 1 ]; then
+    chgrp render /dev/kgsl-3d0 /dev/ion
+    chmod 660 /dev/kgsl-3d0 /dev/ion
+fi
+install -d -m 700 -o tablet -g tablet /run/user/1000
+install -d -m 1777 -o root -g root /tmp/.X11-unix
+chgrp tablet /run/user/0 /run/user/0/wayland-0
+chmod 710 /run/user/0
+chmod 660 /run/user/0/wayland-0
+# Every managed session start must reconnect its normal-user audio servers,
+# including software fallback after a GPU failure. The helper waits for GNOME,
+# serializes against boot startup, and leaves healthy audio untouched.
+if [ "${T630_LOGIN_SESSION_WRAPPED:-0}" = 1 ]; then
+    nohup /usr/local/sbin/t630-audio-start </dev/null >>/var/log/t630-audio-start.log 2>&1 &
+fi
+exec /usr/bin/setpriv --reuid=1000 --regid=1000 --init-groups /usr/bin/env \
+    HOME=/home/tablet USER=tablet LOGNAME=tablet \
+    XDG_RUNTIME_DIR=/run/user/1000 \
+    XDG_CONFIG_HOME=/home/tablet/.config/t630-gnome-preview \
+    XDG_DATA_HOME=/home/tablet/.local/share/t630-gnome-preview \
+    XDG_CACHE_HOME=/home/tablet/.cache/t630-gnome-preview \
+    WAYLAND_DISPLAY=/run/user/0/wayland-0 \
+    XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=GNOME \
+    LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER="${T630_GALLIUM_DRIVER:-llvmpipe}" \
+    MESA_LOADER_DRIVER_OVERRIDE=swrast GSK_RENDERER=cairo \
+    MUTTER_DEBUG_DUMMY_MODE_SPECS="${T630_GNOME_SIZE:-1920x1200}" \
+    /usr/bin/dbus-run-session -- /usr/local/libexec/t630-gnome-session

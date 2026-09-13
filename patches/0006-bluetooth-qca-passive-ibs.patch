@@ -1,0 +1,18 @@
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -1257,7 +1257,14 @@ static int qca_setup(struct hci_uart *hu)
+ 		hci_uart_set_baudrate(hu, 3200000);
+ 
+ 		set_bit(HCI_QUIRK_SIMULTANEOUS_DISCOVERY, &hdev->quirks);
+-		set_bit(QCA_IBS_ENABLED, &qca->flags);
++		/*
++		 * WCN6850 sends receive-side IBS notifications, so retain the QCA
++		 * parser.  This board does not acknowledge host WAKE_IND reliably,
++		 * however, and gating the command queue on that acknowledgement
++		 * stalls HCI initialization.  Keep QCA_IBS_ENABLED clear: outgoing
++		 * HCI frames are sent immediately while incoming IBS control bytes
++		 * are still consumed by qca_recv().
++		 */
+ 		qca_debugfs_init(hdev);
+ 		bt_dev_info(hdev, "using SM-T630 userspace firmware handoff");
+ 		return 0;

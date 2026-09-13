@@ -67,3 +67,36 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# Local build inputs, outputs, and fetched source trees
+/stock/
+/output/
+/reports/
+/downloads/
+/reference-bluetooth/
+/tools/aosp-mkbootimg/
+/tools/aosp-avb/
+/tools/heimdall-source/
+/tools/heimdall-build/
+/ubuntu/pd-mapper-source/
+
+# Firmware, packages, keys, and generated images must not be committed
+*.img
+*.img.lz4
+*.tar
+*.tar.*
+*.zip
+*.deb
+*.cpio
+*.cpio.*
+*.dtb
+*.ko
+*.bin
+*.elf
+*.tlv
+*.pem
+*.key
+*.p12
+.DS_Store
+__pycache__/
+.venv/

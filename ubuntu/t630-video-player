@@ -1,0 +1,17 @@
+#!/bin/sh
+# Touch-friendly mpv player with process-scoped SM-T630 video decoding.
+set -eu
+adapter=/usr/local/lib/t630/t630-v4l2-compat.so
+test -r "$adapter"
+test -r /run/input-firmware/vpu20_1v.mdt
+export LD_PRELOAD="$adapter${LD_PRELOAD:+:$LD_PRELOAD}"
+exec /usr/bin/mpv \
+    --vd=h264_v4l2m2m,vp9_v4l2m2m \
+    --vd-lavc-o=num_output_buffers=4,num_capture_buffers=8 \
+    --vo=wlshm \
+    --hwdec=no \
+    --osc=yes \
+    --input-default-bindings=yes \
+    --force-window=yes \
+    --keep-open=no \
+    "$@"

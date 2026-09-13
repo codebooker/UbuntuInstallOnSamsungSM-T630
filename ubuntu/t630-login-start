@@ -1,0 +1,40 @@
+#!/bin/sh
+# One-shot lab startup prerequisite. No display greeter or automatic locking.
+set -eu
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+test "$(id -u)" = 0
+test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
+grep -Fq 'pam_succeed_if.so service = sshd uid = 0 quiet' /etc/pam.d/common-session
+test -x /opt/t630/elogind-255.27/libexec/elogind
+test -x /opt/t630/gdm-46.2-auth/sbin/gdm
+grep -qx ShowLocalGreeter=false /etc/t630/gdm-auth/custom.conf
+# Elogind's private main configs are honored, but its drop-in search uses the
+# standard /etc paths. Keep tablet safety settings in the main config files.
+grep -qx HandlePowerKey=ignore /opt/t630/elogind-255.27/etc/elogind/logind.conf
+grep -qx AllowSuspend=no /opt/t630/elogind-255.27/etc/elogind/sleep.conf
+if ! pgrep -x elogind >/dev/null; then
+    nohup setsid /usr/local/libexec/t630-elogind-run </dev/null >>/var/log/t630-elogind.log 2>&1 &
+fi
+attempt=0
+until gdbus call --system --dest org.freedesktop.login1 \
+    --object-path /org/freedesktop/login1 --method org.freedesktop.login1.Manager.ListSessions >/dev/null 2>&1; do
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 20
+    sleep 1
+done
+test "$(gdbus call --system --dest org.freedesktop.login1 \
+    --object-path /org/freedesktop/login1 --method org.freedesktop.DBus.Properties.Get \
+    org.freedesktop.login1.Manager HandlePowerKey)" = "(<'ignore'>,)"
+if ! pgrep -x gdm >/dev/null; then
+    nohup /opt/t630/gdm-46.2-auth/sbin/gdm </dev/null >/var/log/t630-gdm-auth.log 2>&1 &
+fi
+attempt=0
+until gdbus call --system --dest org.gnome.DisplayManager \
+    --object-path /org/gnome/DisplayManager/Manager --method org.freedesktop.DBus.Properties.Get \
+    org.gnome.DisplayManager.Manager Version >/dev/null 2>&1; do
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 20
+    sleep 1
+done
+echo 'Login session service and standard GDM verifier ready; locking remains opt-in.'

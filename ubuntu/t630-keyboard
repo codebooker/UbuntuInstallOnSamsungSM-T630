@@ -1,0 +1,21 @@
+#!/bin/sh
+# Dpkg-diverted replacement for the stock Weston keyboard launcher.
+# Preserve WAYLAND_SOCKET: Weston authorizes this exact inherited connection.
+set -u
+if ! /usr/bin/grep -qx maliit /etc/t630/keyboard-mode; then
+    exec /usr/libexec/weston-keyboard.t630-stock
+fi
+export HOME=/root XDG_RUNTIME_DIR=/run/user/0
+export QT_QPA_PLATFORM=wayland QT_WAYLAND_SHELL_INTEGRATION=inputpanel-shell
+export QT_QUICK_BACKEND=software QT_IM_MODULE=compose
+export QT_QUICK_CONTROLS_STYLE=Material QT_QUICK_CONTROLS_MATERIAL_THEME=Dark
+export QT_LOGGING_RULES='*.debug=false'
+unset LD_PRELOAD WAYLAND_DEBUG
+/usr/bin/dbus-run-session -- /usr/bin/maliit-keyboard >/run/t630-maliit.log 2>&1
+keyboard_result=$?
+if [ "$keyboard_result" -ne 0 ] && [ "$keyboard_result" -ne 143 ]; then
+    # Rate-limit compositor respawns. The stock keyboard can crash if started
+    # against an already-active GTK context, so rollback is manual/cold only.
+    /usr/bin/sleep 3
+fi
+exit "$keyboard_result"

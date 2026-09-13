@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Videos
+Comment=Play videos with the tablet hardware decoder
+Exec=/usr/local/bin/t630-video-player %U
+Icon=mpv
+Terminal=false
+StartupNotify=true
+Categories=AudioVideo;Player;Video;
+MimeType=video/mp4;video/x-matroska;video/webm;video/mpeg;video/quicktime;application/ogg;application/vnd.apple.mpegurl;

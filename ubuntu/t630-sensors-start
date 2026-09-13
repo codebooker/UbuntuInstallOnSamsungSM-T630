@@ -1,0 +1,74 @@
+#!/bin/sh
+# Attach Samsung's SSC sensor protection domain and expose it to GNOME.
+set -eu
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+tree=/usr/local/share/t630/sensor-hexagonfs
+node=/dev/adsprpc-smd-secure
+ready=/run/t630-sensors-ready
+
+rm -f "$ready"
+
+test "$(id -u)" = 0
+test -c "$node"
+test -x /usr/bin/hexagonrpcd
+test -x /usr/bin/ssccli
+test -x /usr/libexec/iio-sensor-proxy
+test -d "$tree/sensors/config"
+test -d "$tree/sensors/registry"
+
+# Audio shares the ADSP. Let its known-good route finish before attaching the
+# sensor protection domain, avoiding a boot-time race between the two clients.
+attempt=0
+while [ ! -e /run/t630-audio-ready ] && [ ! -e /etc/t630/audio.disabled ]; do
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 60
+    sleep 1
+done
+
+# Refresh the small set of board facts consumed by sns_reg_config.
+for name in hw_platform platform_subtype platform_subtype_id platform_version soc_id; do
+    test ! -r "/sys/devices/soc0/$name" ||
+        cp "/sys/devices/soc0/$name" "$tree/socinfo/$name"
+done
+if [ -r /sys/class/sensors/ssc_core/ssc_hw_rev ]; then
+    cp /sys/class/sensors/ssc_core/ssc_hw_rev "$tree/socinfo/revision"
+fi
+if [ ! -s "$tree/socinfo/ssc_mode" ]; then
+    printf '0\n' >"$tree/socinfo/ssc_mode"
+fi
+test -e "$tree/sensors/sns_reg_version" || : >"$tree/sensors/sns_reg_version"
+test -e "$tree/sensors/temp.json" || printf '{}\n' >"$tree/sensors/temp.json"
+
+# The device existed before systemd-udevd started, so generate its database
+# entry now. This assigns the downstream node to the SSC drivers.
+udevadm test --action=add /sys/devices/virtual/fastrpc/adsprpc-smd-secure >/var/log/t630-sensor-udev.log 2>&1 || true
+
+if ! pgrep -x hexagonrpcd >/dev/null; then
+    /usr/bin/hexagonrpcd -f "$node" -d adsp -s -R "$tree" >/var/log/t630-hexagonrpcd.log 2>&1 &
+fi
+
+attempt=0
+while ! pgrep -x hexagonrpcd >/dev/null; do
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 10
+    sleep 1
+done
+
+if ! pgrep -f '^/usr/libexec/iio-sensor-proxy$' >/dev/null; then
+    # Let the first short client finish SSC discovery before the desktop
+    # claims the stream; this avoids the early-client handover race.
+    timeout 5s ssccli --sensor accelerometer --timeout 1 >/var/log/t630-sensor-prime.log 2>&1 || true
+    /usr/libexec/iio-sensor-proxy >/var/log/t630-iio-sensor-proxy.log 2>&1 &
+fi
+
+attempt=0
+until busctl --system get-property net.hadess.SensorProxy /net/hadess/SensorProxy net.hadess.SensorProxy HasAccelerometer 2>/dev/null | grep -qx 'b true'; do
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 20
+    sleep 1
+done
+
+: >"$ready"
+echo 'SM-T630 SSC accelerometer is available to GNOME.'

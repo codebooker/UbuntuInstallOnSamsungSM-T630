@@ -1,0 +1,45 @@
+#!/bin/sh
+# Known desktop applications only; no shell command construction from UI input.
+set -eu
+export HOME=/root XDG_RUNTIME_DIR=/run/user/0 WAYLAND_DISPLAY=wayland-0
+export GDK_BACKEND=wayland GTK_THEME=Adwaita:dark
+export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/0/t630-session-bus
+unset LD_PRELOAD
+test -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY"
+case "${1:-controls}" in
+    gnome)
+        exec /usr/bin/env -u GDK_BACKEND T630_GNOME_FULLSCREEN=1 \
+            /usr/local/bin/t630-gnome-preview
+        ;;
+    files|editor|terminal)
+        uid=$(/usr/bin/id -u tablet)
+        gid=$(/usr/bin/id -g tablet)
+        test "$uid" -ge 1000
+        /usr/bin/install -d -m 700 -o "$uid" -g "$gid" "/run/user/$uid"
+        # Grant only traversal to this runtime directory and connection to the
+        # compositor socket. Do not expose root's home or grant input-device access.
+        # Samsung's tmpfs lacks POSIX ACL support. Use the tablet-only group;
+        # no other users gain access, and the runtime directory cannot be listed.
+        /usr/bin/chgrp tablet /run/user/0 /run/user/0/wayland-0
+        /usr/bin/chmod 710 /run/user/0
+        /usr/bin/chmod 660 /run/user/0/wayland-0
+        exec /usr/bin/setpriv --reuid="$uid" --regid="$gid" --init-groups \
+            /usr/bin/env HOME=/home/tablet USER=tablet LOGNAME=tablet \
+            XDG_RUNTIME_DIR="/run/user/$uid" WAYLAND_DISPLAY=/run/user/0/wayland-0 \
+            DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/t630-session-bus" \
+            /usr/local/libexec/t630-user-app "$1"
+        ;;
+esac
+exec 9>"$XDG_RUNTIME_DIR/t630-session-start.lock"
+/usr/bin/flock 9
+if ! /usr/bin/dbus-send --session --dest=org.freedesktop.DBus --type=method_call --print-reply / org.freedesktop.DBus.ListNames >/dev/null 2>&1; then
+    /usr/bin/dbus-daemon --session --fork --address="$DBUS_SESSION_BUS_ADDRESS" 9>&-
+fi
+/usr/bin/flock -u 9
+exec 9>&-
+case "${1:-controls}" in
+    controls) exec /usr/bin/python3 /usr/local/libexec/t630-controls ;;
+    wifi) exec /usr/bin/python3 /usr/local/bin/t630-connect-wifi ;;
+    password) exec /usr/bin/env GTK_IM_MODULE=t630-wayland GTK_IM_MODULE_FILE=/usr/local/share/t630/gtk-immodules.cache /usr/bin/python3 /usr/local/libexec/t630-password ;;
+    *) exit 2 ;;
+esac

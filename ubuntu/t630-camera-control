@@ -46,6 +46,8 @@ stop_group() {
 
 if [ "$action" = disable ]; then
     stop_group /run/t630-camera-bridge.pid /usr/local/sbin/t630-camera-bridge
+    stop_group /run/t630-camera-stack.pid /usr/local/sbin/t630-camera-stack
+    rm -f /run/t630-camera-ready
     exit 0
 fi
 

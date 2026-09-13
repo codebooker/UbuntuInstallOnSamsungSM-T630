@@ -69,6 +69,12 @@ GStreamer/capture group and escalates only that still-validated owned process
 group. The volatile validator reports success only after this cleanup passes,
 preventing a delivered frame from hiding a stuck camera process.
 
+Closing Camera also stops the isolated Android camera stack and removes its
+readiness marker. This releases the provider's observed idle CPU and roughly
+124 MiB resident footprint instead of keeping the compatibility runtime alive
+indefinitely. The already-loaded stock camera kernel module and read-only mounts
+are deliberately left in place; live module removal is not attempted.
+
 ## What does not work yet
 
 - The first recovered rear frame sequence was almost completely dark. CSI,

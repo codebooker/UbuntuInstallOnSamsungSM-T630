@@ -46,6 +46,12 @@ class CameraFrameValidationTests(unittest.TestCase):
         self.assertIn('while pid_matches "$file" "$marker"', control)
         self.assertIn('kill -KILL -- "-$pid"', control)
         self.assertIn('test "$attempt" -lt 16', control)
+        disable = control.index('if [ "$action" = disable ]')
+        restart = control.index('if ! pid_matches /run/t630-camera-stack.pid')
+        branch = control[disable:restart]
+        self.assertIn('stop_group /run/t630-camera-bridge.pid', branch)
+        self.assertIn('stop_group /run/t630-camera-stack.pid', branch)
+        self.assertIn('rm -f /run/t630-camera-ready', branch)
 
 
 if __name__ == "__main__":

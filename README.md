@@ -30,7 +30,7 @@ full-screen GNOME desktop from internal storage.
 | GPU rendering | Experimental; software fallback retained |
 | Stock hardware video decoding | Working for tested H.264/VP9 desktop playback |
 | Browser video acceleration | Not integrated |
-| Cameras | Front camera works in GNOME Camera through an on-demand PipeWire bridge; rear camera calibration is unresolved |
+| Cameras | Front and rear launchers publish one camera at a time to GNOME Camera; rear image quality still needs a well-lit physical test |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).
 

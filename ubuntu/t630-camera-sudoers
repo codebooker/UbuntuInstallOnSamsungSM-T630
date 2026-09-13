@@ -1,2 +1,2 @@
 # Allow only the two validated camera lifecycle operations without a password.
-tablet ALL=(root) NOPASSWD: /usr/local/sbin/t630-camera-control enable, /usr/local/sbin/t630-camera-control disable
+tablet ALL=(root) NOPASSWD: /usr/local/sbin/t630-camera-control enable, /usr/local/sbin/t630-camera-control front, /usr/local/sbin/t630-camera-control rear, /usr/local/sbin/t630-camera-control disable

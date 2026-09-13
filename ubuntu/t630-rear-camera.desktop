@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Rear Camera
+Comment=Take pictures and videos with the SM-T630 rear camera
+Type=Application
+Exec=/usr/local/bin/t630-camera-app rear
+Icon=org.gnome.Snapshot
+Terminal=false
+Categories=AudioVideo;Video;Recorder;GNOME;GTK;
+Keywords=picture;photos;camera;webcam;snapshot;rear;
+X-Purism-FormFactor=Workstation;Mobile;

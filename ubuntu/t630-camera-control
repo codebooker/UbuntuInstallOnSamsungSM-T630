@@ -6,8 +6,10 @@ test "$(id -u)" = 0
 test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
 test "$#" = 1
 case "$1" in
-    enable|disable) action=$1 ;;
-    *) echo "usage: $0 enable|disable" >&2; exit 2 ;;
+    enable|front) action=front; node=t630_front_camera ;;
+    rear) action=rear; node=t630_rear_camera ;;
+    disable) action=disable; node= ;;
+    *) echo "usage: $0 front|rear|disable" >&2; exit 2 ;;
 esac
 
 exec 9>/run/t630-camera-control.lock
@@ -62,17 +64,17 @@ done
 
 if pid_matches /run/t630-camera-bridge.pid /usr/local/sbin/t630-camera-bridge &&
    /usr/local/bin/t630-gnome-run pw-cli ls Node 2>/dev/null |
-       grep -q 'node.name = "t630_front_camera"'; then
+       grep -q "node.name = \"$node\""; then
     exit 0
 fi
 
 stop_group /run/t630-camera-bridge.pid /usr/local/sbin/t630-camera-bridge || true
-setsid /usr/local/sbin/t630-camera-bridge >/run/t630-camera-bridge.log 2>&1 </dev/null 9>&- &
+setsid /usr/local/sbin/t630-camera-bridge "$action" >/run/t630-camera-bridge.log 2>&1 </dev/null 9>&- &
 echo "$!" >/run/t630-camera-bridge.pid
 
 attempt=0
 until /usr/local/bin/t630-gnome-run pw-cli ls Node 2>/dev/null |
-        grep -q 'node.name = "t630_front_camera"'; do
+        grep -q "node.name = \"$node\""; do
     attempt=$((attempt + 1))
     if [ "$attempt" -ge 20 ]; then
         stop_group /run/t630-camera-bridge.pid /usr/local/sbin/t630-camera-bridge || true

@@ -2,8 +2,8 @@
 
 Camera support is an active compatibility experiment. The front camera is now
 available to GNOME Camera as a standard PipeWire video source on the physical
-SM-T630. The rear camera also delivers frames through the native capture probe;
-desktop switching and final image-quality validation remain to do.
+SM-T630. A separate Rear Camera launcher publishes the rear stream to the same
+application; final rear image-quality validation remains to do.
 
 ## What works
 
@@ -39,11 +39,14 @@ Samsung's stock HIDL adapter. A clean automatic-stack test captured ten rear
 frames followed by ten front frames, and a separate rear burst delivered 60
 frames at 640x480/30 fps without killing the stack.
 
+The provider allows one camera client at a time. `t630-camera-control` therefore
+stops the current bridge before selecting `front` or `rear`; it never keeps both
+sensors powered. Both source transitions and cleanup were verified through
+PipeWire, and the Rear Camera desktop launcher opened GNOME Camera with the rear
+source active.
+
 ## What does not work yet
 
-- Camera ID 0 is not yet published to PipeWire. The provider accepts only one
-  active camera client, so desktop switching must stop the front stream before
-  starting the rear one.
 - The first recovered rear frame sequence was almost completely dark. CSI,
   CSID and IFE interrupts plus request completion were all healthy, but a
   well-lit physical target still needs to be captured before claiming image
@@ -67,11 +70,11 @@ frames at 640x480/30 fps without killing the stack.
   properties and permission stubs needed outside Android.
 - `ubuntu/t630-android-log-capture.py` records Android binary-log datagrams for
   diagnosis without running the full Android logging daemon.
-- `ubuntu/t630-camera-bridge` converts the NDK client's I420 stream into a
-  standard PipeWire `Video/Source`.
-- `ubuntu/t630-camera-control`, `t630-camera-app`, and the desktop file
-  provide an on-demand lifecycle: the camera powers up when Camera opens and is
-  released when the app exits.
+- `ubuntu/t630-camera-bridge` converts the selected NDK I420 stream into a
+  standard front or rear PipeWire `Video/Source`.
+- `ubuntu/t630-camera-control`, `t630-camera-app`, and the two desktop files
+  provide an exclusive, on-demand lifecycle: the selected camera powers up when
+  its launcher opens and is released when the app exits.
 
 ## Building the sensor-service bridge
 
@@ -94,8 +97,7 @@ calibration, raw logs, or captured images. The repository intentionally carries
 only the independently written compatibility source and the instructions for
 reconstructing a runtime from the user's matching stock package.
 
-The remaining camera work is rear image-quality validation, safe front/rear
-desktop switching, physical orientation checking, and wider application
-compatibility testing. Permission stubs are process-scoped to this isolated
-compatibility runtime; they are not loaded into GNOME or ordinary Ubuntu
-applications.
+The remaining camera work is rear image-quality validation, physical
+orientation checking, and wider application compatibility testing. Permission
+stubs are process-scoped to this isolated compatibility runtime; they are not
+loaded into GNOME or ordinary Ubuntu applications.

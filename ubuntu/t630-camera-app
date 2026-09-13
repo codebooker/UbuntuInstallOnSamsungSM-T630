@@ -3,7 +3,12 @@
 set -euo pipefail
 
 test "$(id -u)" = 1000
-sudo -n /usr/local/sbin/t630-camera-control enable
+camera=${1:-front}
+case "$camera" in
+    front|rear) ;;
+    *) echo "usage: $0 [front|rear]" >&2; exit 2 ;;
+esac
+sudo -n /usr/local/sbin/t630-camera-control "$camera"
 cleanup() {
     sudo -n /usr/local/sbin/t630-camera-control disable || true
 }

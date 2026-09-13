@@ -29,7 +29,9 @@ button behavior.
   stock image and runs under NetworkManager.
 - Bluetooth uses the WCN6850 UART. The kernel patches restore Samsung-disabled
   HCI socket support, Qualcomm initialization, and the board-specific RXD wake
-  pulse required after firmware handoff.
+  pulse required after firmware handoff. A single-instance userspace supervisor
+  restarts the complete firmware-loader/BlueZ stack after a bounded delay if its
+  owned launcher exits.
 - Audio uses the stock DSP firmware and calibration with guarded speaker routing.
   The microphone uses a demand-driven ALSA-to-PipeWire bridge.
 - Sensors use Samsung's DSP stack through a narrow downstream FastRPC adapter

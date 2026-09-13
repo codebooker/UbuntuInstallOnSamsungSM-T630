@@ -1,0 +1,53 @@
+#!/bin/sh
+# Keep the SM-T630 Bluetooth UART owner and BlueZ available without systemd.
+set -u
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
+test "$(id -u)" = 0
+test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
+test -x /usr/local/sbin/t630-bluetooth-start
+
+exec 9>/run/t630-bluetooth-supervisor.lock
+flock -n 9 || exit 0
+
+child=
+stop_requested=false
+stop_child() {
+    stop_requested=true
+    if [ -n "$child" ]; then
+        kill "$child" 2>/dev/null || true
+    fi
+}
+trap stop_child TERM INT HUP
+
+failures=0
+while [ "$stop_requested" = false ] && [ ! -e /run/t630-stopping ] && \
+        [ ! -e /etc/t630/bluetooth.disabled ]; do
+    /usr/local/sbin/t630-bluetooth-start &
+    child=$!
+    if wait "$child"; then
+        status=0
+    else
+        status=$?
+    fi
+    child=
+
+    if [ "$stop_requested" = true ] || [ -e /run/t630-stopping ]; then
+        exit 0
+    fi
+
+    failures=$((failures + 1))
+    delay=$((failures * 2))
+    if [ "$delay" -gt 30 ]; then
+        delay=30
+    fi
+    echo "Bluetooth service exited with status $status; restarting in ${delay}s" >&2
+    sleep "$delay" &
+    child=$!
+    wait "$child" 2>/dev/null || true
+    child=
+done
+
+exit 0

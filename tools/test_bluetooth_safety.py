@@ -31,6 +31,21 @@ class BluetoothSafetyTests(unittest.TestCase):
         self.assertLess(deletes[0], destroy)
         self.assertGreater(deletes[1], destroy)
 
+    def test_supervisor_is_bounded_and_desktop_uses_it(self):
+        supervisor = ROOT / "ubuntu/t630-bluetooth-supervisor"
+        subprocess.run(["sh", "-n", supervisor], check=True)
+        text = supervisor.read_text()
+        self.assertIn("flock -n 9", text)
+        self.assertIn('if [ "$delay" -gt 30 ]', text)
+        self.assertIn("/run/t630-stopping", text)
+        desktop = (ROOT / "ubuntu/t630-desktop-autostart").read_text()
+        self.assertIn("/usr/local/sbin/t630-bluetooth-supervisor", desktop)
+
+    def test_managed_session_reaps_inherited_service_children(self):
+        managed = (ROOT / "ubuntu/t630-managed-session.py").read_text()
+        self.assertIn("os.waitpid(-1, 0)", managed)
+        self.assertIn("if reaped_pid == pid:", managed)
+
     def test_health_check_avoids_recursive_sysfs_reads(self):
         health = ROOT / "tools/check_runtime_health.sh"
         subprocess.run(["sh", "-n", health], check=True)

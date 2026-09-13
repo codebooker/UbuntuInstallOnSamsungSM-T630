@@ -21,7 +21,7 @@ explicit, previously validated sysfs paths instead.
 | Keyboard | Working | Maliit/GNOME on-screen keyboard with Shift, Enter, Backspace, and Hide |
 | Physical keys | Working | Volume, Power, Home, Back, Recents, and red Active button mapped |
 | Wi-Fi | Working | Reconnect survives interface renaming; SSH works over the LAN |
-| Bluetooth | Working | WCN6850 startup retry, firmware handoff, idle wake, BlueZ discovery, and synchronized UART teardown physically tested |
+| Bluetooth | Working | WCN6850 startup retry, firmware handoff, idle wake, BlueZ discovery, synchronized teardown, and supervised recovery physically tested |
 | Speakers | Working | Stock calibration and guarded amplifier sequencing; GNOME volume control works |
 | Microphone | Working | Built-in microphone exposed as the normal PipeWire source through a demand-driven bridge |
 | Sensors | Mostly working | Accelerometer, light, proximity, magnetometer, compass, and automatic brightness tested; physical rotation and suspend/resume remain to validate |

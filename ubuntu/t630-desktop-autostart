@@ -60,7 +60,15 @@ if [ -x /usr/local/sbin/t630-audio-start ] && [ ! -e /etc/t630/audio.disabled ];
     nohup /usr/local/sbin/t630-audio-start </dev/null >>/var/log/t630-audio-start.log 2>&1 &
 fi
 if [ -x /usr/local/sbin/t630-bluetooth-start ] && [ ! -e /etc/t630/bluetooth.disabled ]; then
-    nohup /usr/local/sbin/t630-bluetooth-start </dev/null >>/var/log/t630-bluetooth-start.log 2>&1 &
+    if [ -x /usr/local/sbin/t630-bluetooth-supervisor ]; then
+        if ! pgrep -f '^/bin/sh /usr/local/sbin/t630-bluetooth-supervisor$' >/dev/null; then
+            nohup /usr/local/sbin/t630-bluetooth-supervisor </dev/null \
+                >>/var/log/t630-bluetooth-start.log 2>&1 &
+        fi
+    else
+        nohup /usr/local/sbin/t630-bluetooth-start </dev/null \
+            >>/var/log/t630-bluetooth-start.log 2>&1 &
+    fi
 fi
 if [ -x /usr/local/sbin/t630-sensors-start ] && [ ! -e /etc/t630/sensors.disabled ]; then
     nohup /usr/local/sbin/t630-sensors-start </dev/null >>/var/log/t630-sensors-start.log 2>&1 &

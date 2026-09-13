@@ -51,7 +51,16 @@ try:
 
     signal.signal(signal.SIGTERM, stop_child)
     signal.signal(signal.SIGINT, stop_child)
-    _, status = os.waitpid(pid, 0)
+    # The shell that becomes this wrapper has already started a few root-side
+    # tablet services. They remain our direct children across exec(). Reap
+    # completed one-shot helpers while continuing to wait for the exact GNOME
+    # child; otherwise every desktop start leaves zombies for the life of the
+    # boot.
+    status = None
+    while status is None:
+        reaped_pid, reaped_status = os.waitpid(-1, 0)
+        if reaped_pid == pid:
+            status = reaped_status
     sys.exit(os.waitstatus_to_exitcode(status))
 finally:
     if writer is not None:

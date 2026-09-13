@@ -66,6 +66,21 @@ stayed unchanged, no kernel exception was logged, and a fresh launcher restored
 the powered adapter on its first attempt. This physically verifies patch 0008
 against the previously reproducible timer use-after-free.
 
+### Runtime supervision and reaping
+
+The desktop now starts Bluetooth through a single-instance supervisor rather
+than leaving the one-shot launcher as an unsupervised shell child. If the UART
+owner or BlueZ exits, the supervisor restarts the complete launcher after a
+capped delay. Its stop path terminates and reaps the exact owned child.
+
+On boot `056cf97f-4035-4b53-8809-8218437b3a82`, the live launcher was
+deliberately terminated under the new supervisor. It logged status 1, waited two
+seconds, started a new launcher, and restored a powered adapter without changing
+the boot ID or disturbing the desktop, Wi-Fi, audio, or sensors. A subsequent
+clean boot `4d826579-5c53-47e3-8edd-dc3d6ffd8d0b` started the supervisor and its
+Bluetooth child automatically. The managed GNOME wrapper now reaps inherited
+one-shot startup helpers; no zombie processes remained after startup.
+
 ## Physical verification
 
 Clean boot `79fdbd99-b920-459c-bd1f-ee2886e431b0` established all of the

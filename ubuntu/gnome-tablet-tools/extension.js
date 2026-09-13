@@ -32,6 +32,10 @@ export default class TabletKeyboard extends Extension {
                 ? 'Automatic screen-off paused' : `Screen off after ${status.idle_seconds / 60} min`;
             this._brightness.visible = true;
             this._keepAwake.visible = true;
+            this._flashlight.checked = status.flashlight.enabled;
+            this._flashlight.visible = status.flashlight.available;
+            this._flashlightBrightness.slider.value = status.flashlight.brightness / 100;
+            this._flashlightBrightness.visible = status.flashlight.available;
             this._updatingDisplay = false;
         });
     }
@@ -86,7 +90,33 @@ export default class TabletKeyboard extends Extension {
             this._displayRequest(['idle', this._keepAwake.checked ? '0' : '300'],
                 () => this._refreshDisplay());
         });
-        this._powerIndicator.quickSettingsItems.push(this._brightness, this._keepAwake);
+        this._flashlight = new QuickSettings.QuickToggle({
+            title: 'Flashlight', iconName: 'media-flash-symbolic', toggleMode: true,
+        });
+        this._flashlight.visible = false;
+        this._flashlight.connect('clicked', () => {
+            this._displayRequest(['flashlight', this._flashlight.checked ? 'on' : 'off'],
+                () => this._refreshDisplay());
+        });
+        this._flashlightBrightness = new QuickSettings.QuickSlider({
+            iconName: 'media-flash-symbolic', iconLabel: 'Flashlight brightness',
+        });
+        this._flashlightBrightness.slider.accessible_name = 'Flashlight brightness';
+        this._flashlightBrightness.visible = false;
+        this._flashlightBrightness.slider.connect('notify::value', () => {
+            if (this._updatingDisplay)
+                return;
+            if (this._flashlightBrightnessTimer)
+                GLib.Source.remove(this._flashlightBrightnessTimer);
+            this._flashlightBrightnessTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => {
+                this._flashlightBrightnessTimer = 0;
+                const value = Math.max(5, Math.round(this._flashlightBrightness.slider.value * 100));
+                this._displayRequest(['flashlight', 'brightness', String(value)]);
+                return GLib.SOURCE_REMOVE;
+            });
+        });
+        this._powerIndicator.quickSettingsItems.push(
+            this._brightness, this._keepAwake, this._flashlight, this._flashlightBrightness);
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._powerIndicator, 2);
         this._powerMenu = Main.panel.statusArea.quickSettings.menu;
         this._powerMenuId = this._powerMenu.connect('open-state-changed', (_menu, open) => {
@@ -98,16 +128,28 @@ export default class TabletKeyboard extends Extension {
                 this._displayRequest(['inhibit']);
             return GLib.SOURCE_CONTINUE;
         });
+        this._flashlightLeaseTimer = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 5, () => {
+            if (this._flashlight.checked)
+                this._displayRequest(['flashlight', 'renew']);
+            return GLib.SOURCE_CONTINUE;
+        });
         this._refreshDisplay();
     }
 
     disable() {
+        if (this._flashlight?.checked)
+            this._displayRequest(['flashlight', 'off']);
         this._displayActive = false;
+        if (this._flashlightBrightnessTimer)
+            GLib.Source.remove(this._flashlightBrightnessTimer);
+        if (this._flashlightLeaseTimer)
+            GLib.Source.remove(this._flashlightLeaseTimer);
         if (this._brightnessTimer)
             GLib.Source.remove(this._brightnessTimer);
         if (this._fullscreenTimer)
             GLib.Source.remove(this._fullscreenTimer);
         this._brightnessTimer = this._fullscreenTimer = 0;
+        this._flashlightBrightnessTimer = this._flashlightLeaseTimer = 0;
         if (this._powerMenuId)
             this._powerMenu.disconnect(this._powerMenuId);
         this._powerMenuId = 0;

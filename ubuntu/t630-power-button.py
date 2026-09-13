@@ -20,11 +20,13 @@ import sys
 import time
 
 sys.path.insert(0, '/usr/local/lib/t630')
-from t630_display import DisplaySettings, ControlSocket
+from t630_display import DisplaySettings, ControlSocket, FlashlightSettings
 
 RUN = '/usr/local/bin/t630-gnome-run'
 LIGHT = Path('/sys/class/backlight/panel0-backlight')
 STATE = Path('/run/t630-display-off-brightness')
+TORCH = Path('/sys/class/leds/led:torch_0')
+TORCH_SWITCH = Path('/sys/class/leds/led:switch_0')
 EVENT = struct.Struct('@llHHi')
 
 
@@ -121,7 +123,13 @@ def main():
     with open('/run/t630-power-button.lock', 'a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         restore()  # Repair a previous abnormal monitor exit while blanked.
-        settings = DisplaySettings(LIGHT, STATE, '/var/lib/t630/display-settings.json')
+        try:
+            flashlight = FlashlightSettings(TORCH, TORCH_SWITCH)
+        except (OSError, ValueError) as exc:
+            flashlight = None
+            print(f'Flashlight unavailable: {type(exc).__name__}', flush=True)
+        settings = DisplaySettings(LIGHT, STATE, '/var/lib/t630/display-settings.json',
+                                   flashlight)
         def stop(_signal, _frame):
             raise SystemExit(0)
         signal.signal(signal.SIGTERM, stop)
@@ -143,6 +151,7 @@ def main():
                     ready = select.select([fd, control.sock], [], [], 1)[0]
                     if control.sock in ready:
                         control.handle()
+                    settings.tick()
                     settings.flush()
                     now = time.monotonic()
                     if now >= next_idle_check:
@@ -212,7 +221,10 @@ def main():
                                 print(f'Power action not completed: {type(exc).__name__}', flush=True)
             finally:
                 settings.flush(force=True)
-                control.close()
+                try:
+                    settings.close()
+                finally:
+                    control.close()
                 os.close(fd)
         finally:
             restore()

@@ -2,6 +2,7 @@
 """Expose the active custom tablet session to GNOME settings daemons."""
 import os
 from pathlib import Path
+import re
 import signal
 
 from gi.repository import Gio, GLib
@@ -21,7 +22,11 @@ CLIENT_XML = """<node><interface name='org.gnome.SessionManager.ClientPrivate'>
 <signal name='Stop'/>
 </interface></node>"""
 
-if os.geteuid() != 1000 or os.environ.get('XDG_SESSION_ID', '')[:1] != 'c':
+session_id = os.environ.get('XDG_SESSION_ID', '')
+# systemd-logind normally returns cNN; this tablet's elogind can return a
+# numeric NN form after session recreation. Both originate from CreateSession
+# in the root-only wrapper and are valid local session identifiers.
+if os.geteuid() != 1000 or not re.fullmatch(r'c?[0-9]+', session_id):
     raise SystemExit('Only for the registered tablet login session.')
 if Path('/etc/t630-install-id').read_text().strip() != 'SM-T630-T630XXSBDZE3-Ubuntu-v1':
     raise SystemExit('Wrong device installation.')

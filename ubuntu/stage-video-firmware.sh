@@ -31,7 +31,18 @@ for source in "$destination"/*; do
     # Synchronous firmware requests can run with the Ubuntu caller's root.
     user_target="/run/input-firmware/${source##*/}"
     if [ -L "$user_target" ]; then
-        test "$(readlink "$user_target")" = "$source"
+        existing=$(readlink "$user_target")
+        case "$existing" in
+            "$source") ;;
+            "/opt/t630/camera-firmware/${source##*/}")
+                # Camera bring-up may publish these same two signed Adreno
+                # files first. Share that validated byte-identical copy rather
+                # than making camera and desktop startup fight over a symlink.
+                test -f "$existing"
+                cmp -s "$source" "$existing"
+                ;;
+            *) exit 1 ;;
+        esac
     else
         test ! -e "$user_target"
         ln -s "$source" "$user_target"

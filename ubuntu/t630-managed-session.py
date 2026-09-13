@@ -17,6 +17,10 @@ if sys.argv[1:] != ['/usr/local/bin/t630-gnome-preview']:
 reader, writer = os.pipe()
 pid = os.fork()
 if pid == 0:
+    # Give this exact desktop tree its own process group. A wrapper stop can
+    # then reach dbus-run-session and every descendant without touching Weston
+    # or unrelated tablet services.
+    os.setsid()
     os.close(writer)
     session = os.read(reader, 128).decode().strip()
     os.close(reader)
@@ -45,7 +49,7 @@ try:
 
     def stop_child(_signal, _frame):
         try:
-            os.kill(pid, signal.SIGTERM)
+            os.killpg(pid, signal.SIGTERM)
         except ProcessLookupError:
             pass
 
@@ -66,7 +70,7 @@ finally:
     if writer is not None:
         os.close(writer)
         try:
-            os.kill(pid, signal.SIGTERM)
+            os.killpg(pid, signal.SIGTERM)
         except ProcessLookupError:
             pass
         os.waitpid(pid, 0)

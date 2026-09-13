@@ -44,7 +44,10 @@ if os.getuid() == 0:
     # dropping privileges, so login1 sees these apps as the same tablet user.
     for entry in (session_proc / 'cgroup').read_text().splitlines():
         _, controllers, group_path = entry.split(':', 2)
-        if controllers == 'name=elogind' and re.fullmatch(r'/c[0-9]+', group_path):
+        # systemd-logind commonly names these /cNN; elogind may use /NN after
+        # recreating the same custom session. In either case, accept only the
+        # numeric session cgroup reported by the selected GNOME process.
+        if controllers == 'name=elogind' and re.fullmatch(r'/c?[0-9]+', group_path):
             target = Path('/sys/fs/cgroup/elogind') / group_path[1:] / 'cgroup.procs'
             with target.open('w') as stream:
                 stream.write(str(os.getpid()))

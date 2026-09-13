@@ -11,9 +11,73 @@ SOCKET = '/run/t630-display.sock'
 IDLE_CHOICES = (0, 120, 300, 600, 1800)
 
 
+class FlashlightSettings:
+    """Bounded, leased control of the rear torch and its PMIC switch."""
+
+    LEASE_SECONDS = 15
+    # The kernel advertises 500 mA. Keep ordinary torch operation at or below
+    # the controller's conventional 300 mA operating point.
+    SAFE_MAX = 300
+
+    def __init__(self, torch, switch):
+        self.torch, self.switch = map(Path, (torch, switch))
+        if self.torch.name != 'led:torch_0' or self.switch.name != 'led:switch_0':
+            raise ValueError('Unexpected flashlight nodes')
+        if self.torch.resolve().parent != self.switch.resolve().parent:
+            raise ValueError('Flashlight current and switch are from different controllers')
+        if int((self.torch / 'max_brightness').read_text()) != 500:
+            raise ValueError('Unexpected torch current limit')
+        if int((self.switch / 'max_brightness').read_text()) != 255:
+            raise ValueError('Unexpected torch switch')
+        self.percent = 20
+        self.enabled = False
+        self.lease_until = 0
+        self.off()
+
+    def status(self):
+        return dict(available=True, enabled=self.enabled, brightness=self.percent)
+
+    def set_brightness(self, percent):
+        if type(percent) is not int or not 5 <= percent <= 100:
+            raise ValueError('Flashlight brightness must be 5..100')
+        self.percent = percent
+        if self.enabled:
+            self._write_current()
+            self.renew()
+
+    def _write_current(self):
+        raw = max(1, round(self.SAFE_MAX * self.percent / 100))
+        (self.torch / 'brightness').write_text(str(raw))
+
+    def on(self):
+        # The PMIC driver requires current first and the separate switch last.
+        self._write_current()
+        (self.switch / 'brightness').write_text('1')
+        self.enabled = True
+        self.renew()
+
+    def renew(self):
+        if not self.enabled:
+            raise ValueError('Flashlight is off')
+        self.lease_until = time.monotonic() + self.LEASE_SECONDS
+
+    def expire(self):
+        if self.enabled and time.monotonic() >= self.lease_until:
+            self.off()
+
+    def off(self):
+        # Clear both controls even if our in-memory state says it is already off.
+        # This repairs a prior abnormal monitor exit during the next startup.
+        (self.torch / 'brightness').write_text('0')
+        (self.switch / 'brightness').write_text('0')
+        self.enabled = False
+        self.lease_until = 0
+
+
 class DisplaySettings:
-    def __init__(self, light, off_state, preferences):
+    def __init__(self, light, off_state, preferences, flashlight=None):
         self.light, self.off_state, self.preferences = map(Path, (light, off_state, preferences))
+        self.flashlight = flashlight
         self.maximum = int((self.light / 'max_brightness').read_text())
         if self.maximum != 306:
             raise ValueError('Unexpected backlight')
@@ -41,8 +105,11 @@ class DisplaySettings:
     def status(self):
         source = self.off_state if self.off_state.exists() else self.light / 'brightness'
         raw = int(source.read_text())
-        return dict(brightness=max(5, min(100, round(raw * 100 / self.maximum))),
-                    idle_seconds=self.idle_seconds, blanked=self.off_state.exists())
+        result = dict(brightness=max(5, min(100, round(raw * 100 / self.maximum))),
+                      idle_seconds=self.idle_seconds, blanked=self.off_state.exists())
+        result['flashlight'] = (self.flashlight.status() if self.flashlight else
+                                dict(available=False, enabled=False, brightness=20))
+        return result
 
     def set_brightness(self, percent, persist=True):
         self.validate(percent, self.idle_seconds)
@@ -67,9 +134,26 @@ class DisplaySettings:
         elif parts == ['INHIBIT']:
             # Short lease for an active full-screen app; never survives a crash.
             self.inhibit_until = time.monotonic() + 40
+        elif parts == ['FLASHLIGHT', 'ON'] and self.flashlight:
+            self.flashlight.on()
+        elif parts == ['FLASHLIGHT', 'OFF'] and self.flashlight:
+            self.flashlight.off()
+        elif parts == ['FLASHLIGHT', 'RENEW'] and self.flashlight:
+            self.flashlight.renew()
+        elif (len(parts) == 3 and parts[:2] == ['FLASHLIGHT', 'BRIGHTNESS'] and
+              self.flashlight):
+            self.flashlight.set_brightness(int(parts[2]))
         else:
             raise ValueError('Unsupported display request')
         return self.status()
+
+    def tick(self):
+        if self.flashlight:
+            self.flashlight.expire()
+
+    def close(self):
+        if self.flashlight:
+            self.flashlight.off()
 
     def flush(self, force=False):
         if self.dirty_at is None or (not force and time.monotonic() - self.dirty_at < 2):

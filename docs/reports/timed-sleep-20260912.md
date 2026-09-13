@@ -144,3 +144,19 @@ Scripts: `ubuntu/test-t630-driver-wake-pattern.py`,
 New bounded retries apply only to newly recorded kernel EBUSY, never a failed
 safety prerequisite. Device/install/kernel/IPA/USB/battery/password-lock checks
 remain in place. No driver unloads, partition writes or auth bypasses.
+
+## Interface-rename guard — 2026-09-13
+
+The guarded suspend helper no longer assumes that the primary radio is named
+`wlan0`. It selects exactly one connected interface that exposes this vendor
+driver's add/delete wake-pattern attributes and a valid six-byte MAC address.
+Zero or multiple matches are refused rather than guessed. Tests cover a
+connected `wlp1s0`, an inactive Samsung virtual interface, and an ambiguous
+two-interface failure. The current plugged-in tablet correctly returned
+`external power or USB connected` without attempting suspend.
+
+The read-only runtime-health helper now discovers the connected Wi-Fi interface
+the same way through NetworkManager and prints only its interface/state, not the
+saved connection or network name. On boot
+`84251a48-c3c6-44cf-81bf-5d9f046fb4f8` it reported GNOME, Weston, Wi-Fi,
+Bluetooth, 30% speaker volume and the accelerometer healthy.

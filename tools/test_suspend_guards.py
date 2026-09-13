@@ -42,6 +42,33 @@ class Guards(unittest.TestCase):
     def test_playing_audio_blocks(self):
         self.assertFalse(module.can_suspend('Discharging', ['not attached'], 'ONLINE', True, True, True))
 
+    def test_active_vendor_wifi_can_have_a_predictable_rename(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            active = root / 'wlp1s0'
+            inactive = root / 'swlan0'
+            for interface, carrier, address in (
+                    (active, '1', '02:00:00:00:00:01'),
+                    (inactive, '0', '02:00:00:00:00:02')):
+                interface.mkdir()
+                for name, value in (('carrier', carrier), ('address', address),
+                                    ('wowl_add_ptrn', ''), ('wowl_del_ptrn', '')):
+                    (interface / name).write_text(value)
+            self.assertEqual(module.wifi_interface(root).name, 'wlp1s0')
+
+    def test_ambiguous_connected_vendor_wifi_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ('wlan0', 'wlan1'):
+                interface = root / name
+                interface.mkdir()
+                for attribute, value in (('carrier', '1'),
+                                         ('address', '02:00:00:00:00:01'),
+                                         ('wowl_add_ptrn', ''), ('wowl_del_ptrn', '')):
+                    (interface / attribute).write_text(value)
+            with self.assertRaises(RuntimeError):
+                module.wifi_interface(root)
+
 
 class HelperCleanup(unittest.TestCase):
     def setUp(self):
@@ -55,6 +82,9 @@ class HelperCleanup(unittest.TestCase):
             '/sys/power/state': 'freeze mem',
             '/sys/class/rtc/rtc0/device/power/wakeup': 'enabled',
             '/sys/class/net/wlan0/address': '02:00:00:00:00:01',
+            '/sys/class/net/wlan0/carrier': '1',
+            '/sys/class/net/wlan0/wowl_add_ptrn': '',
+            '/sys/class/net/wlan0/wowl_del_ptrn': '',
             '/sys/class/power_supply/battery/status': 'Discharging',
             '/sys/class/udc/test/state': 'not attached',
             '/sys/bus/platform/devices/soc:qcom,ipa_fws/subsys0/state': 'ONLINE',

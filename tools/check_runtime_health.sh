@@ -16,9 +16,10 @@ printf 'gnome_shell: '
 pgrep -x gnome-shell >/dev/null && echo running || echo stopped
 
 printf 'wifi: '
-nmcli -t -f GENERAL.STATE,GENERAL.CONNECTION device show wlan0 2>/dev/null |
-    tr '\n' ' '
-echo
+nmcli -t -f DEVICE,TYPE,STATE device status 2>/dev/null |
+    awk -F: '$2 == "wifi" && $3 == "connected" {
+        print "interface=" $1 " state=" $3; found=1; exit
+    } END {if (!found) print "unavailable"}'
 
 printf 'bluetooth: '
 if [ -d /sys/class/bluetooth/hci0 ]; then

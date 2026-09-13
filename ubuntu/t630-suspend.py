@@ -23,6 +23,24 @@ def can_suspend(status, usb_states, ipa, locked, blanked, audio_active):
             and ipa == 'ONLINE' and locked and blanked and not audio_active)
 
 
+def wifi_interface(net_class=None):
+    net_class = net_class or Path('/sys/class/net')
+    candidates = []
+    for entry in net_class.iterdir():
+        if not ((entry / 'wowl_add_ptrn').is_file()
+                and (entry / 'wowl_del_ptrn').is_file()
+                and (entry / 'address').is_file()
+                and (entry / 'carrier').is_file()):
+            continue
+        if (entry / 'carrier').read_text().strip() == '1':
+            address = (entry / 'address').read_text().strip().split(':')
+            if len(address) == 6 and all(len(part) == 2 for part in address):
+                candidates.append(entry)
+    if len(candidates) != 1:
+        raise RuntimeError('expected one connected vendor Wi-Fi interface')
+    return candidates[0]
+
+
 def main():
     assert os.geteuid() == 0
     assert sys.argv[1:] in ([], ['--check'])
@@ -34,8 +52,7 @@ def main():
     assert Path('/sys/module/lpm_levels/parameters/sleep_disabled').read_text().strip() == 'Y'
     assert 'freeze' in Path('/sys/power/state').read_text().split()
     assert Path('/sys/class/rtc/rtc0/device/power/wakeup').read_text().strip() == 'enabled'
-    iface = Path('/sys/class/net/wlan0')
-    assert len((iface / 'address').read_text().strip().split(':')) == 6
+    iface = wifi_interface()
     status = Path('/sys/class/power_supply/battery/status').read_text().strip()
     usb = [p.read_text().strip() for p in Path('/sys/class/udc').glob('*/state')]
     ipa = Path('/sys/bus/platform/devices/soc:qcom,ipa_fws/subsys0/state').read_text().strip()

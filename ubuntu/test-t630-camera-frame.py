@@ -13,7 +13,7 @@ import subprocess
 import tempfile
 
 
-WIDTH = 640
+WIDTH = 720
 HEIGHT = 480
 FRAME_BYTES = WIDTH * HEIGHT * 3 // 2
 INSTALL_ID = "SM-T630-T630XXSBDZE3-Ubuntu-v1"

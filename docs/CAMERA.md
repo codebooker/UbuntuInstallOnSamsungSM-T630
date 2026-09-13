@@ -95,11 +95,12 @@ measured mean luma 162.26 with 1.39% near-white pixels before color tuning, and
 inspection confirms that ID 3 is another front-camera endpoint; neither can
 substitute for rear ID 0.
 
-Rear manual AE leaves Samsung's automatic white balance inactive. Result
-metadata reports `awb_state=0` and gains `1.391,1.000,1.000,2.469`. The HAL
-advertises every standard white-balance preset, but an incandescent-preset
-trial entered an active session without delivering a frame. The bridge therefore
-keeps the known-good AUTO request and passes only rear I420 through the small
+The first rear result reports inactive white balance (`awb_state=0`) and gains
+`1.391,1.000,1.000,2.469`, but longer runs show AUTO progressing to converged
+state `2` with gains near `1.969,1.000,1.000,1.711`. The HAL advertises every
+standard white-balance preset, but an incandescent-preset trial entered an
+active session without delivering a frame. The bridge therefore keeps the
+known-good AUTO request and passes only rear I420 through the small
 source-built `t630-yuv-tune` filter. Its current 0.90× red and 1.32× blue gains
 move the measured chroma away from yellow while leaving luma essentially
 unchanged. Physical inspection found the final profile acceptable and not too
@@ -108,6 +109,21 @@ blue, although a little warmth remains. The **Rear Camera Color** app exposes a
 single bounded integer atomically to the user's configuration directory; the
 running filter reloads it twice per second, so adjustment requires neither root
 access nor a fragile camera restart. The setting persists across launches.
+
+Both PipeWire sources now publish 720×480 at 30 fps. This is the highest tested
+mode that GNOME Snapshot accepts from this compatibility source. The complete
+rear path delivered more than 1,100 continuous frames with the color filter at
+11.4% of one CPU and GStreamer at 3.1%. A 1280×960 direct capture delivered 300
+frames and the same PipeWire mode delivered 300 frames to a headless consumer,
+but Snapshot segfaulted at both 1280×960 and 960×720. Those crashes closed the
+camera session normally and did not reset the tablet. HD sensor delivery is
+therefore kept separate from the stable GNOME preview for now.
+
+Rear continuous-picture autofocus is working: result state advanced from
+inactive (`0`) to passive scan (`1`) and passive focused (`2`). The front camera
+advertises only AF off and reports a zero minimum-focus distance, confirming it
+is fixed focus. Rear flash is advertised and reported ready (`flash_state=2`),
+but no torch or flash request has been sent yet.
 
 The provider allows one camera client at a time. `t630-camera-control` therefore
 stops the current bridge before selecting `front` or `rear`; it never keeps both
@@ -132,10 +148,12 @@ are deliberately left in place; live module removal is not attempted.
 
 ## Remaining limitations
 
-- Rear ID 0 does not provide trustworthy automatic exposure or white balance
-  outside Android. The current 30 ms / ISO 800 baseline, gamma 2.5 tone lift,
-  and userspace color correction remain conservative fixed profiles rather than
-  scene-aware 3A; wider lighting, noise, frame-rate, and color tests remain.
+- Rear ID 0 does not provide trustworthy automatic exposure outside Android.
+  The current 30 ms / ISO 800 baseline, gamma 2.5 tone lift, and userspace color
+  correction remain conservative fixed exposure/tone profiles rather than
+  scene-aware AE; wider-lighting and noise tests remain.
+- Snapshot crashes above 720×480 even though direct and headless PipeWire HD
+  delivery work. Rear flash/torch control is not yet implemented.
 - The stack still depends on proprietary binaries extracted from the owner's
   exact `T630XXSBDZE3` stock firmware. They cannot be distributed here.
 

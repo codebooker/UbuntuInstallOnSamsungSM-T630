@@ -30,7 +30,7 @@ explicit, previously validated sysfs paths instead.
 | System suspend | Experimental | Guarded manual shallow suspend and wake passed; automatic idle suspend remains disabled |
 | GPU | Experimental | Turnip/Zink can render GNOME, but a KGSL fault was reproduced; software fallback is retained |
 | Video | Mostly working | FFmpeg and GStreamer H.264/VP9 use the stock decoder. A real WebKit process selected it, but no accelerated browser launcher is shipped because this kernel cannot provide WebKit's normal user-namespace sandbox |
-| Camera | Partial | Front exposure works. Rear ID 0 requires its still template and AE off; the current 30 ms / ISO 800 profile plus gamma 2.5 measured mean luma 160 with no near-white clipping. The accepted userspace red/blue correction can be adjusted live with the Rear Camera Color slider |
+| Camera | Partial | Both GNOME previews run at 720×480. Rear ID 0 uses 30 ms / ISO 800, gamma 2.5, working continuous autofocus, and a live color slider. The HAL supports HD, but Snapshot crashes above the current preview size; flash is detected but not yet controlled |
 | Security | Lab configuration | GNOME password lock works, but the retained recovery compositor and USB root console mean this is not a hardened full-device login boundary |
 
 ## Known limitations

@@ -24,6 +24,7 @@ static int requested_frames = 1;
 static const char *output_path;
 static const char *output_format;
 static int capture_metadata_reported = 0;
+static int last_af_state = -1;
 
 static int start_binder_thread_pool(void) {
     void *library = dlopen("libbinder_ndk.so", RTLD_NOW | RTLD_LOCAL);
@@ -205,11 +206,13 @@ static void capture_completed(void *context, ACameraCaptureSession *session,
     (void)context;
     (void)session;
     (void)request;
-    if (!capture_metadata_reported && result != NULL) {
+    if (result != NULL) {
         ACameraMetadata_const_entry exposure = {0};
         ACameraMetadata_const_entry sensitivity = {0};
         ACameraMetadata_const_entry ae_state = {0};
         ACameraMetadata_const_entry awb_state = {0};
+        ACameraMetadata_const_entry af_state = {0};
+        ACameraMetadata_const_entry flash_state = {0};
         ACameraMetadata_const_entry color_gains = {0};
         camera_status_t exposure_status = ACameraMetadata_getConstEntry(
             result, ACAMERA_SENSOR_EXPOSURE_TIME, &exposure);
@@ -219,9 +222,16 @@ static void capture_completed(void *context, ACameraCaptureSession *session,
             result, ACAMERA_CONTROL_AE_STATE, &ae_state);
         camera_status_t awb_status = ACameraMetadata_getConstEntry(
             result, ACAMERA_CONTROL_AWB_STATE, &awb_state);
+        camera_status_t af_status = ACameraMetadata_getConstEntry(
+            result, ACAMERA_CONTROL_AF_STATE, &af_state);
+        camera_status_t flash_status = ACameraMetadata_getConstEntry(
+            result, ACAMERA_FLASH_STATE, &flash_state);
         camera_status_t gains_status = ACameraMetadata_getConstEntry(
             result, ACAMERA_COLOR_CORRECTION_GAINS, &color_gains);
-        if (exposure_status == ACAMERA_OK && exposure.count > 0 &&
+        int current_af_state = af_status == ACAMERA_OK && af_state.count > 0 ?
+            af_state.data.u8[0] : -1;
+        if ((!capture_metadata_reported || current_af_state != last_af_state) &&
+            exposure_status == ACAMERA_OK && exposure.count > 0 &&
             sensitivity_status == ACAMERA_OK && sensitivity.count > 0) {
             fprintf(stderr, "capture metadata: exposure=%lldns sensitivity=%d",
                     (long long)exposure.data.i64[0], sensitivity.data.i32[0]);
@@ -229,12 +239,17 @@ static void capture_completed(void *context, ACameraCaptureSession *session,
                 fprintf(stderr, " ae_state=%u", ae_state.data.u8[0]);
             if (awb_status == ACAMERA_OK && awb_state.count > 0)
                 fprintf(stderr, " awb_state=%u", awb_state.data.u8[0]);
+            if (af_status == ACAMERA_OK && af_state.count > 0)
+                fprintf(stderr, " af_state=%u", af_state.data.u8[0]);
+            if (flash_status == ACAMERA_OK && flash_state.count > 0)
+                fprintf(stderr, " flash_state=%u", flash_state.data.u8[0]);
             if (gains_status == ACAMERA_OK && color_gains.count >= 4)
                 fprintf(stderr, " gains=%.3f,%.3f,%.3f,%.3f",
                         color_gains.data.f[0], color_gains.data.f[1],
                         color_gains.data.f[2], color_gains.data.f[3]);
             fprintf(stderr, "\n");
             capture_metadata_reported = 1;
+            last_af_state = current_af_state;
         }
     }
 }
@@ -290,7 +305,9 @@ static int check_status(const char *operation, camera_status_t status) {
 }
 
 int main(int argc, char **argv) {
-    const char *camera_id = argc > 1 ? argv[1] : "0";
+    const int describe_only = argc > 1 && strcmp(argv[1], "--describe") == 0;
+    const char *camera_id = describe_only ? (argc > 2 ? argv[2] : "0") :
+        (argc > 1 ? argv[1] : "0");
     output_path = argc > 2 ? argv[2] : "/data/vendor/camera/t630-frame.pgm";
     int width = argc > 3 ? atoi(argv[3]) : 640;
     int height = argc > 4 ? atoi(argv[4]) : 480;
@@ -328,7 +345,8 @@ int main(int argc, char **argv) {
     if (check_status("get camera list", camera_status) != 0) goto done;
     fprintf(stderr, "available cameras:");
     for (int i = 0; i < ids->numCameras; ++i) fprintf(stderr, " %s", ids->cameraIds[i]);
-    fprintf(stderr, "\nopening camera %s\n", camera_id);
+    fprintf(stderr, "\n%s camera %s\n",
+            describe_only ? "describing" : "opening", camera_id);
 
     /* Record the advertised modes for diagnosis. The rear HAL produced no
      * frames with the tested incandescent preset despite advertising it. */
@@ -337,6 +355,12 @@ int main(int argc, char **argv) {
         manager, camera_id, &characteristics);
     if (camera_status == ACAMERA_OK && characteristics != NULL) {
         ACameraMetadata_const_entry awb_modes = {0};
+        ACameraMetadata_const_entry af_modes = {0};
+        ACameraMetadata_const_entry flash = {0};
+        ACameraMetadata_const_entry focus = {0};
+        ACameraMetadata_const_entry orientation = {0};
+        ACameraMetadata_const_entry fps = {0};
+        ACameraMetadata_const_entry streams = {0};
         if (ACameraMetadata_getConstEntry(
                 characteristics, ACAMERA_CONTROL_AWB_AVAILABLE_MODES,
                 &awb_modes) == ACAMERA_OK) {
@@ -346,7 +370,54 @@ int main(int argc, char **argv) {
             }
             fprintf(stderr, "\n");
         }
+        if (ACameraMetadata_getConstEntry(
+                characteristics, ACAMERA_CONTROL_AF_AVAILABLE_MODES,
+                &af_modes) == ACAMERA_OK) {
+            fprintf(stderr, "available AF modes:");
+            for (uint32_t i = 0; i < af_modes.count; ++i)
+                fprintf(stderr, " %u", af_modes.data.u8[i]);
+            fprintf(stderr, "\n");
+        }
+        if (ACameraMetadata_getConstEntry(
+                characteristics, ACAMERA_FLASH_INFO_AVAILABLE,
+                &flash) == ACAMERA_OK && flash.count > 0)
+            fprintf(stderr, "flash available: %u\n", flash.data.u8[0]);
+        if (ACameraMetadata_getConstEntry(
+                characteristics, ACAMERA_LENS_INFO_MINIMUM_FOCUS_DISTANCE,
+                &focus) == ACAMERA_OK && focus.count > 0)
+            fprintf(stderr, "minimum focus distance: %.3f diopters\n",
+                    focus.data.f[0]);
+        if (ACameraMetadata_getConstEntry(
+                characteristics, ACAMERA_SENSOR_ORIENTATION,
+                &orientation) == ACAMERA_OK && orientation.count > 0)
+            fprintf(stderr, "sensor orientation: %d degrees\n",
+                    orientation.data.i32[0]);
+        if (ACameraMetadata_getConstEntry(
+                characteristics, ACAMERA_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES,
+                &fps) == ACAMERA_OK) {
+            fprintf(stderr, "available FPS ranges:");
+            for (uint32_t i = 0; i + 1 < fps.count; i += 2)
+                fprintf(stderr, " %d-%d", fps.data.i32[i], fps.data.i32[i + 1]);
+            fprintf(stderr, "\n");
+        }
+        if (ACameraMetadata_getConstEntry(
+                characteristics, ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS,
+                &streams) == ACAMERA_OK) {
+            fprintf(stderr, "YUV output sizes:");
+            for (uint32_t i = 0; i + 3 < streams.count; i += 4) {
+                if (streams.data.i32[i] == AIMAGE_FORMAT_YUV_420_888 &&
+                    streams.data.i32[i + 3] ==
+                        ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT)
+                    fprintf(stderr, " %dx%d", streams.data.i32[i + 1],
+                            streams.data.i32[i + 2]);
+            }
+            fprintf(stderr, "\n");
+        }
         ACameraMetadata_free(characteristics);
+    }
+    if (describe_only) {
+        result = camera_status == ACAMERA_OK ? 0 : 1;
+        goto done;
     }
 
     AImageReader *reader = NULL;
@@ -395,7 +466,8 @@ int main(int argc, char **argv) {
     const uint8_t ae_mode = strcmp(camera_id, "0") == 0 ?
         ACAMERA_CONTROL_AE_MODE_OFF : ACAMERA_CONTROL_AE_MODE_ON;
     const uint8_t awb_mode = ACAMERA_CONTROL_AWB_MODE_AUTO;
-    const uint8_t af_mode = ACAMERA_CONTROL_AF_MODE_CONTINUOUS_VIDEO;
+    const uint8_t af_mode = strcmp(camera_id, "0") == 0 ?
+        ACAMERA_CONTROL_AF_MODE_CONTINUOUS_PICTURE : ACAMERA_CONTROL_AF_MODE_OFF;
     if (check_status("enable automatic control", ACaptureRequest_setEntry_u8(
             request, ACAMERA_CONTROL_MODE, 1, &control_mode)) != 0 ||
         check_status("enable auto exposure", ACaptureRequest_setEntry_u8(
@@ -407,7 +479,7 @@ int main(int argc, char **argv) {
     camera_status = ACaptureRequest_setEntry_u8(
         request, ACAMERA_CONTROL_AF_MODE, 1, &af_mode);
     if (camera_status != ACAMERA_OK)
-        fprintf(stderr, "continuous autofocus unavailable: %d\n", camera_status);
+        fprintf(stderr, "autofocus mode unavailable: %d\n", camera_status);
 
     /* Samsung's rear still template carries 20,400 ns / ISO 58 priority
      * fields even while its AE result claims convergence near 40 ms. Rear AE

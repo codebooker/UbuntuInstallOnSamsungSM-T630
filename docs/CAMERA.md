@@ -28,12 +28,13 @@ reports only aggregate luma statistics as JSON, then deletes the raw stream and
 turns the camera off in a `finally` block. It never writes a photograph to the
 Ubuntu filesystem.
 
-The camera module's cold device scan is followed immediately by the same
-guarded permission repair used during desktop startup. This preserves normal
-user access to conventional `/dev` endpoints, current ALSA nodes, DRM render,
-KGSL/ION and the hardware codec nodes. Without that repair, opening a camera
-could leave already-running audio functional while preventing later audio,
-graphics and video processes from opening their devices.
+The camera module no longer runs a global `mdev` cold scan. A narrowly scoped
+helper creates only the exact kernel-advertised camera/media nodes and validates
+their device numbers. The usual guarded desktop permission repair follows it.
+This preserves normal-user access to FUSE, current ALSA nodes, DRM render,
+KGSL/ION and the hardware codec nodes. Without this change, opening a camera
+could leave already-running services functional while preventing later Files,
+audio, graphics and video processes from opening their devices.
 
 Android log capture is capped at 4 MiB in `/run`. A live stress test sent more
 than 6 MiB of printable camera-log traffic; the file stayed below its cap, the
@@ -111,6 +112,9 @@ are deliberately left in place; live module removal is not attempted.
   sensor delivered eight frames with luma range 0–38 and standard deviation
   7.49. The rear sensor delivered eight frames but remained nearly uniform
   (range 0–7, standard deviation 0.46) while its lens faced the support surface.
+- `ubuntu/t630-camera-nodes.py` creates only video0/1, v4l-subdev0–16 and
+  media0/1 from their exact sysfs device numbers; it deliberately ignores the
+  separately governed video32/33 codec nodes.
 
 ## Building the sensor-service bridge
 

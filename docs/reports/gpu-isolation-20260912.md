@@ -178,6 +178,22 @@ All44 local regression tests passed; the new audio-selector/routing tests also
 passed on the tablet. No boot image, kernel/module binary, driver reset policy,
 speaker gain, protection limits, or authentication rules were changed.
 
+## Repeated sysmem trials — 2026-09-13
+
+On clean boot `84251a48-c3c6-44cf-81bf-5d9f046fb4f8`, three consecutive private
+`gpu-x11-sysmem` GNOME trials completed. Each held for 30 seconds, passed 11 bus
+health checks, loaded the isolated Turnip library and produced two distinct
+central image hashes while toggling Overview. The first and third final frames
+were visually inspected and rendered the GNOME overview correctly. No KGSL
+translation-fault, GPU-hang, kernel oops or panic line appeared, the real
+password-locked software GNOME process remained running, and no private test
+process remained afterward.
+
+This strengthens the case for sysmem mode and the bounded fallback, but does not
+erase the earlier reproduced UCHE translation fault or the GLES precision
+failures. Software GNOME therefore remains the default rather than promoting a
+three-run test into a broad GPU-stability claim.
+
 Evidence: `gnome-sysmem-coldboot-20260912.log/.png`,
 `gnome-sysmem-fallback-20260912.log`, `audio-session-repair-20260912.log`.
 

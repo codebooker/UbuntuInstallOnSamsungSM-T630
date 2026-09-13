@@ -17,14 +17,11 @@ source = Path('/usr/local/share/t630/mdev.conf')
 target = Path('/proc/1/root/etc/mdev.conf')
 assert not target.is_symlink()
 source_text = source.read_text()
-known_sources = {
-    base,
-    source_text,
-    source_text.replace('video3[23] 0:994 660\n', ''),
-    source_text.replace('(dri/)?renderD128 0:994 660\n', ''),
-    source_text.replace('video3[23] 0:994 660\n', '').replace(
-        '(dri/)?renderD128 0:994 660\n', ''),
-}
+known_sources = {base, source_text}
+for optional_rule in ('fuse 0:0 666\n', 'video3[23] 0:994 660\n',
+                      '(dri/)?renderD128 0:994 660\n'):
+    known_sources.update(text.replace(optional_rule, '')
+                         for text in tuple(known_sources))
 assert target.read_text() in known_sources, 'Unknown mdev configuration; preserving it.'
 subprocess.run(['install', '-m', '644', str(source), str(target)], check=True)
 conventional_nodes = {
@@ -35,6 +32,7 @@ conventional_nodes = {
     'urandom': (1, 9),
     'tty': (5, 0),
     'ptmx': (5, 2),
+    'fuse': (10, 229),
 }
 for name, device_number in conventional_nodes.items():
     node = Path('/dev') / name

@@ -79,14 +79,17 @@ device-number and sysfs-driver checks. VPU firmware staging runs before every
 GNOME launch. Browser video acceleration remains unimplemented.
 
 Later camera coexistence testing found that the camera module's `mdev -s` cold
-scan reset existing audio, graphics and codec nodes to root ownership. The
-camera mount helper now immediately reapplies exact device-number/driver-checked
-permissions, including DRM renderD128 and all kernel-advertised major-116 ALSA
-nodes. After a clean reboot, a camera start/stop followed by a normal-user
-1280x720 H.264 hardware decode passed; speaker audio remained unmuted. A
-generated 320x240 H.264 stream still stalls this vendor decoder, while generated
-320x240 VP9 and 1280x720 H.264 complete, so the launcher retains software
-fallback for unsupported/problematic streams.
+scan reset unrelated live device permissions, including FUSE, ALSA, graphics
+and codec nodes. The final camera helper therefore does not run a global scan:
+it creates only the exact kernel-advertised video0/1, v4l-subdev0–16 and media0/1
+nodes, then runs the exact-device permission verifier. A missing media1 node was
+recreated from its sysfs device number as a live creation-path test. Afterward,
+a cold camera start/capture/complete-stack stop followed by a normal-user
+1280x720 H.264 hardware decode passed; FUSE and all audio/render nodes retained
+their intended modes, and speaker audio remained unmuted. A generated 320x240
+H.264 stream still stalls this vendor decoder, while generated 320x240 VP9 and
+1280x720 H.264 complete, so the launcher retains software fallback for
+unsupported/problematic streams.
 
 ## GPU rendering
 

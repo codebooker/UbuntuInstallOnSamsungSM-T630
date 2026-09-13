@@ -84,10 +84,9 @@ done
 if [[ ! -d /sys/module/camera ]]; then
     insmod /opt/t630/vendor/lib/modules/camera.ko
 fi
-/proc/1/root/bin/busybox mdev -s
-# A camera cold scan must not revoke access from the already-running desktop,
-# audio server, GPU, or video player. Reapply only the validated conventional,
-# ALSA, render, codec and KGSL/ION ownership rules after mdev returns.
+# Create only the camera/media nodes exposed by this exact kernel. A global
+# mdev scan here would reset unrelated live desktop device permissions.
+python3 /usr/local/share/t630/t630-camera-nodes.py
 python3 /usr/local/share/t630/t630-device-permissions.py
 
 test -c /dev/media0

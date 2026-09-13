@@ -36,9 +36,10 @@ class CameraFrameValidationTests(unittest.TestCase):
 
     def test_camera_rescan_reapplies_desktop_permissions(self):
         mounts = (ROOT / "camera/t630-camera-mounts.sh").read_text()
-        scan = mounts.index("/proc/1/root/bin/busybox mdev -s")
+        nodes = mounts.index("python3 /usr/local/share/t630/t630-camera-nodes.py")
         repair = mounts.index("python3 /usr/local/share/t630/t630-device-permissions.py")
-        self.assertGreater(repair, scan)
+        self.assertGreater(repair, nodes)
+        self.assertNotIn("mdev -s", mounts)
         self.assertNotIn("chmod 666 /dev/null", mounts)
 
     def test_camera_control_bounds_owned_group_teardown(self):

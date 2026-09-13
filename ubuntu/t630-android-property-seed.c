@@ -242,6 +242,22 @@ int t630_check_calling_permission_ids(void)
     __asm__("_ZN7android22checkCallingPermissionERKNS_8String16EPiS3_");
 int t630_check_calling_permission_ids(void) { return 1; }
 
+/* The framework sensor-service adapter uses libbinder's PermissionCache for
+ * HIGH_SAMPLING_RATE_SENSORS.  Its real implementation calls the Java
+ * permission controller, which is another SystemServer component absent from
+ * this isolated runtime. */
+int t630_permission_cache_check(void)
+    __asm__("_ZN7android15PermissionCache15checkPermissionERKNS_8String16Eij");
+int t630_permission_cache_check(void) { return 1; }
+
+int t630_permission_cache_check_calling(void)
+    __asm__("_ZN7android15PermissionCache22checkCallingPermissionERKNS_8String16E");
+int t630_permission_cache_check_calling(void) { return 1; }
+
+int t630_check_permission(void)
+    __asm__("_ZN7android15checkPermissionERKNS_8String16Eijb");
+int t630_check_permission(void) { return 1; }
+
 void t630_permission_finish(void)
     __asm__("_ZN7android10permission17PermissionChecker32finishDataDeliveryFromDatasourceEiRKNS_7content22AttributionSourceStateE");
 void t630_permission_finish(void) {}

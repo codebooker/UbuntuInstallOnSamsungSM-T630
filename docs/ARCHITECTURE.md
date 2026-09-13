@@ -39,8 +39,10 @@ button behavior.
 - Video playback has a process-scoped adapter to the stock Qualcomm decoder.
 - Camera development runs the stock camera HAL in an isolated Android
   Binder/VNDK compatibility environment with stock assets mounted read-only.
-  The front sensor delivers I420 frames to a source-built NDK client and an
-  on-demand GStreamer bridge publishes them as a normal PipeWire video source.
+  Native SensorService and the stock framework HIDL adapter satisfy the rear
+  HAL's exposure-control dependency without running Java SystemServer. The
+  sensors deliver I420 frames to a source-built NDK client; the front stream is
+  published through an on-demand GStreamer/PipeWire bridge.
   Proprietary binaries are never part of this repository.
 
 ## Safety model

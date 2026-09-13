@@ -2,7 +2,8 @@
 
 Camera support is an active compatibility experiment. The front camera is now
 available to GNOME Camera as a standard PipeWire video source on the physical
-SM-T630.
+SM-T630. The rear camera also delivers frames through the native capture probe;
+desktop switching and final image-quality validation remain to do.
 
 ## What works
 
@@ -28,13 +29,26 @@ The rebooted prototype completed a 300-frame PipeWire-to-VP8/WebM recording.
 Opening and closing the GNOME Camera launcher repeatedly also starts and
 releases the sensor without leaving its PipeWire source behind.
 
+Camera ID 0 (rear, S5K3L6) now completes capture requests. The stock HAL needs
+`ro.boot.revision=5` to select the matching DV2 board profile. Its AEC then asks
+for `android.frameworks.sensorservice@1.0::ISensorManager/default`; without
+Android SystemServer that lookup blocked forever, starved the sensor request
+queue, and eventually tripped the camera watchdog. The compatibility stack now
+starts native SensorService and a small source-built launcher that registers
+Samsung's stock HIDL adapter. A clean automatic-stack test captured ten rear
+frames followed by ten front frames, and a separate rear burst delivered 60
+frames at 640x480/30 fps without killing the stack.
+
 ## What does not work yet
 
-- Camera ID 0 (rear, S5K3L6) opens and starts its sensor. Supplying the stock
-  `ro.boot.revision=5` value makes Samsung's HAL correctly select its DV2 sensor
-  profile, but the CSI path receives no start-of-frame event and the request
-  times out. Most rear EEPROM sections also fail the stock kernel's CRC checks;
-  this remains under investigation.
+- Camera ID 0 is not yet published to PipeWire. The provider accepts only one
+  active camera client, so desktop switching must stop the front stream before
+  starting the rear one.
+- The first recovered rear frame sequence was almost completely dark. CSI,
+  CSID and IFE interrupts plus request completion were all healthy, but a
+  well-lit physical target still needs to be captured before claiming image
+  quality. Several rear EEPROM sections report the same stock-kernel CRC
+  failures seen earlier.
 - The stack still depends on proprietary binaries extracted from the owner's
   exact `T630XXSBDZE3` stock firmware. They cannot be distributed here.
 
@@ -47,6 +61,8 @@ releases the sensor without leaving its PipeWire source behind.
 - `camera/t630-binder-placeholder.c` supplies the small nullable display-event
   service response CameraService expects while constructing its BufferQueue.
 - `camera/t630-camera-capture.c` is the Android NDK capture probe.
+- `camera/t630-sensorservice-hidl.cpp` registers the stock framework HIDL
+  sensor adapter without starting Android's Java SystemServer.
 - `ubuntu/t630-android-property-seed.c` supplies the small set of Android
   properties and permission stubs needed outside Android.
 - `ubuntu/t630-android-log-capture.py` records Android binary-log datagrams for
@@ -57,6 +73,20 @@ releases the sensor without leaving its PipeWire source behind.
   provide an on-demand lifecycle: the camera powers up when Camera opens and is
   released when the app exits.
 
+## Building the sensor-service bridge
+
+Install an Android NDK, set `ANDROID_NDK_ROOT`, then run:
+
+```sh
+tools/build_camera_sensor_bridge.sh
+```
+
+This creates an AArch64 property/permission shim and the HIDL adapter launcher
+under `build/camera/`. The current launcher resolves private C++ symbols from
+the stock libraries at runtime and is intentionally tied to the tested
+`T630XXSBDZE3` image. Do not reuse it with another firmware build until its
+symbols and behavior have been revalidated.
+
 ## Safety and redistribution
 
 Do not commit extracted `cameraserver`, camera HAL libraries, firmware,
@@ -64,7 +94,8 @@ calibration, raw logs, or captured images. The repository intentionally carries
 only the independently written compatibility source and the instructions for
 reconstructing a runtime from the user's matching stock package.
 
-Rear-camera work remains separate because the sensor starts but its CSI path
-does not deliver a frame; bypassing calibration checks would only hide one of
-the symptoms. The remaining front-camera work is physical orientation checking
-and wider application compatibility testing.
+The remaining camera work is rear image-quality validation, safe front/rear
+desktop switching, physical orientation checking, and wider application
+compatibility testing. Permission stubs are process-scoped to this isolated
+compatibility runtime; they are not loaded into GNOME or ordinary Ubuntu
+applications.

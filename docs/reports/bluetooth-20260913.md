@@ -98,3 +98,21 @@ following:
 The remaining early timeout is visible but no longer functional: the verified
 retry completes before BlueZ starts. Future work can move the retry into a
 kernel delayed-init path if eliminating that benign log line becomes valuable.
+
+## Bluetooth audio policy
+
+The Ubuntu PipeWire installation includes WirePlumber's BlueZ monitor and its
+SBC, AAC, aptX, LDAC, FastStream, LC3, and Opus codec plugins. An early
+prototype override had kept the monitor disabled because the session did not
+yet have logind or a working Bluetooth transport. Both dependencies now exist,
+so `51-t630-bluetooth.lua` enables the stock WirePlumber Bluetooth audio policy
+while leaving untested Bluetooth MIDI disabled.
+
+Registration of the audio endpoints and preservation of the built-in speaker
+and microphone are verified on the tablet. Actual A2DP playback still requires
+pairing a headset or speaker and is not yet claimed as physically tested.
+
+On physical boot `84251a48-c3c6-44cf-81bf-5d9f046fb4f8`, WirePlumber restarted
+cleanly with the new override. BlueZ then advertised both Audio Source and Audio
+Sink profiles. The 30% `Tablet_Speakers` sink and the `Tablet_Microphone` source
+remained present and default; WirePlumber logged no BlueZ-monitor failure.

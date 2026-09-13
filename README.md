@@ -29,8 +29,8 @@ full-screen GNOME desktop from internal storage.
 | Charging and manual shallow suspend/wake | Working |
 | Accelerometer, light, proximity, magnetometer | Working |
 | GPU rendering | Experimental; software fallback retained |
-| Stock hardware video decoding | Working for tested H.264/VP9 desktop playback |
-| Browser video acceleration | Not integrated |
+| Stock hardware video decoding | Working for tested FFmpeg H.264/VP9 and GStreamer H.264 playback |
+| Browser video acceleration | WebKit hardware selection verified; safe launcher blocked by the stock kernel's missing user-namespace support |
 | Cameras | Front and rear launchers publish one camera at a time to GNOME Camera; rear image quality still needs a well-lit physical test |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).

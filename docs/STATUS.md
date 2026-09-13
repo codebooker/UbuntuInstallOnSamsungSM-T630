@@ -29,7 +29,7 @@ explicit, previously validated sysfs paths instead.
 | Display sleep | Working | Power-key blank/lock/wake works |
 | System suspend | Experimental | Guarded manual shallow suspend and wake passed; automatic idle suspend remains disabled |
 | GPU | Experimental | Turnip/Zink can render GNOME, but a KGSL fault was reproduced; software fallback is retained |
-| Video | Partial | Stock decoder adapter passed tested H.264 and VP9 playback; browser integration is absent |
+| Video | Mostly working | FFmpeg H.264/VP9 and GStreamer H.264 use the stock decoder. A real WebKit process selected it, but no accelerated browser launcher is shipped because this kernel cannot provide WebKit's normal user-namespace sandbox |
 | Camera | Partial | Separate front and rear launchers publish one 640x480 camera at a time to GNOME Camera. A volatile eight-frame validator confirms delivery and cleans up both sensors; the rear lens-down result is nearly uniform, so a well-lit image and orientation validation remain |
 | Security | Lab configuration | GNOME password lock works, but the retained recovery compositor and USB root console mean this is not a hardened full-device login boundary |
 
@@ -41,6 +41,9 @@ explicit, previously validated sysfs paths instead.
 - Recovery to stock was prepared but has not been exercised end-to-end on the
   development tablet.
 - GPU acceleration is opt-in; software rendering is the safe fallback.
+- The stock kernel has `CONFIG_USER_NS` disabled. Firefox remains the safe
+  default browser; the verified WebKit hardware-video path is not exposed as a
+  launcher because it currently requires disabling WebKit's normal sandbox.
 - Automatic idle system suspend is disabled while power behavior is still being
   characterized.
 - Camera support still depends on proprietary files extracted from the owner's
@@ -49,4 +52,5 @@ explicit, previously validated sysfs paths instead.
   image-quality validation remains.
   See [CAMERA.md](CAMERA.md).
 
-For the complete test history, see the dated files in `docs/reports/`.
+For the complete test history, see the dated files in `docs/reports/`, including
+the [GStreamer and WebKit video report](reports/gstreamer-video-20260913.md).

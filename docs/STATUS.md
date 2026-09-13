@@ -30,7 +30,7 @@ explicit, previously validated sysfs paths instead.
 | System suspend | Experimental | Guarded manual shallow suspend and wake passed; automatic idle suspend remains disabled |
 | GPU | Experimental | Turnip/Zink can render GNOME, but a KGSL fault was reproduced; software fallback is retained |
 | Video | Partial | Stock decoder adapter passed tested H.264 and VP9 playback; browser integration is absent |
-| Camera | Partial | Separate front and rear launchers publish one 640x480 camera at a time to GNOME Camera. Rear capture no longer hangs and Android logs are bounded; well-lit image and orientation validation remain |
+| Camera | Partial | Separate front and rear launchers publish one 640x480 camera at a time to GNOME Camera. A volatile eight-frame validator confirms delivery and cleans up both sensors; the rear lens-down result is nearly uniform, so a well-lit image and orientation validation remain |
 | Security | Lab configuration | GNOME password lock works, but the retained recovery compositor and USB root console mean this is not a hardened full-device login boundary |
 
 ## Known limitations

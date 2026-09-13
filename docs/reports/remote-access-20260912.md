@@ -94,6 +94,15 @@ server. Exactly one process and one `127.0.0.1:8765` listener remained, the log
 was empty, the endpoint returned HTTP 200, and a 1920x1200 PNG frame crossed the
 authenticated SSH tunnel successfully.
 
+## Lock-screen wake verification — 2026-09-13
+
+After the display idled to brightness zero, the bounded synthetic Power-event
+helper exercised the ordinary userspace wake path. Brightness returned from the
+saved value of 254, the blank-state file was removed, and GNOME ScreenSaver
+continued to report active. A fresh 1920x1200 frame through the loopback service
+showed the GNOME password screen and on-screen keyboard; no unlock or password
+input was performed.
+
 ## Disable
 
 Using USB serial, first disable the dedicated dispatcher hook (remove its execute

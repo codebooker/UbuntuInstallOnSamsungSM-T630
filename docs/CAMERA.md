@@ -21,6 +21,13 @@ a complete Android system the watchdog reports failures through system_server
 and tombstoned. Neither exists here, and leaving it enabled can terminate the
 hybrid camera stack during an ordinary HAL timeout.
 
+`ubuntu/test-t630-camera-frame.py` provides a repeatable, privacy-preserving
+physical check. Run it through `t630-gnome-run` with either `front` or `rear`.
+It captures eight I420 frames into the tablet user's volatile runtime directory,
+reports only aggregate luma statistics as JSON, then deletes the raw stream and
+turns the camera off in a `finally` block. It never writes a photograph to the
+Ubuntu filesystem.
+
 Android log capture is capped at 4 MiB in `/run`. A live stress test sent more
 than 6 MiB of printable camera-log traffic; the file stayed below its cap, the
 logger remained alive, and the front stream continued running. This prevents a
@@ -81,6 +88,11 @@ source active.
 - `ubuntu/t630-camera-control`, `t630-camera-app`, and the two desktop files
   provide an exclusive, on-demand lifecycle: the selected camera powers up when
   its launcher opens and is released when the app exits.
+- `ubuntu/test-t630-camera-frame.py` validates delivery and contrast without
+  retaining a frame. On boot `4d826579-5c53-47e3-8edd-dc3d6ffd8d0b`, the front
+  sensor delivered eight frames with luma range 0–38 and standard deviation
+  7.49. The rear sensor delivered eight frames but remained nearly uniform
+  (range 0–7, standard deviation 0.46) while its lens faced the support surface.
 
 ## Building the sensor-service bridge
 

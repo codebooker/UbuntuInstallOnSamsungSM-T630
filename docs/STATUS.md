@@ -29,7 +29,7 @@ explicit, previously validated sysfs paths instead.
 | Display sleep | Working | Power-key blank/lock/wake works |
 | System suspend | Experimental | Guarded manual shallow suspend and wake passed; automatic idle suspend remains disabled |
 | GPU | Experimental | Turnip/Zink can render GNOME, but a KGSL fault was reproduced; software fallback is retained |
-| Video | Mostly working | FFmpeg H.264/VP9 and GStreamer H.264 use the stock decoder. A real WebKit process selected it, but no accelerated browser launcher is shipped because this kernel cannot provide WebKit's normal user-namespace sandbox |
+| Video | Mostly working | FFmpeg and GStreamer H.264/VP9 use the stock decoder. A real WebKit process selected it, but no accelerated browser launcher is shipped because this kernel cannot provide WebKit's normal user-namespace sandbox |
 | Camera | Partial | Separate front and rear launchers publish one 640x480 camera at a time to GNOME Camera. A volatile eight-frame validator confirms delivery and cleans up both sensors; the rear lens-down result is nearly uniform, so a well-lit image and orientation validation remain |
 | Security | Lab configuration | GNOME password lock works, but the retained recovery compositor and USB root console mean this is not a hardened full-device login boundary |
 

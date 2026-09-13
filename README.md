@@ -29,7 +29,7 @@ full-screen GNOME desktop from internal storage.
 | Charging and manual shallow suspend/wake | Working |
 | Accelerometer, light, proximity, magnetometer | Working |
 | GPU rendering | Experimental; software fallback retained |
-| Stock hardware video decoding | Working for tested FFmpeg H.264/VP9 and GStreamer H.264 playback |
+| Stock hardware video decoding | Working for tested FFmpeg and GStreamer H.264/VP9 playback |
 | Browser video acceleration | WebKit hardware selection verified; safe launcher blocked by the stock kernel's missing user-namespace support |
 | Cameras | Front and rear launchers publish one camera at a time to GNOME Camera; rear image quality still needs a well-lit physical test |
 

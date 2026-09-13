@@ -50,6 +50,9 @@ On boot `e3fdbec7-82e2-483a-b60e-41673728ffa5`:
   exited normally in 254 ms without a bounded sink workaround.
 - A captured 1280×720 NV12 frame matched GStreamer's software decode byte for
   byte after applying each buffer's advertised plane offsets and strides.
+- GStreamer's `v4l2vp9dec` decoded and drained a 60-frame 1280×720 VP9 stream in
+  235 ms. Its complete 82,944,000-byte I420 output matched `avdec_vp9` byte for
+  byte after normal video-format conversion.
 - The existing FFmpeg adapter path decoded all 60 frames through
   `h264_v4l2m2m`; its complete NV12 output matched software decode byte for
   byte.

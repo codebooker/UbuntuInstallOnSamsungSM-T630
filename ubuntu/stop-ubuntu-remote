@@ -71,4 +71,7 @@ for target in /run/ubuntu/run/user/1000/doc /run/ubuntu/run/user/1000/gvfs \
     done
 done
 sync
-reboot -f
+# This script finishes in the outer recovery root, but an SSH invocation can
+# retain Ubuntu's PATH. Name BusyBox explicitly so we never resolve systemd's
+# chroot-aware reboot wrapper and silently leave the tablet running unmounted.
+/bin/busybox reboot -f

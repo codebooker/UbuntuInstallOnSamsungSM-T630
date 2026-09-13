@@ -13,7 +13,12 @@ case "$1" in
 esac
 
 exec 9>/run/t630-camera-control.lock
-flock -x 9
+if [ "$action" = disable ]; then
+    flock -x 9
+elif ! flock -n 9; then
+    echo 'Camera transition already in progress; retry after it finishes.' >&2
+    exit 75
+fi
 
 pid_matches() {
     local file=$1 marker=$2 pid cmdline
@@ -26,9 +31,33 @@ pid_matches() {
 }
 
 stop_group() {
-    local file=$1 marker=$2 pid attempt
+    local file=$1 marker=$2 pid attempt candidate group executable
     if pid_matches "$file" "$marker"; then
         read -r pid <"$file"
+
+        if [ "$marker" = /usr/local/sbin/t630-camera-bridge ]; then
+            # Stop the downstream consumer first. The capture client ignores
+            # SIGPIPE and unwinds through ACameraCaptureSession_close(), which
+            # avoids leaving stale CDM/IFE state in Samsung's kernel driver.
+            ps -eo pid=,pgid=,exe= | while read -r candidate group executable; do
+                if [ "$group" = "$pid" ] &&
+                   [ "$executable" = /usr/bin/gst-launch-1.0 ]; then
+                    kill -TERM "$candidate" 2>/dev/null || true
+                fi
+            done
+            attempt=0
+            while pid_matches "$file" "$marker" && [ "$attempt" -lt 15 ]; do
+                attempt=$((attempt + 1))
+                sleep .2
+            done
+        fi
+
+        # Fallback for a bridge that could not unwind, and the normal bounded
+        # teardown for the compatibility service stack.
+        if ! pid_matches "$file" "$marker"; then
+            rm -f "$file"
+            return 0
+        fi
         kill -TERM -- "-$pid" 2>/dev/null || true
         attempt=0
         while pid_matches "$file" "$marker"; do
@@ -77,10 +106,10 @@ if pid_matches /run/t630-camera-bridge.pid /usr/local/sbin/t630-camera-bridge &&
 fi
 
 stop_group /run/t630-camera-bridge.pid /usr/local/sbin/t630-camera-bridge || true
-# CameraService releases the previous exclusive client asynchronously after the
-# capture process exits. Starting the other sensor immediately can return
-# ACAMERA_ERROR_CAMERA_IN_USE even though the owned process is already gone.
-sleep 2
+# CameraService and the downstream CDM/IFE driver release the previous client
+# asynchronously. A real hardware quiesce also avoids the stock driver's stale
+# command-buffer bug during front/rear transitions.
+sleep 5
 
 bridge_attempt=0
 while [ "$bridge_attempt" -lt 3 ]; do
@@ -99,7 +128,7 @@ while [ "$bridge_attempt" -lt 3 ]; do
         sleep 1
     done
     stop_group /run/t630-camera-bridge.pid /usr/local/sbin/t630-camera-bridge || true
-    sleep 2
+    sleep 5
 done
 echo 'Camera source did not appear in PipeWire after three bounded attempts.' >&2
 exit 1

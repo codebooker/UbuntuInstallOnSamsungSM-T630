@@ -17,6 +17,13 @@ class RemoteAccessTests(unittest.TestCase):
         self.assertIn("http://127.0.0.1:8765/", text)
         self.assertIn('test "$attempt" -lt 10', text)
 
+    def test_clean_reboot_does_not_resolve_ubuntu_systemd_wrapper(self):
+        helper = (ROOT / "ubuntu/stop-ubuntu-remote").read_text()
+        launcher = (ROOT / "ubuntu/t630-remote-start").read_text()
+        self.assertIn("/bin/busybox reboot -f", helper)
+        self.assertNotIn("\nreboot -f", helper)
+        self.assertIn("pre_explicit_reboot=a0ac11c", launcher)
+
     def test_screen_server_has_its_own_single_instance_lock(self):
         source = (ROOT / "ubuntu/t630_screen.py").read_text()
         self.assertIn("/run/t630-screen-service.lock", source)

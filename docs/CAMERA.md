@@ -4,7 +4,7 @@ Camera support is an active compatibility experiment. The front camera is
 available to GNOME Camera as a standard PipeWire video source on the physical
 SM-T630. The separate Rear Camera launcher starts rear ID 0 with a guarded
 manual exposure baseline and rear-only tone correction; physical confirmation
-of that final profile remains.
+of the latest color profile remains.
 
 ## What works
 
@@ -29,7 +29,7 @@ the same indoor target, this moved it from 10 ms at sensitivity 58 (mean luma
 different: its preview template returns zero-filled buffers, while its still
 template returns real but severely underexposed pixels. Rear therefore retains
 the still template, disables AE so Samsung cannot replace explicit sensor
-fields, and requests 60 ms at sensitivity 1600. The capture log reports one set
+fields, and requests 30 ms at sensitivity 800. The capture log reports one set
 of resulting exposure metadata per run rather than every completed request.
 
 `ubuntu/test-t630-camera-frame.py` provides a repeatable, privacy-preserving
@@ -86,11 +86,23 @@ frames followed by ten front frames, and a separate rear burst delivered 60
 frames at 640x480/30 fps without killing the stack. Outside the full Android
 framework, its preview template delivers zero-filled YUV while claiming
 converged AE; the still template instead exposes the real low-valued image. A
-manual 60 ms / ISO 1600 request raised raw mean luma from 1.17 to 5.89. A scoped
-GStreamer gamma 2.5 stage raised the published rear-source mean to 53.84 while
-preserving black at zero. Camera IDs 2 and 3 produce bright frames, but physical
+manual 60 ms / ISO 1600 diagnostic request raised raw mean luma from 1.17 to
+5.89. A scoped GStreamer gamma 2.5 stage recovered shadow detail. When a brighter
+real scene made that profile visibly overexposed (published mean 206.37), the
+sensor baseline was reduced to 30 ms / ISO 800. The corrected live source
+measured mean luma 162.26 with 1.39% near-white pixels before color tuning, and
+160.35 with no near-white pixels afterward. Camera IDs 2 and 3 produce bright frames, but physical
 inspection confirms that ID 3 is another front-camera endpoint; neither can
 substitute for rear ID 0.
+
+Rear manual AE leaves Samsung's automatic white balance inactive. Result
+metadata reports `awb_state=0` and gains `1.391,1.000,1.000,2.469`. The HAL
+advertises every standard white-balance preset, but an incandescent-preset
+trial entered an active session without delivering a frame. The bridge therefore
+keeps the known-good AUTO request and passes only rear I420 through the small
+source-built `t630-yuv-tune` filter. Its current 0.92× red and 1.25× blue gains
+move the measured chroma away from yellow while leaving luma essentially
+unchanged; final visual tuning is still in progress.
 
 The provider allows one camera client at a time. `t630-camera-control` therefore
 stops the current bridge before selecting `front` or `rear`; it never keeps both
@@ -98,10 +110,14 @@ sensors powered. Both source transitions and cleanup were verified through
 PipeWire, and the Rear Camera desktop launcher opened GNOME Camera with the rear
 source active.
 
-Bridge teardown first requests a normal exit, then bounds an unresponsive
-GStreamer/capture group and escalates only that still-validated owned process
-group. The volatile validator reports success only after this cleanup passes,
-preventing a delivered frame from hiding a stuck camera process.
+Bridge teardown closes the downstream GStreamer consumer first. The capture
+client ignores SIGPIPE, observes the closed pipe as a normal write failure, and
+unwinds through `ACameraCaptureSession_close()` before the control helper uses a
+bounded owned-process-group fallback. This matters because a rapid queued
+front/rear transition reproduced a stock `camera.ko` panic in
+`cdm_write_genirq`; nonblocking transition locks and a five-second hardware
+quiesce now prevent stale switch requests from reaching that path. The volatile
+validator reports success only after cleanup passes.
 
 Closing Camera also stops the isolated Android camera stack and removes its
 readiness marker. This releases the provider's observed idle CPU and roughly
@@ -111,10 +127,10 @@ are deliberately left in place; live module removal is not attempted.
 
 ## Remaining limitations
 
-- Rear ID 0 does not provide trustworthy automatic exposure outside Android.
-  The current 60 ms / ISO 1600 baseline and gamma 2.5 correction are bounded by
-  the sensor's published 20,400–250,002,000 ns and ISO 58–2807 ranges, but still
-  need visual exposure, noise, frame-rate, and orientation confirmation.
+- Rear ID 0 does not provide trustworthy automatic exposure or white balance
+  outside Android. The current 30 ms / ISO 800 baseline, gamma 2.5 tone lift,
+  and userspace color correction remain conservative fixed profiles rather than
+  scene-aware 3A; wider lighting, noise, frame-rate, and color tests remain.
 - The stack still depends on proprietary binaries extracted from the owner's
   exact `T630XXSBDZE3` stock firmware. They cannot be distributed here.
 
@@ -127,6 +143,8 @@ are deliberately left in place; live module removal is not attempted.
 - `camera/t630-binder-placeholder.c` supplies the small nullable display-event
   service response CameraService expects while constructing its BufferQueue.
 - `camera/t630-camera-capture.c` is the Android NDK capture probe.
+- `camera/t630-yuv-tune.c` is the bounded streaming I420 red/blue correction
+  used only for the rear source.
 - `camera/t630-sensorservice-hidl.cpp` registers the stock framework HIDL
   sensor adapter without starting Android's Java SystemServer.
 - `ubuntu/t630-android-property-seed.c` supplies the small set of Android
@@ -182,5 +200,14 @@ responded by increasing to 41.7 ms at sensitivity 994, but that path's final
 frame was entirely black. IDs 2 and 3 delivered bright frames; physical
 inspection of ID 3 showed the front camera, so the rear bridge remains mapped
 to ID 0. Switching ID 0 back to the still template recovered real pixels; an
-authoritative 60 ms / ISO 1600 request plus rear-only gamma 2.5 raised its
-published mean luma to 53.84. Each validator removed its volatile raw stream.
+authoritative 60 ms / ISO 1600 diagnostic request plus rear-only gamma 2.5
+proved the path, but was too bright in the later physical scene. The deployed
+30 ms / ISO 800 profile measured mean luma 160.35 with no near-white pixels
+after userspace color tuning. Each validator removed its volatile raw stream.
+
+Build the Ubuntu-native color filter on the tablet (or another AArch64 Ubuntu
+host) with:
+
+```sh
+tools/build_camera_color_filter.sh
+```

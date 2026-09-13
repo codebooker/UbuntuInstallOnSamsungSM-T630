@@ -6,9 +6,11 @@ test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
 test "$(uname -r)" = 5.4.274-qgki-31225846-abT630XXSBDZE3
 test "$(grep '^PARTNAME=' /sys/class/block/sda26/uevent)" = PARTNAME=super
 test "$(cat /sys/class/block/sda26/size)" = 18432000
+super_device=$(cat /sys/class/block/sda26/dev)
+[[ "$super_device" =~ ^[0-9]+:[0-9]+$ ]]
 
-system_table='0 12036096 linear 259:10 2048
-12036096 16248 linear 259:10 17401856'
+system_table="0 12036096 linear $super_device 2048
+12036096 16248 linear $super_device 17401856"
 if ! dmsetup info t630-stock-system >/dev/null 2>&1; then
     printf '%s\n' "$system_table" | dmsetup create t630-stock-system --readonly
 fi

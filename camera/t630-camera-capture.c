@@ -4,6 +4,7 @@
 #include <media/NdkImage.h>
 #include <media/NdkImageReader.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -208,18 +209,30 @@ static void capture_completed(void *context, ACameraCaptureSession *session,
         ACameraMetadata_const_entry exposure = {0};
         ACameraMetadata_const_entry sensitivity = {0};
         ACameraMetadata_const_entry ae_state = {0};
+        ACameraMetadata_const_entry awb_state = {0};
+        ACameraMetadata_const_entry color_gains = {0};
         camera_status_t exposure_status = ACameraMetadata_getConstEntry(
             result, ACAMERA_SENSOR_EXPOSURE_TIME, &exposure);
         camera_status_t sensitivity_status = ACameraMetadata_getConstEntry(
             result, ACAMERA_SENSOR_SENSITIVITY, &sensitivity);
         camera_status_t ae_status = ACameraMetadata_getConstEntry(
             result, ACAMERA_CONTROL_AE_STATE, &ae_state);
+        camera_status_t awb_status = ACameraMetadata_getConstEntry(
+            result, ACAMERA_CONTROL_AWB_STATE, &awb_state);
+        camera_status_t gains_status = ACameraMetadata_getConstEntry(
+            result, ACAMERA_COLOR_CORRECTION_GAINS, &color_gains);
         if (exposure_status == ACAMERA_OK && exposure.count > 0 &&
             sensitivity_status == ACAMERA_OK && sensitivity.count > 0) {
             fprintf(stderr, "capture metadata: exposure=%lldns sensitivity=%d",
                     (long long)exposure.data.i64[0], sensitivity.data.i32[0]);
             if (ae_status == ACAMERA_OK && ae_state.count > 0)
                 fprintf(stderr, " ae_state=%u", ae_state.data.u8[0]);
+            if (awb_status == ACAMERA_OK && awb_state.count > 0)
+                fprintf(stderr, " awb_state=%u", awb_state.data.u8[0]);
+            if (gains_status == ACAMERA_OK && color_gains.count >= 4)
+                fprintf(stderr, " gains=%.3f,%.3f,%.3f,%.3f",
+                        color_gains.data.f[0], color_gains.data.f[1],
+                        color_gains.data.f[2], color_gains.data.f[3]);
             fprintf(stderr, "\n");
             capture_metadata_reported = 1;
         }
@@ -287,6 +300,10 @@ int main(int argc, char **argv) {
     requested_frames = argc > 8 ? atoi(argv[8]) : 1;
     int result = 1;
 
+    /* When the downstream GStreamer consumer closes, turn EPIPE into a normal
+     * write failure so main can close the capture session and camera device. */
+    signal(SIGPIPE, SIG_IGN);
+
     if ((strcmp(output_format, "pgm") != 0 &&
          strcmp(output_format, "i420") != 0) ||
         requested_frames < 0 ||
@@ -312,6 +329,25 @@ int main(int argc, char **argv) {
     fprintf(stderr, "available cameras:");
     for (int i = 0; i < ids->numCameras; ++i) fprintf(stderr, " %s", ids->cameraIds[i]);
     fprintf(stderr, "\nopening camera %s\n", camera_id);
+
+    /* Record the advertised modes for diagnosis. The rear HAL produced no
+     * frames with the tested incandescent preset despite advertising it. */
+    ACameraMetadata *characteristics = NULL;
+    camera_status = ACameraManager_getCameraCharacteristics(
+        manager, camera_id, &characteristics);
+    if (camera_status == ACAMERA_OK && characteristics != NULL) {
+        ACameraMetadata_const_entry awb_modes = {0};
+        if (ACameraMetadata_getConstEntry(
+                characteristics, ACAMERA_CONTROL_AWB_AVAILABLE_MODES,
+                &awb_modes) == ACAMERA_OK) {
+            fprintf(stderr, "available AWB modes:");
+            for (uint32_t i = 0; i < awb_modes.count; ++i) {
+                fprintf(stderr, " %u", awb_modes.data.u8[i]);
+            }
+            fprintf(stderr, "\n");
+        }
+        ACameraMetadata_free(characteristics);
+    }
 
     AImageReader *reader = NULL;
     fprintf(stderr, "image reader: %dx%d, %d buffers, %ds timeout\n",
@@ -377,8 +413,8 @@ int main(int argc, char **argv) {
      * fields even while its AE result claims convergence near 40 ms. Rear AE
      * must be off for the explicit sensor fields below to become authoritative. */
     if (strcmp(camera_id, "0") == 0) {
-        const int64_t rear_exposure_ns = 60000000;
-        const int32_t rear_sensitivity = 1600;
+        const int64_t rear_exposure_ns = 30000000;
+        const int32_t rear_sensitivity = 800;
         if (check_status("set rear exposure", ACaptureRequest_setEntry_i64(
                 request, ACAMERA_SENSOR_EXPOSURE_TIME, 1, &rear_exposure_ns)) != 0 ||
             check_status("set rear sensitivity", ACaptureRequest_setEntry_i32(

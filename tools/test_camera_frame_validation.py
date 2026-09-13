@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import importlib.util
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -41,6 +43,9 @@ class CameraFrameValidationTests(unittest.TestCase):
         self.assertGreater(repair, nodes)
         self.assertNotIn("mdev -s", mounts)
         self.assertNotIn("chmod 666 /dev/null", mounts)
+        self.assertIn("super_device=$(cat /sys/class/block/sda26/dev)", mounts)
+        self.assertIn('linear $super_device 2048', mounts)
+        self.assertNotIn("linear 259:10", mounts)
 
     def test_camera_control_bounds_owned_group_teardown(self):
         control = (ROOT / "ubuntu/t630-camera-control").read_text()
@@ -49,6 +54,12 @@ class CameraFrameValidationTests(unittest.TestCase):
         self.assertIn('test "$attempt" -lt 16', control)
         self.assertIn("cmdline=$( { tr", control)
         self.assertIn("} 2>/dev/null) || return 1", control)
+        self.assertIn("flock -n 9", control)
+        self.assertIn("exit 75", control)
+        self.assertIn("/usr/bin/gst-launch-1.0", control)
+        self.assertIn("ACameraCaptureSession_close()", control)
+        self.assertIn("ps -eo pid=,pgid=,exe= | while read", control)
+        self.assertNotIn("done < <(", control)
         disable = control.index('if [ "$action" = disable ]')
         restart = control.index('if ! pid_matches /run/t630-camera-stack.pid')
         branch = control[disable:restart]
@@ -56,7 +67,7 @@ class CameraFrameValidationTests(unittest.TestCase):
         self.assertIn('stop_group /run/t630-camera-stack.pid', branch)
         self.assertIn('rm -f /run/t630-camera-ready', branch)
         self.assertIn('bridge_attempt=0', control)
-        self.assertIn('ACAMERA_ERROR_CAMERA_IN_USE', control)
+        self.assertIn('CameraService and the downstream CDM/IFE driver', control)
 
     def test_camera_launcher_keeps_bridge_for_existing_snapshot(self):
         launcher = (ROOT / "ubuntu/t630-camera-app").read_text()
@@ -76,11 +87,17 @@ class CameraFrameValidationTests(unittest.TestCase):
         self.assertIn("ACAMERA_CONTROL_MODE_AUTO", capture)
         self.assertIn("ACAMERA_CONTROL_AE_MODE_OFF : ACAMERA_CONTROL_AE_MODE_ON", capture)
         self.assertIn("ACAMERA_CONTROL_AWB_MODE_AUTO", capture)
+        self.assertIn("ACAMERA_CONTROL_AWB_AVAILABLE_MODES", capture)
+        self.assertIn("produced no", capture)
+        self.assertNotIn("rear_awb_mode", capture)
         self.assertIn("ACAMERA_CONTROL_AF_MODE_CONTINUOUS_VIDEO", capture)
-        self.assertIn("rear_exposure_ns = 60000000", capture)
-        self.assertIn("rear_sensitivity = 1600", capture)
+        self.assertIn("rear_exposure_ns = 30000000", capture)
+        self.assertIn("rear_sensitivity = 800", capture)
         self.assertIn('dlsym(library, "ABinderProcess_startThreadPool")', capture)
         self.assertIn("capture metadata: exposure=", capture)
+        self.assertIn("ACAMERA_COLOR_CORRECTION_GAINS", capture)
+        self.assertIn("gains=%.3f,%.3f,%.3f,%.3f", capture)
+        self.assertIn("signal(SIGPIPE, SIG_IGN)", capture)
 
     def test_ndk_build_includes_capture_client(self):
         build = (ROOT / "tools/build_camera_sensor_bridge.sh").read_text()
@@ -95,6 +112,34 @@ class CameraFrameValidationTests(unittest.TestCase):
         self.assertIn("image_filter=", front)
         self.assertNotIn("gamma=", front)
         self.assertIn("gamma gamma=2.5", rear)
+        self.assertIn("t630-yuv-tune 640 480 920 1250", rear)
+        self.assertIn('color_filter=(cat)', front)
+
+    def test_rear_color_filter_is_bounded_and_streaming(self):
+        source = (ROOT / "camera/t630-yuv-tune.c").read_text()
+        build = (ROOT / "tools/build_camera_color_filter.sh").read_text()
+        self.assertIn("red-permille blue-permille", source)
+        self.assertIn("red_gain < 500", source)
+        self.assertIn("blue_gain > 2000", source)
+        self.assertIn("signal(SIGPIPE, SIG_IGN)", source)
+        self.assertIn("truncated I420 frame", source)
+        self.assertIn("-Werror", build)
+
+    def test_rear_color_filter_reduces_yellow_chroma(self):
+        with tempfile.TemporaryDirectory() as directory:
+            binary = Path(directory) / "t630-yuv-tune"
+            subprocess.run([
+                "cc", "-std=c11", "-O2", "-Wall", "-Wextra", "-Werror",
+                str(ROOT / "camera/t630-yuv-tune.c"), "-o", str(binary),
+            ], check=True)
+            # One 2x2 I420 block: neutral luma with low U/high V is yellow.
+            frame = bytes([128, 128, 128, 128, 90, 150])
+            result = subprocess.run(
+                [str(binary), "2", "2", "920", "1250"],
+                input=frame, check=True, capture_output=True).stdout
+            self.assertEqual(len(result), len(frame))
+            self.assertGreater(result[4], frame[4])
+            self.assertLess(result[5], frame[5])
 
 if __name__ == "__main__":
     unittest.main()

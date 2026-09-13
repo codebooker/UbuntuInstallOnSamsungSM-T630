@@ -31,7 +31,7 @@ full-screen GNOME desktop from internal storage.
 | GPU rendering | Experimental; software fallback retained |
 | Stock hardware video decoding | Working for tested FFmpeg and GStreamer H.264/VP9 playback |
 | Browser video acceleration | WebKit hardware selection verified; safe launcher blocked by the stock kernel's missing user-namespace support |
-| Cameras | Front camera is correctly exposed; rear ID 0 now uses a manual sensor baseline plus a scoped tone lift, pending physical confirmation |
+| Cameras | Front works; rear ID 0 uses a manual sensor baseline, scoped tone lift, and userspace color correction, with final rear tuning in progress |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).
 

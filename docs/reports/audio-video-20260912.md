@@ -91,6 +91,12 @@ H.264 stream still stalls this vendor decoder, while generated 320x240 VP9 and
 1280x720 H.264 complete, so the launcher retains software fallback for
 unsupported/problematic streams.
 
+The revised outer-initramfs mdev rules were then exercised from the real USB
+recovery environment (not from inside the Ubuntu chroot). `/dev/null` and
+`/dev/fuse` remained root:root 0666; KGSL, ION, video32/33 and renderD128
+remained root:render 0660; ALSA control remained root:audio 0660. This matches
+the context of the delayed Wi-Fi scan that originally exposed the problem.
+
 ## GPU rendering
 
 KGSL reports Adreno642Lv1. Ubuntu Mesa 25.2.8's packaged Vulkan driver enumerates

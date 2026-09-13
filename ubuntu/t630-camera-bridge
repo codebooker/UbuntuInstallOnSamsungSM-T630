@@ -1,0 +1,15 @@
+#!/bin/bash
+# Publish the working Samsung front camera as a normal PipeWire video source.
+set -euo pipefail
+
+test "$(id -u)" = 0
+test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
+test -f /run/t630-camera-ready
+test -x /data/vendor/camera/t630-camera-capture
+test -x /usr/local/bin/t630-gnome-run
+
+frame_bytes=$((640 * 480 * 3 / 2))
+android_libraries=/system/lib64:/system/lib64/bootstrap:/apex/com.android.i18n/lib64:/dev/t630-vndk30/lib64:/vendor/lib64:/vendor/lib64/hw
+
+env LD_LIBRARY_PATH="$android_libraries" LD_PRELOAD=/dev/t630-android-property-seed.so /data/vendor/camera/t630-camera-capture 1 - 640 480 4 0 i420 0 2>/run/t630-camera-capture-stream.log |
+    /usr/local/bin/t630-gnome-run gst-launch-1.0 -q fdsrc fd=0 do-timestamp=true blocksize="$frame_bytes" ! rawvideoparse format=i420 width=640 height=480 framerate=30/1 ! queue leaky=downstream max-size-buffers=2 ! pipewiresink mode=provide stream-properties="props,media.class=Video/Source,node.name=t630_front_camera,node.description=SM-T630_Front_Camera"

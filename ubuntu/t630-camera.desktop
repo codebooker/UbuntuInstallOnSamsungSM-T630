@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Camera
+Comment=Take pictures and videos with the SM-T630 front camera
+Type=Application
+Exec=/usr/local/bin/t630-camera-app
+Icon=org.gnome.Snapshot
+Terminal=false
+Categories=AudioVideo;Video;Recorder;GNOME;GTK;
+Keywords=picture;photos;camera;webcam;snapshot;
+X-Purism-FormFactor=Workstation;Mobile;

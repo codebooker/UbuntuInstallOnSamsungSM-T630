@@ -50,13 +50,20 @@ start_android_service /run/t630-camera-provider.out \
     /vendor/bin/hw/vendor.samsung.hardware.camera.provider@4.0-service_64
 sleep 24
 start_android_service /run/t630-cameraserver.out /system/bin/cameraserver
-sleep 3
+attempt=0
+until timeout 8 env LD_PRELOAD="$preload" /system/bin/cmd media.camera help \
+        2>/dev/null | grep -q 'set-watchdog'; do
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 20
+    sleep 1
+done
 
 # There is no tombstoned/system_server in this hybrid runtime. A timed-out HAL
 # call must return an ordinary error, not ask Android's watchdog to abort the
 # compatibility stack (and with it the surrounding Ubuntu userspace).
 timeout 8 env LD_PRELOAD="$preload" /system/bin/cmd media.camera \
-    set-watchdog 0 >/run/t630-camera-watchdog.out 2>&1 || true
+    set-watchdog 0 >/run/t630-camera-watchdog.out 2>&1
+test ! -s /run/t630-camera-watchdog.out
 sleep 2
 touch /run/t630-camera-ready
 

@@ -39,9 +39,9 @@ button behavior.
 - Video playback has a process-scoped adapter to the stock Qualcomm decoder.
 - Camera development runs the stock camera HAL in an isolated Android
   Binder/VNDK compatibility environment with stock assets mounted read-only.
-  The front sensor now delivers frames to a source-built NDK client;
-  PipeWire/Video4Linux exposure is the next integration layer. Proprietary
-  binaries are never part of this repository.
+  The front sensor delivers I420 frames to a source-built NDK client and an
+  on-demand GStreamer bridge publishes them as a normal PipeWire video source.
+  Proprietary binaries are never part of this repository.
 
 ## Safety model
 

@@ -16,8 +16,11 @@ void ABinderProcess_setThreadPoolMaxThreadCount(uint32_t num_threads);
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t condition = PTHREAD_COND_INITIALIZER;
 static int frame_result = 0;
-static int frame_claimed = 0;
+static int frame_in_progress = 0;
+static int frames_written = 0;
+static int requested_frames = 1;
 static const char *output_path;
+static const char *output_format;
 
 static void finish(int result) {
     pthread_mutex_lock(&lock);
@@ -37,54 +40,90 @@ static void image_available(void *context, AImageReader *reader) {
         return;
     }
 
-    /* More than one Binder worker may receive an image callback before the
-     * main thread closes the repeating request. Claim exactly one frame so
-     * concurrent callbacks cannot truncate and rewrite the same output. */
+    /* Serialize callbacks. acquireLatestImage() discards stale frames while
+     * the writer is busy, which is preferable to blocking the camera HAL. */
     pthread_mutex_lock(&lock);
-    if (frame_claimed || frame_result != 0) {
+    if (frame_in_progress || frame_result != 0) {
         pthread_mutex_unlock(&lock);
         AImage_delete(image);
         return;
     }
-    frame_claimed = 1;
+    frame_in_progress = 1;
     pthread_mutex_unlock(&lock);
 
-    int32_t width = 0, height = 0, row_stride = 0, pixel_stride = 0;
-    uint8_t *data = NULL;
-    int data_length = 0;
+    int32_t width = 0, height = 0;
     if (AImage_getWidth(image, &width) != AMEDIA_OK ||
-        AImage_getHeight(image, &height) != AMEDIA_OK ||
-        AImage_getPlaneRowStride(image, 0, &row_stride) != AMEDIA_OK ||
-        AImage_getPlanePixelStride(image, 0, &pixel_stride) != AMEDIA_OK ||
-        AImage_getPlaneData(image, 0, &data, &data_length) != AMEDIA_OK) {
-        fprintf(stderr, "reading image plane failed\n");
+        AImage_getHeight(image, &height) != AMEDIA_OK) {
+        fprintf(stderr, "reading image dimensions failed\n");
         AImage_delete(image);
         finish(-1);
         return;
     }
 
-    FILE *file = fopen(output_path, "wb");
+    FILE *file = strcmp(output_path, "-") == 0 ? stdout :
+        fopen(output_path, frames_written == 0 ? "wb" : "ab");
     if (file == NULL) {
         perror("opening output");
         AImage_delete(image);
         finish(-1);
         return;
     }
-    fprintf(file, "P5\n%d %d\n255\n", width, height);
-    for (int y = 0; y < height; ++y) {
-        uint8_t *row = data + y * row_stride;
-        if (pixel_stride == 1) {
-            fwrite(row, 1, width, file);
-        } else {
-            for (int x = 0; x < width; ++x) {
-                fputc(row[x * pixel_stride], file);
+
+    int planes = strcmp(output_format, "i420") == 0 ? 3 : 1;
+    if (planes == 1) fprintf(file, "P5\n%d %d\n255\n", width, height);
+    int write_failed = 0;
+    for (int plane = 0; plane < planes && !write_failed; ++plane) {
+        int32_t row_stride = 0, pixel_stride = 0;
+        uint8_t *data = NULL;
+        int data_length = 0;
+        int plane_width = plane == 0 ? width : (width + 1) / 2;
+        int plane_height = plane == 0 ? height : (height + 1) / 2;
+        if (AImage_getPlaneRowStride(image, plane, &row_stride) != AMEDIA_OK ||
+            AImage_getPlanePixelStride(image, plane, &pixel_stride) != AMEDIA_OK ||
+            AImage_getPlaneData(image, plane, &data, &data_length) != AMEDIA_OK) {
+            fprintf(stderr, "reading image plane %d failed\n", plane);
+            write_failed = 1;
+            break;
+        }
+        for (int y = 0; y < plane_height && !write_failed; ++y) {
+            uint8_t *row = data + y * row_stride;
+            if (pixel_stride == 1) {
+                write_failed = fwrite(row, 1, plane_width, file) !=
+                    (size_t)plane_width;
+            } else {
+                for (int x = 0; x < plane_width; ++x) {
+                    if (fputc(row[x * pixel_stride], file) == EOF) {
+                        write_failed = 1;
+                        break;
+                    }
+                }
             }
         }
     }
-    fclose(file);
-    fprintf(stderr, "captured %dx%d Y frame to %s\n", width, height, output_path);
+    if (file == stdout) {
+        if (fflush(file) != 0) write_failed = 1;
+    } else if (fclose(file) != 0) {
+        write_failed = 1;
+    }
     AImage_delete(image);
-    finish(1);
+
+    if (write_failed) {
+        fprintf(stderr, "writing image failed\n");
+        finish(-1);
+        return;
+    }
+
+    pthread_mutex_lock(&lock);
+    frames_written++;
+    frame_in_progress = 0;
+    if (frames_written == 1 || frames_written % 30 == 0)
+        fprintf(stderr, "captured %d %dx%d %s frame(s) to %s\n",
+                frames_written, width, height, output_format, output_path);
+    if (requested_frames > 0 && frames_written >= requested_frames) {
+        frame_result = 1;
+        pthread_cond_signal(&condition);
+    }
+    pthread_mutex_unlock(&lock);
 }
 
 static void camera_disconnected(void *context, ACameraDevice *device) {
@@ -204,7 +243,20 @@ int main(int argc, char **argv) {
     int height = argc > 4 ? atoi(argv[4]) : 480;
     int max_images = argc > 5 ? atoi(argv[5]) : 16;
     int timeout_seconds = argc > 6 ? atoi(argv[6]) : 60;
+    output_format = argc > 7 ? argv[7] : "pgm";
+    requested_frames = argc > 8 ? atoi(argv[8]) : 1;
     int result = 1;
+
+    if ((strcmp(output_format, "pgm") != 0 &&
+         strcmp(output_format, "i420") != 0) ||
+        requested_frames < 0 ||
+        (strcmp(output_format, "pgm") == 0 && requested_frames != 1)) {
+        fprintf(stderr,
+                "usage: %s [camera [output [width [height [buffers "
+                "[timeout [pgm|i420 [frames]]]]]]]]\n",
+                argv[0]);
+        return 2;
+    }
 
     /*
      * AImageReader's BufferQueue producer lives in cameraserver.  A standalone
@@ -287,7 +339,10 @@ int main(int argc, char **argv) {
     deadline.tv_sec += timeout_seconds;
     pthread_mutex_lock(&lock);
     while (frame_result == 0) {
-        if (pthread_cond_timedwait(&condition, &lock, &deadline) != 0) break;
+        int wait_result = timeout_seconds > 0 ?
+            pthread_cond_timedwait(&condition, &lock, &deadline) :
+            pthread_cond_wait(&condition, &lock);
+        if (wait_result != 0) break;
     }
     result = frame_result == 1 ? 0 : 1;
     pthread_mutex_unlock(&lock);

@@ -18,7 +18,8 @@ stop_capture() {
     fi
 }
 
-trap 'stop_capture; rm -f /run/user/1000/t630-microphone-bridge.pid' EXIT INT TERM HUP
+trap 'stop_capture; rm -f /run/user/1000/t630-microphone-bridge.pid' EXIT
+trap 'exit 0' INT TERM HUP
 echo $$ >/run/user/1000/t630-microphone-bridge.pid
 
 while :; do

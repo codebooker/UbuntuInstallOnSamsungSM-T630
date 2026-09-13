@@ -1,8 +1,8 @@
 # Camera bring-up
 
-Camera support is an active compatibility experiment. It is not part of the
-normal desktop yet, but the front camera has produced real 640x480 frames on
-the physical SM-T630.
+Camera support is an active compatibility experiment. The front camera is now
+available to GNOME Camera as a standard PipeWire video source on the physical
+SM-T630.
 
 ## What works
 
@@ -10,7 +10,10 @@ The exact stock `camera.ko` creates the two Qualcomm camera media graphs. The
 matching Samsung camera provider and Android CameraService can run alongside
 Ubuntu in a deliberately small Binder/VNDK environment. The source-only client
 in `camera/t630-camera-capture.c` opens camera ID 1 (front, S5K4HA), configures a
-YUV stream, receives capture callbacks, and writes the Y plane as a PGM image.
+YUV stream, and exports either a one-frame grayscale PGM or a continuous I420
+stream. The I420 stream feeds GStreamer, which publishes
+`SM-T630_Front_Camera` to PipeWire. GNOME Camera was verified as an independent
+consumer with an active PipeWire link and a captured PNG.
 
 The compatibility stack disables CameraService's process-killing watchdog. In
 a complete Android system the watchdog reports failures through system_server
@@ -21,12 +24,12 @@ The runtime mounts stock system/vendor/APEX content read-only and uses a
 separate Ubuntu-owned `/data` directory. It does not mount Android calibration
 or identity partitions writable.
 
+The rebooted prototype completed a 300-frame PipeWire-to-VP8/WebM recording.
+Opening and closing the GNOME Camera launcher repeatedly also starts and
+releases the sensor without leaving its PipeWire source behind.
+
 ## What does not work yet
 
-- The front camera is not yet exposed as a normal PipeWire or Video4Linux
-  camera, so GNOME applications cannot select it.
-- The capture client currently exports only grayscale PGM snapshots, not a
-  continuous color stream.
 - Camera ID 0 (rear, S5K3L6) opens and starts its sensor, but the Samsung HAL
   rejects its EEPROM module data and reports CRC/module-version errors. The
   request then fails before delivering a usable buffer.
@@ -46,6 +49,11 @@ or identity partitions writable.
   properties and permission stubs needed outside Android.
 - `ubuntu/t630-android-log-capture.py` records Android binary-log datagrams for
   diagnosis without running the full Android logging daemon.
+- `ubuntu/t630-camera-bridge` converts the NDK client's I420 stream into a
+  standard PipeWire `Video/Source`.
+- `ubuntu/t630-camera-control`, `t630-camera-app`, and the desktop file
+  provide an on-demand lifecycle: the camera powers up when Camera opens and is
+  released when the app exits.
 
 ## Safety and redistribution
 
@@ -54,7 +62,7 @@ calibration, raw logs, or captured images. The repository intentionally carries
 only the independently written compatibility source and the instructions for
 reconstructing a runtime from the user's matching stock package.
 
-The next milestone is a continuous front-camera bridge that ordinary Ubuntu
-camera applications can discover. Rear-camera work remains separate because
-its failure is currently at module-calibration validation, not at the Ubuntu
-frame handoff that was solved for the front camera.
+Rear-camera work remains separate because its failure is at module-calibration
+validation, not at the Ubuntu frame handoff solved for the front camera. The
+remaining front-camera work is physical orientation checking and wider
+application compatibility testing.

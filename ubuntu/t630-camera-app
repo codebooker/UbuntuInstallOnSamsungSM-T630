@@ -1,0 +1,11 @@
+#!/bin/bash
+# Start the hardware bridge on demand, run GNOME Camera, and release it on exit.
+set -euo pipefail
+
+test "$(id -u)" = 1000
+sudo -n /usr/local/sbin/t630-camera-control enable
+cleanup() {
+    sudo -n /usr/local/sbin/t630-camera-control disable || true
+}
+trap cleanup EXIT INT TERM
+snapshot

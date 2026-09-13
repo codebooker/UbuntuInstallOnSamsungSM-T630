@@ -61,6 +61,11 @@ class VideoAdapterTests(unittest.TestCase):
             "planes[0].bytesused = target_offset + chroma_size", block
         )
 
+    def test_vendor_eos_is_translated_for_gstreamer(self):
+        source = (ROOT / "tools/t630_v4l2_probe.c").read_text()
+        self.assertIn("T630_V4L2_BUF_FLAG_EOS 0x10000000U", source)
+        self.assertIn("translated.flags |= V4L2_BUF_FLAG_LAST", source)
+
     def test_player_uses_adapter_with_software_fallback(self):
         launcher = (ROOT / "ubuntu/t630-video-player").read_text()
         self.assertIn("LD_PRELOAD", launcher)

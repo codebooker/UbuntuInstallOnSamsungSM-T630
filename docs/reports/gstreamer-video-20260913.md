@@ -26,6 +26,9 @@ reported by the kernel ABI:
   contiguous NV12 image plane while keeping the extradata allocation internal.
 - The dequeue path compacts the vendor's 512-scanline chroma padding and reports
   the compact NV12 byte extent instead of the entire padded allocation.
+- Samsung signals decoder end-of-stream with Qualcomm's private
+  `V4L2_BUF_FLAG_EOS` (`0x10000000`). The adapter translates it to the standard
+  `V4L2_BUF_FLAG_LAST` expected after `VIDIOC_DECODER_CMD(STOP)`.
 
 The mode remains opt-in and process scoped:
 
@@ -43,24 +46,21 @@ before translating any V4L2 request. It is never preloaded system-wide.
 On boot `e3fdbec7-82e2-483a-b60e-41673728ffa5`:
 
 - GStreamer decoded all 60 frames of a generated 1280×720 H.264 stream through
-  `v4l2h264dec` and exited successfully when the bounded sink consumed 60
-  frames.
+  `v4l2h264dec`, received the translated standard end-of-stream marker and
+  exited normally in 254 ms without a bounded sink workaround.
 - A captured 1280×720 NV12 frame matched GStreamer's software decode byte for
   byte after applying each buffer's advertised plane offsets and strides.
 - The existing FFmpeg adapter path decoded all 60 frames through
   `h264_v4l2m2m`; its complete NV12 output matched software decode byte for
   byte.
 - The installed adapter SHA256 after these changes is
-  `0a654f9128552c418969ac202c1797d8e3a99aa3d9a27c25eb6b9b1062fe171f`.
-- Neither bounded test added a VIDC overload/state error, GPU fault, kernel
+  `28fe0677bed5b00d42be4baa65defff907f0e06a149111964defd04550fe7fb6`.
+- Neither decoder test added a VIDC overload/state error, GPU fault, kernel
   oops, panic or watchdog marker.
 
-The stock driver does not complete GStreamer's generic finite-stream drain on
-its own. A bounded sink reaches the requested frame count normally, and
-pipeline teardown/flush works, but an unbounded `gst-launch` test waits after
-the last frame. Browser playback is continuous and uses pipeline teardown, but
-this EOF behavior should be fixed before calling the generic GStreamer adapter
-complete.
+Before the private-to-standard EOS translation, the same unbounded pipeline
+waited indefinitely after delivering its last frame. The ordinary finite-file
+path now drains and exits without a timeout or special sink configuration.
 
 ## Real browser result and security boundary
 

@@ -24,6 +24,7 @@
 #define MAX_V4L2_BUFFERS 32
 #define ION_SYSTEM_HEAP_ID 25
 #define ION_FLAG_CACHED 1U
+#define T630_V4L2_BUF_FLAG_EOS 0x10000000U
 
 struct ion_allocation_data {
     uint64_t len;
@@ -403,6 +404,14 @@ static int translate_dqbuf(int fd, struct v4l2_buffer *original,
     result = next_ioctl(fd, VIDIOC_DQBUF, &translated);
     if (result < 0)
         return result;
+    /* Qualcomm's downstream UAPI uses a private EOS bit. Generic V4L2
+     * consumers wait for the standard LAST flag after DECODER_CMD(STOP). */
+    if (gstreamer_compat() &&
+        translated.type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE &&
+        (translated.flags & T630_V4L2_BUF_FLAG_EOS)) {
+        translated.flags &= ~T630_V4L2_BUF_FLAG_EOS;
+        translated.flags |= V4L2_BUF_FLAG_LAST;
+    }
     if (getenv("T630_V4L2_DEBUG"))
         dprintf(STDERR_FILENO,
                 "t630-v4l2: dq type=%u index=%u flags=0x%x planes=%u bytes=%u/%u\n",

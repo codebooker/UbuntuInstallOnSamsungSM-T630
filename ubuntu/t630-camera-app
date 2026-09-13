@@ -8,9 +8,35 @@ case "$camera" in
     front|rear) ;;
     *) echo "usage: $0 [front|rear]" >&2; exit 2 ;;
 esac
+
+# Exactly one launcher owns Snapshot's lifetime and eventual camera cleanup.
+# A second front/rear launcher is only a switch request; it must not linger and
+# later disable the source selected by the owner.
+exec 8>"$XDG_RUNTIME_DIR/t630-camera-app.lock"
+if ! flock -n 8; then
+    sudo -n /usr/local/sbin/t630-camera-control "$camera"
+    exit 0
+fi
+
+# The stock phone-sized default leaves most of the tablet unused. Let Mutter
+# maximize it so the same setting follows both landscape and portrait modes.
+gsettings set org.gnome.Snapshot is-maximized true
 sudo -n /usr/local/sbin/t630-camera-control "$camera"
 cleanup() {
     sudo -n /usr/local/sbin/t630-camera-control disable || true
 }
 trap cleanup EXIT INT TERM
-snapshot
+
+# Snapshot is a single-instance GNOME application. If it was opened from an
+# old/system launcher, invoking it again returns immediately and used to tear
+# the camera bridge down behind the still-visible window. Adopt that exact
+# existing process instead and keep the bridge alive until the window exits.
+snapshot_pid=$(pgrep -u "$(id -u)" -xo snapshot || true)
+if [ -n "$snapshot_pid" ] &&
+   [ "$(readlink "/proc/$snapshot_pid/exe" 2>/dev/null || true)" = /usr/bin/snapshot ]; then
+    while kill -0 "$snapshot_pid" 2>/dev/null; do
+        sleep 1
+    done
+else
+    snapshot
+fi

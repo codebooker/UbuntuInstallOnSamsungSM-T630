@@ -16,12 +16,13 @@ exec 9>/run/t630-camera-control.lock
 flock -x 9
 
 pid_matches() {
-    local file=$1 marker=$2 pid
+    local file=$1 marker=$2 pid cmdline
     test -s "$file" || return 1
     read -r pid <"$file"
     [[ "$pid" =~ ^[0-9]+$ ]] || return 1
     test -r "/proc/$pid/cmdline" || return 1
-    tr '\0' ' ' <"/proc/$pid/cmdline" | grep -Fq "$marker"
+    cmdline=$( { tr '\0' ' ' <"/proc/$pid/cmdline"; } 2>/dev/null) || return 1
+    grep -Fq "$marker" <<<"$cmdline"
 }
 
 stop_group() {
@@ -76,17 +77,29 @@ if pid_matches /run/t630-camera-bridge.pid /usr/local/sbin/t630-camera-bridge &&
 fi
 
 stop_group /run/t630-camera-bridge.pid /usr/local/sbin/t630-camera-bridge || true
-setsid /usr/local/sbin/t630-camera-bridge "$action" >/run/t630-camera-bridge.log 2>&1 </dev/null 9>&- &
-echo "$!" >/run/t630-camera-bridge.pid
+# CameraService releases the previous exclusive client asynchronously after the
+# capture process exits. Starting the other sensor immediately can return
+# ACAMERA_ERROR_CAMERA_IN_USE even though the owned process is already gone.
+sleep 2
 
-attempt=0
-until /usr/local/bin/t630-gnome-run pw-cli ls Node 2>/dev/null |
-        grep -q "node.name = \"$node\""; do
-    attempt=$((attempt + 1))
-    if [ "$attempt" -ge 20 ]; then
-        stop_group /run/t630-camera-bridge.pid /usr/local/sbin/t630-camera-bridge || true
-        echo 'Camera source did not appear in PipeWire.' >&2
-        exit 1
-    fi
-    sleep 1
+bridge_attempt=0
+while [ "$bridge_attempt" -lt 3 ]; do
+    bridge_attempt=$((bridge_attempt + 1))
+    setsid /usr/local/sbin/t630-camera-bridge "$action" >/run/t630-camera-bridge.log 2>&1 </dev/null 9>&- &
+    echo "$!" >/run/t630-camera-bridge.pid
+
+    attempt=0
+    while pid_matches /run/t630-camera-bridge.pid /usr/local/sbin/t630-camera-bridge; do
+        if /usr/local/bin/t630-gnome-run pw-cli ls Node 2>/dev/null |
+                grep -q "node.name = \"$node\""; then
+            exit 0
+        fi
+        attempt=$((attempt + 1))
+        [ "$attempt" -lt 20 ] || break
+        sleep 1
+    done
+    stop_group /run/t630-camera-bridge.pid /usr/local/sbin/t630-camera-bridge || true
+    sleep 2
 done
+echo 'Camera source did not appear in PipeWire after three bounded attempts.' >&2
+exit 1

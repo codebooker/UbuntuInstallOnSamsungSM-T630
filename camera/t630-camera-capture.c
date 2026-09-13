@@ -1,5 +1,6 @@
 #include <camera/NdkCameraDevice.h>
 #include <camera/NdkCameraManager.h>
+#include <dlfcn.h>
 #include <media/NdkImage.h>
 #include <media/NdkImageReader.h>
 #include <pthread.h>
@@ -9,9 +10,9 @@
 #include <string.h>
 #include <time.h>
 
-/* Exported by Android's libbinder_ndk; the public NDK omits this header. */
-void ABinderProcess_startThreadPool(void);
-void ABinderProcess_setThreadPoolMaxThreadCount(uint32_t num_threads);
+/* Exported by Android's libbinder_ndk, but omitted from the public NDK stubs. */
+typedef void (*binder_start_thread_pool_fn)(void);
+typedef void (*binder_set_max_threads_fn)(uint32_t num_threads);
 
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t condition = PTHREAD_COND_INITIALIZER;
@@ -21,6 +22,28 @@ static int frames_written = 0;
 static int requested_frames = 1;
 static const char *output_path;
 static const char *output_format;
+static int capture_metadata_reported = 0;
+
+static int start_binder_thread_pool(void) {
+    void *library = dlopen("libbinder_ndk.so", RTLD_NOW | RTLD_LOCAL);
+    if (library == NULL) {
+        fprintf(stderr, "loading libbinder_ndk.so failed: %s\n", dlerror());
+        return -1;
+    }
+
+    binder_start_thread_pool_fn start =
+        (binder_start_thread_pool_fn)dlsym(library, "ABinderProcess_startThreadPool");
+    binder_set_max_threads_fn set_max =
+        (binder_set_max_threads_fn)dlsym(library, "ABinderProcess_setThreadPoolMaxThreadCount");
+    if (start == NULL || set_max == NULL) {
+        fprintf(stderr, "resolving Binder thread-pool functions failed: %s\n", dlerror());
+        return -1;
+    }
+
+    set_max(8);
+    start();
+    return 0;
+}
 
 static void finish(int result) {
     pthread_mutex_lock(&lock);
@@ -163,7 +186,7 @@ static void capture_started(void *context, ACameraCaptureSession *session,
     (void)context;
     (void)session;
     (void)request;
-    fprintf(stderr, "capture started at %lld\n", (long long)timestamp);
+    (void)timestamp;
 }
 
 static void capture_progressed(void *context, ACameraCaptureSession *session,
@@ -173,7 +196,6 @@ static void capture_progressed(void *context, ACameraCaptureSession *session,
     (void)session;
     (void)request;
     (void)result;
-    fprintf(stderr, "capture progressed\n");
 }
 
 static void capture_completed(void *context, ACameraCaptureSession *session,
@@ -182,8 +204,26 @@ static void capture_completed(void *context, ACameraCaptureSession *session,
     (void)context;
     (void)session;
     (void)request;
-    (void)result;
-    fprintf(stderr, "capture completed\n");
+    if (!capture_metadata_reported && result != NULL) {
+        ACameraMetadata_const_entry exposure = {0};
+        ACameraMetadata_const_entry sensitivity = {0};
+        ACameraMetadata_const_entry ae_state = {0};
+        camera_status_t exposure_status = ACameraMetadata_getConstEntry(
+            result, ACAMERA_SENSOR_EXPOSURE_TIME, &exposure);
+        camera_status_t sensitivity_status = ACameraMetadata_getConstEntry(
+            result, ACAMERA_SENSOR_SENSITIVITY, &sensitivity);
+        camera_status_t ae_status = ACameraMetadata_getConstEntry(
+            result, ACAMERA_CONTROL_AE_STATE, &ae_state);
+        if (exposure_status == ACAMERA_OK && exposure.count > 0 &&
+            sensitivity_status == ACAMERA_OK && sensitivity.count > 0) {
+            fprintf(stderr, "capture metadata: exposure=%lldns sensitivity=%d",
+                    (long long)exposure.data.i64[0], sensitivity.data.i32[0]);
+            if (ae_status == ACAMERA_OK && ae_state.count > 0)
+                fprintf(stderr, " ae_state=%u", ae_state.data.u8[0]);
+            fprintf(stderr, "\n");
+            capture_metadata_reported = 1;
+        }
+    }
 }
 
 static void capture_failed(void *context, ACameraCaptureSession *session,
@@ -263,8 +303,7 @@ int main(int argc, char **argv) {
      * native process must service incoming Binder transactions itself; Android
      * applications normally get this thread pool from the runtime.
      */
-    ABinderProcess_setThreadPoolMaxThreadCount(8);
-    ABinderProcess_startThreadPool();
+    if (start_binder_thread_pool() != 0) return 1;
 
     ACameraManager *manager = ACameraManager_create();
     ACameraIdList *ids = NULL;
@@ -302,13 +341,52 @@ int main(int argc, char **argv) {
     ACaptureSessionOutputContainer *outputs = NULL;
     ACaptureRequest *request = NULL;
     ACameraCaptureSession *session = NULL;
+    ACameraDevice_request_template capture_template =
+        strcmp(camera_id, "0") == 0 ? TEMPLATE_STILL_CAPTURE : TEMPLATE_PREVIEW;
     if (check_status("create target", ACameraOutputTarget_create(window, &target)) != 0 ||
         check_status("create session output", ACaptureSessionOutput_create(window, &session_output)) != 0 ||
         check_status("create output container", ACaptureSessionOutputContainer_create(&outputs)) != 0 ||
         check_status("add output", ACaptureSessionOutputContainer_add(outputs, session_output)) != 0 ||
-        check_status("create request", ACameraDevice_createCaptureRequest(device, TEMPLATE_STILL_CAPTURE, &request)) != 0 ||
+        check_status("create request", ACameraDevice_createCaptureRequest(device, capture_template, &request)) != 0 ||
         check_status("add target", ACaptureRequest_addTarget(request, target)) != 0) {
         goto cleanup_camera;
+    }
+
+    /* Explicit 3A controls keep exposure converging continuously. Camera 0's
+     * logical rear pipeline produces zero-filled buffers with TEMPLATE_PREVIEW,
+     * so it retains Samsung's still template while all other IDs use preview. */
+    const uint8_t control_mode = ACAMERA_CONTROL_MODE_AUTO;
+    const uint8_t ae_mode = strcmp(camera_id, "0") == 0 ?
+        ACAMERA_CONTROL_AE_MODE_OFF : ACAMERA_CONTROL_AE_MODE_ON;
+    const uint8_t awb_mode = ACAMERA_CONTROL_AWB_MODE_AUTO;
+    const uint8_t af_mode = ACAMERA_CONTROL_AF_MODE_CONTINUOUS_VIDEO;
+    if (check_status("enable automatic control", ACaptureRequest_setEntry_u8(
+            request, ACAMERA_CONTROL_MODE, 1, &control_mode)) != 0 ||
+        check_status("enable auto exposure", ACaptureRequest_setEntry_u8(
+            request, ACAMERA_CONTROL_AE_MODE, 1, &ae_mode)) != 0 ||
+        check_status("enable auto white balance", ACaptureRequest_setEntry_u8(
+            request, ACAMERA_CONTROL_AWB_MODE, 1, &awb_mode)) != 0) {
+        goto cleanup_camera;
+    }
+    camera_status = ACaptureRequest_setEntry_u8(
+        request, ACAMERA_CONTROL_AF_MODE, 1, &af_mode);
+    if (camera_status != ACAMERA_OK)
+        fprintf(stderr, "continuous autofocus unavailable: %d\n", camera_status);
+
+    /* Samsung's rear still template carries 20,400 ns / ISO 58 priority
+     * fields even while its AE result claims convergence near 40 ms. Rear AE
+     * must be off for the explicit sensor fields below to become authoritative. */
+    if (strcmp(camera_id, "0") == 0) {
+        const int64_t rear_exposure_ns = 60000000;
+        const int32_t rear_sensitivity = 1600;
+        if (check_status("set rear exposure", ACaptureRequest_setEntry_i64(
+                request, ACAMERA_SENSOR_EXPOSURE_TIME, 1, &rear_exposure_ns)) != 0 ||
+            check_status("set rear sensitivity", ACaptureRequest_setEntry_i32(
+                request, ACAMERA_SENSOR_SENSITIVITY, 1, &rear_sensitivity)) != 0) {
+            goto cleanup_camera;
+        }
+        fprintf(stderr, "rear request: exposure=%lldns sensitivity=%d\n",
+                (long long)rear_exposure_ns, rear_sensitivity);
     }
 
     ACameraCaptureSession_stateCallbacks session_callbacks = {

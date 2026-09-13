@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build the two redistributable pieces of the camera sensor-service bridge.
+# Build the redistributable pieces of the camera compatibility stack.
 set -eu
 
 repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
@@ -25,5 +25,9 @@ mkdir -p "$output_dir"
 "$cxx" -std=c++17 -Wall -Wextra -Werror -fPIE -pie \
     "$repo_dir/camera/t630-sensorservice-hidl.cpp" -ldl \
     -o "$output_dir/t630-sensorservice-hidl"
+"$cc" -std=c11 -Wall -Wextra -Werror -O2 \
+    "$repo_dir/camera/t630-camera-capture.c" \
+    -lcamera2ndk -lmediandk -landroid -llog -ldl \
+    -o "$output_dir/t630-camera-capture"
 
-echo "Built camera sensor-service bridge in $output_dir"
+echo "Built camera compatibility components in $output_dir"

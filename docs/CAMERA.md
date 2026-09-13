@@ -1,9 +1,10 @@
 # Camera bring-up
 
-Camera support is an active compatibility experiment. The front camera is now
+Camera support is an active compatibility experiment. The front camera is
 available to GNOME Camera as a standard PipeWire video source on the physical
-SM-T630. A separate Rear Camera launcher publishes the rear stream to the same
-application; final rear image-quality validation remains to do.
+SM-T630. The separate Rear Camera launcher starts rear ID 0 with a guarded
+manual exposure baseline and rear-only tone correction; physical confirmation
+of that final profile remains.
 
 ## What works
 
@@ -20,6 +21,16 @@ The compatibility stack disables CameraService's process-killing watchdog. In
 a complete Android system the watchdog reports failures through system_server
 and tombstoned. Neither exists here, and leaving it enabled can terminate the
 hybrid camera stack during an ordinary HAL timeout.
+
+The client uses Android's continuous-preview request template and explicitly
+enables automatic exposure, white balance, and focus for the front camera. On
+the same indoor target, this moved it from 10 ms at sensitivity 58 (mean luma
+20.98) to 40 ms at sensitivity 156 (mean luma 107.54). The rear logical path is
+different: its preview template returns zero-filled buffers, while its still
+template returns real but severely underexposed pixels. Rear therefore retains
+the still template, disables AE so Samsung cannot replace explicit sensor
+fields, and requests 60 ms at sensitivity 1600. The capture log reports one set
+of resulting exposure metadata per run rather than every completed request.
 
 `ubuntu/test-t630-camera-frame.py` provides a repeatable, privacy-preserving
 physical check. Run it through `t630-gnome-run` with either `front` or `rear`.
@@ -49,7 +60,22 @@ The rebooted prototype completed a 300-frame PipeWire-to-VP8/WebM recording.
 Opening and closing the GNOME Camera launcher repeatedly also starts and
 releases the sensor without leaving its PipeWire source behind.
 
-Camera ID 0 (rear, S5K3L6) now completes capture requests. The stock HAL needs
+The Camera desktop override must live under the session's actual
+`XDG_DATA_HOME`, which is
+`/home/tablet/.local/share/t630-gnome-preview/applications`, and must be named
+`org.gnome.Snapshot.desktop`. Installing it in the account's conventional
+`.local/share/applications` directory does not override the stock launcher in
+this isolated session. The rear entry is installed beside it as
+`t630-rear-camera.desktop`.
+
+Snapshot is a single-instance application. The launcher now detects an exact
+existing `/usr/bin/snapshot` process and keeps the selected hardware bridge
+alive until that process exits; previously a second invocation returned at
+once and disabled the source behind the still-visible window. It also stores
+Snapshot's standard `is-maximized` preference so the camera follows both tablet
+orientations instead of opening at its phone-sized 800×640 default.
+
+Logical camera ID 0 (rear, S5K3L6) now completes capture requests. The stock HAL needs
 `ro.boot.revision=5` to select the matching DV2 board profile. Its AEC then asks
 for `android.frameworks.sensorservice@1.0::ISensorManager/default`; without
 Android SystemServer that lookup blocked forever, starved the sensor request
@@ -57,7 +83,14 @@ queue, and eventually tripped the camera watchdog. The compatibility stack now
 starts native SensorService and a small source-built launcher that registers
 Samsung's stock HIDL adapter. A clean automatic-stack test captured ten rear
 frames followed by ten front frames, and a separate rear burst delivered 60
-frames at 640x480/30 fps without killing the stack.
+frames at 640x480/30 fps without killing the stack. Outside the full Android
+framework, its preview template delivers zero-filled YUV while claiming
+converged AE; the still template instead exposes the real low-valued image. A
+manual 60 ms / ISO 1600 request raised raw mean luma from 1.17 to 5.89. A scoped
+GStreamer gamma 2.5 stage raised the published rear-source mean to 53.84 while
+preserving black at zero. Camera IDs 2 and 3 produce bright frames, but physical
+inspection confirms that ID 3 is another front-camera endpoint; neither can
+substitute for rear ID 0.
 
 The provider allows one camera client at a time. `t630-camera-control` therefore
 stops the current bridge before selecting `front` or `rear`; it never keeps both
@@ -76,14 +109,12 @@ readiness marker. This releases the provider's observed idle CPU and roughly
 indefinitely. The already-loaded stock camera kernel module and read-only mounts
 are deliberately left in place; live module removal is not attempted.
 
-## What does not work yet
+## Remaining limitations
 
-- The first recovered rear frame sequence was almost completely dark. CSI,
-  CSID and IFE interrupts plus request completion were all healthy, but a
-  well-lit physical target still needs to be captured before claiming image
-  quality. The accelerometer simultaneously reported the tablet lying flat and
-  face-up, with the rear lens pointed into its supporting surface. Several rear
-  EEPROM sections report the same stock-kernel CRC failures seen earlier.
+- Rear ID 0 does not provide trustworthy automatic exposure outside Android.
+  The current 60 ms / ISO 1600 baseline and gamma 2.5 correction are bounded by
+  the sensor's published 20,400–250,002,000 ns and ISO 58–2807 ranges, but still
+  need visual exposure, noise, frame-rate, and orientation confirmation.
 - The stack still depends on proprietary binaries extracted from the owner's
   exact `T630XXSBDZE3` stock firmware. They cannot be distributed here.
 
@@ -118,17 +149,18 @@ are deliberately left in place; live module removal is not attempted.
 
 ## Building the sensor-service bridge
 
-Install an Android NDK, set `ANDROID_NDK_ROOT`, then run:
+Install Android NDK r27 or newer, set `ANDROID_NDK_ROOT`, then run:
 
 ```sh
 tools/build_camera_sensor_bridge.sh
 ```
 
-This creates an AArch64 property/permission shim and the HIDL adapter launcher
-under `build/camera/`. The current launcher resolves private C++ symbols from
-the stock libraries at runtime and is intentionally tied to the tested
-`T630XXSBDZE3` image. Do not reuse it with another firmware build until its
-symbols and behavior have been revalidated.
+This creates the AArch64 property/permission shim, HIDL adapter launcher, and
+NDK capture client under `build/camera/`. The capture client resolves the two
+Binder thread-pool entry points dynamically because the Android runtime exports
+them but the public NDK link stub does not. The compatibility code is
+intentionally tied to the tested `T630XXSBDZE3` image. Do not reuse it with
+another firmware build until its symbols and behavior have been revalidated.
 
 ## Safety and redistribution
 
@@ -137,7 +169,18 @@ calibration, raw logs, or captured images. The repository intentionally carries
 only the independently written compatibility source and the instructions for
 reconstructing a runtime from the user's matching stock package.
 
-The remaining camera work is rear image-quality validation, physical
-orientation checking, and wider application compatibility testing. Permission
-stubs are process-scoped to this isolated compatibility runtime; they are not
-loaded into GNOME or ordinary Ubuntu applications.
+The remaining camera work is physical validation and tuning of the rear manual
+profile, orientation checking, and wider application compatibility testing.
+Permission stubs are process-scoped to this isolated compatibility runtime;
+they are not loaded into GNOME or ordinary Ubuntu applications.
+
+After the launcher/session-path repair, a front validation delivered eight
+frames with mean luma 20.98. With preview-mode 3A enabled, a fresh front run
+delivered eight frames with range 7–255, mean 107.54, and standard deviation
+95.51; the HAL reported 40 ms exposure at sensitivity 156. The rear HAL also
+responded by increasing to 41.7 ms at sensitivity 994, but that path's final
+frame was entirely black. IDs 2 and 3 delivered bright frames; physical
+inspection of ID 3 showed the front camera, so the rear bridge remains mapped
+to ID 0. Switching ID 0 back to the still template recovered real pixels; an
+authoritative 60 ms / ISO 1600 request plus rear-only gamma 2.5 raised its
+published mean luma to 53.84. Each validator removed its volatile raw stream.

@@ -30,7 +30,7 @@ explicit, previously validated sysfs paths instead.
 | System suspend | Experimental | Guarded manual shallow suspend and wake passed; automatic idle suspend remains disabled |
 | GPU | Experimental | Turnip/Zink can render GNOME, but a KGSL fault was reproduced; software fallback is retained |
 | Video | Mostly working | FFmpeg and GStreamer H.264/VP9 use the stock decoder. A real WebKit process selected it, but no accelerated browser launcher is shipped because this kernel cannot provide WebKit's normal user-namespace sandbox |
-| Camera | Partial | Separate front and rear launchers publish one 640x480 camera at a time to GNOME Camera. A volatile eight-frame validator confirms delivery and cleans up both sensors; the rear lens-down result is nearly uniform, so a well-lit image and orientation validation remain |
+| Camera | Partial | Front preview-mode auto-exposure raised mean luma from 20.98 to 107.54. Rear ID 0 requires its still template, AE off, a 60 ms / ISO 1600 sensor baseline, and rear-only gamma 2.5; this raised measured mean luma from 1.17 to 53.84. Physical rear confirmation remains |
 | Security | Lab configuration | GNOME password lock works, but the retained recovery compositor and USB root console mean this is not a hardened full-device login boundary |
 
 ## Known limitations
@@ -48,8 +48,8 @@ explicit, previously validated sysfs paths instead.
   characterized.
 - Camera support still depends on proprietary files extracted from the owner's
   matching stock firmware; those files cannot be redistributed here. The front
-  and rear cameras are integrated with GNOME as exclusive sources; final rear
-  image-quality validation remains.
+  camera is integrated with GNOME; the rear path still needs physical exposure
+  and orientation confirmation after its manual sensor/tone correction.
   See [CAMERA.md](CAMERA.md).
 
 For the complete test history, see the dated files in `docs/reports/`, including

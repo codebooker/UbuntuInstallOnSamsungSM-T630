@@ -80,3 +80,21 @@ is installed or documented as a user recommendation.
 Firefox therefore remains the safe default browser. Browser hardware video is
 verified at the decoder/application boundary but remains unshipped until there
 is a reviewed sandbox solution (or a replacement kernel with user namespaces).
+
+## Cold-boot persistence
+
+After installing the final adapter, an ordinary `/bin/stop-ubuntu reboot` was
+issued from the retained USB recovery environment so the Ubuntu filesystem was
+stopped and unmounted first. Fresh boot
+`4e65451d-b0b6-4c0d-90e5-5d11a28306a9` automatically restored Weston, GNOME,
+Wi-Fi, Bluetooth with both audio profiles, the 30% speaker sink, the microphone
+source, UPower battery reporting, SensorProxy and the remote screen service.
+NetworkManager handled the Wi-Fi interface appearing as `wlp1s0` rather than
+the previous boot's `wlan0`.
+
+The installed adapter retained its exact expected SHA256. A normal UID 1000
+process then repeated both 60-frame 1280×720 tests: FFmpeg hardware output again
+matched software NV12 byte for byte, and the unbounded GStreamer pipeline again
+drained to EOS normally through `v4l2h264dec`. The camera compatibility stack
+was stopped, shared device permissions remained valid, package audit was clean,
+and the expanded kernel-fault check reported zero markers.

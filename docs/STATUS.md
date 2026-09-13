@@ -15,7 +15,7 @@ explicit, previously validated sysfs paths instead.
 | Area | State | Notes |
 | --- | --- | --- |
 | Boot | Working | Stock downstream kernel with a replacement Ubuntu initramfs; Ubuntu root on userdata |
-| Display | Working | Internal 1920×1200 panel through DRM/MSM; full-screen nested GNOME |
+| Display | Working | Internal DRM/MSM panel; GNOME fills both tested 1920×1200 landscape and 1200×1920 portrait positions without the recovery panel showing |
 | Touch | Working | Finger coordinates and click/drag corrected |
 | S Pen | Working | Position and clicking corrected; GNOME keyboard accepts pen input |
 | Keyboard | Working | Maliit/GNOME on-screen keyboard with Shift, Enter, Backspace, and Hide |
@@ -24,7 +24,7 @@ explicit, previously validated sysfs paths instead.
 | Bluetooth | Working | WCN6850 startup retry, firmware handoff, idle wake, BlueZ discovery, synchronized teardown, and supervised recovery physically tested; WirePlumber Bluetooth audio policy is enabled, pending a paired-headset playback test |
 | Speakers | Working | Stock calibration and guarded amplifier sequencing; GNOME volume control works |
 | Microphone | Working | Built-in microphone exposed as the normal PipeWire source through a demand-driven bridge |
-| Sensors | Mostly working | Accelerometer, light, proximity, magnetometer, compass, and automatic brightness tested; physical rotation and suspend/resume remain to validate |
+| Sensors | Working | Accelerometer, light, proximity, magnetometer, compass, automatic brightness, and debounced panel/GNOME rotation tested in adjacent positions; four-edge and suspend/resume rotation passes remain |
 | Charging | Working | Charger detection and charge state are exposed through UPower to GNOME; 100% fully charged was verified after a cold boot |
 | Display sleep | Working | Power-key blank/lock/wake works |
 | System suspend | Experimental | Guarded manual shallow suspend and wake passed; automatic idle suspend remains disabled |

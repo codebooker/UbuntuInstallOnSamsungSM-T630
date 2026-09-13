@@ -19,7 +19,7 @@ full-screen GNOME desktop from internal storage.
 | Component | Status |
 | --- | --- |
 | Native boot / internal Ubuntu root | Working on the test SM-T630 |
-| 1920×1200 GNOME desktop | Working |
+| Full-screen GNOME desktop and automatic rotation | Working in tested landscape and portrait positions |
 | Finger touch and S Pen | Working |
 | Wi-Fi and key-only SSH | Working |
 | Speakers, microphone, volume keys | Working |

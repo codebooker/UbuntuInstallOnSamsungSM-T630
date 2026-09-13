@@ -8,8 +8,28 @@ import subprocess
 import sys
 import threading
 import time
+from pathlib import Path
 from urllib.parse import urlsplit
 from PIL import Image
+
+ROTATION_STATE = Path('/run/t630-weston-rotation.state')
+
+
+def orient_for_viewer(image):
+    """Undo the panel transform so the remote view follows the tablet UI."""
+    try:
+        transform = int(ROTATION_STATE.read_text().strip())
+    except (OSError, ValueError):
+        transform = 1  # Installed default is landscape/rotate-90.
+    operations = {
+        0: None,
+        1: Image.Transpose.ROTATE_270,
+        2: Image.Transpose.ROTATE_180,
+        3: Image.Transpose.ROTATE_90,
+    }
+    operation = operations.get(transform, Image.Transpose.ROTATE_270)
+    return image if operation is None else image.transpose(operation)
+
 
 def capture():
     result = subprocess.run(['/usr/local/libexec/t630-capture','--stdout'],
@@ -17,7 +37,7 @@ def capture():
     image = Image.open(io.BytesIO(result.stdout))
     if image.size != (1200,1920):
         raise ValueError('Unexpected display dimensions')
-    image = image.transpose(Image.Transpose.ROTATE_270)
+    image = orient_for_viewer(image)
     out = io.BytesIO()
     image.save(out,format='PNG',compress_level=3)
     return out.getvalue()

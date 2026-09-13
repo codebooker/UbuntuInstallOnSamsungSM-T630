@@ -41,5 +41,5 @@ exec /usr/bin/setpriv --reuid=1000 --regid=1000 --init-groups /usr/bin/env \
     XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=GNOME \
     LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER="${T630_GALLIUM_DRIVER:-llvmpipe}" \
     MESA_LOADER_DRIVER_OVERRIDE=swrast GSK_RENDERER=cairo \
-    MUTTER_DEBUG_DUMMY_MODE_SPECS="${T630_GNOME_SIZE:-1920x1200}" \
+    MUTTER_DEBUG_DUMMY_MODE_SPECS="${T630_GNOME_SIZE:-1920x1200:1200x1920}" \
     /usr/bin/dbus-run-session -- /usr/local/libexec/t630-gnome-session

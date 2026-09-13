@@ -15,9 +15,11 @@ bootloader partitions are not replaced by the normal prototype path.
 ## Desktop stack
 
 The internal Qualcomm DRM device drives Weston. GNOME runs as the unprivileged
-`tablet` user in a managed, full-screen nested session. This keeps a small
-software-rendered recovery compositor available while GPU acceleration remains
-experimental.
+`tablet` user in a managed, screen-sized nested session. The rootful Xwayland
+host is deliberately undecorated rather than protocol-fullscreen: Xwayland 24
+disconnects if a fullscreen xdg-shell surface changes between landscape and
+portrait aspect ratios. Weston's fallback panel is hidden so GNOME owns the
+complete visible output, while the recovery compositor remains underneath.
 
 Maliit and GNOME Shell provide the on-screen keyboard. Device-specific input
 rules normalize finger, S Pen, navigation-key, volume-key, Power-key, and Active
@@ -35,7 +37,12 @@ button behavior.
 - Audio uses the stock DSP firmware and calibration with guarded speaker routing.
   The microphone uses a demand-driven ALSA-to-PipeWire bridge.
 - Sensors use Samsung's DSP stack through a narrow downstream FastRPC adapter
-  and Linux's standard sensor-proxy interface.
+  and Linux's standard sensor-proxy interface. Rotation is synchronized across
+  three layers: a small Weston module changes the real DSI output transform,
+  Xwayland switches between 1920×1200 and 1200×1920, and Mutter selects the
+  matching dummy-monitor mode while remaining at transform zero. A
+  session-local controller applies the SM-T630's calibrated absolute sensor
+  map after a debounce, avoiding relative-rotation feedback.
 - GPU experiments use Mesa Turnip/Zink through KGSL, with health checks and an
   automatic software-rendered fallback.
 - Video playback has an exact-device-guarded, process-scoped adapter to the

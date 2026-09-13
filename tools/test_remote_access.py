@@ -23,6 +23,12 @@ class RemoteAccessTests(unittest.TestCase):
         self.assertIn("fcntl.LOCK_EX | fcntl.LOCK_NB", source)
         self.assertIn("('127.0.0.1',8765)", source)
 
+    def test_live_view_tracks_the_real_output_transform(self):
+        source = (ROOT / "ubuntu/t630_screen.py").read_text()
+        self.assertIn("/run/t630-weston-rotation.state", source)
+        self.assertIn("Image.Transpose.ROTATE_180", source)
+        self.assertIn("Image.Transpose.ROTATE_270", source)
+
 
 if __name__ == "__main__":
     unittest.main()

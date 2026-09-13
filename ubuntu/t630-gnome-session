@@ -13,6 +13,10 @@ gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us')]"
 gsettings set org.gnome.desktop.background picture-options none
 gsettings set org.gnome.desktop.background primary-color '#241331'
 gsettings set org.gnome.desktop.session idle-delay 0
+# Mutter's nested dummy monitor feeds its own transforms back into the stock
+# orientation handler. Keep that relative handler out of the loop; the
+# SM-T630 controller below applies debounced absolute transforms instead.
+gsettings set org.gnome.settings-daemon.peripherals.touchscreen orientation-lock true
 if [ "${T630_LOGIN_SESSION_WRAPPED:-0}" = 1 ]; then
     gsettings set org.gnome.desktop.screensaver lock-enabled true
     # The root, power-key-only helper locks before touching the backlight.
@@ -39,7 +43,13 @@ printf 'add :3 . %s\n' "$cookie" | xauth -f "$XAUTHORITY" source -
 unset cookie
 export XWAYLAND_NO_GLAMOR=1
 if [ "${T630_GNOME_FULLSCREEN:-0}" = 1 ]; then
-    set -- -geometry 1920x1200 -fullscreen
+    # Xwayland's xdg-shell fullscreen state is locked to its initial size and
+    # disconnects when the parent Weston output changes aspect ratio. A
+    # screen-sized undecorated rootful window can follow wl_output resizes.
+    case "$(cat /run/t630-weston-rotation.state 2>/dev/null || echo 1)" in
+        0|2) set -- -geometry 1200x1920 ;;
+        *) set -- -geometry 1920x1200 ;;
+    esac
 else
     set -- -geometry 1600x1000 -decorate
 fi
@@ -49,6 +59,7 @@ shell_pid=
 auth_watch_pid=
 media_keys_pid=
 power_pid=
+rotation_pid=
 session_manager_pid=
 cleanup() {
     trap - EXIT INT TERM
@@ -56,6 +67,7 @@ cleanup() {
     if [ -n "$auth_watch_pid" ]; then kill -TERM "$auth_watch_pid" 2>/dev/null || true; fi
     if [ -n "$media_keys_pid" ]; then kill -TERM "$media_keys_pid" 2>/dev/null || true; fi
     if [ -n "$power_pid" ]; then kill -TERM "$power_pid" 2>/dev/null || true; fi
+    if [ -n "$rotation_pid" ]; then kill -TERM "$rotation_pid" 2>/dev/null || true; fi
     if [ -n "$session_manager_pid" ]; then kill -TERM "$session_manager_pid" 2>/dev/null || true; fi
     kill -TERM "$xwayland_pid" 2>/dev/null || true
     wait "$xwayland_pid" 2>/dev/null || true
@@ -176,6 +188,20 @@ if [ -x /usr/libexec/gsd-power ]; then
         exec /usr/libexec/gsd-power
     ) >"$XDG_RUNTIME_DIR/t630-gsd-power.log" 2>&1 &
     power_pid=$!
+fi
+if [ -x /usr/local/libexec/t630-rotation-controller ]; then
+    (
+        attempt=0
+        while [ ! -e /run/t630-sensors-ready ]; do
+            kill -0 "$shell_pid"
+            attempt=$((attempt + 1))
+            test "$attempt" -lt 45
+            sleep 1
+        done
+        unset LD_PRELOAD
+        exec /usr/local/libexec/t630-rotation-controller
+    ) >"$XDG_RUNTIME_DIR/t630-rotation.log" 2>&1 &
+    rotation_pid=$!
 fi
 if [ "${T630_LOGIN_SESSION_WRAPPED:-0}" = 1 ] && [ -f /etc/t630/lock-on-start ]; then
     /usr/local/libexec/t630-lock-on-start

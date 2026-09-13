@@ -94,6 +94,12 @@ server. Exactly one process and one `127.0.0.1:8765` listener remained, the log
 was empty, the endpoint returned HTTP 200, and a 1920x1200 PNG frame crossed the
 authenticated SSH tunnel successfully.
 
+After real output rotation was added, the service also stopped assuming every
+frame was landscape. It reads the root-owned Weston rotation state and applies
+the inverse view transform to the fixed 1200×1920 panel capture. The endpoint
+therefore returns 1920×1200 in either landscape position and 1200×1920 in
+either portrait position, matching what a person holding the tablet sees.
+
 ## Lock-screen wake verification — 2026-09-13
 
 After the display idled to brightness zero, the bounded synthetic Power-event

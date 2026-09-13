@@ -14,7 +14,12 @@ class RotationValidatorTests(unittest.TestCase):
         self.assertIn("10 <= args.duration <= 180", source)
         self.assertIn("AccelerometerOrientation", source)
         self.assertIn("org.gnome.Mutter.DisplayConfig", source)
-        self.assertIn("len(orientations) >= 2 and len(transforms) >= 2", source)
+        self.assertIn("EXPECTED_TRANSFORMS", source)
+        self.assertIn("EXPECTED_MODES", source)
+        self.assertIn("/run/t630-weston-rotation.state", source)
+        self.assertIn("item['gnome_transform'] != 0", source)
+        self.assertIn("SETTLE_SECONDS = 1.5", source)
+        self.assertIn("and not mismatches", source)
         self.assertNotIn('/dev/input', source)
         self.assertNotIn('ScreenSaver.SetActive', source)
 

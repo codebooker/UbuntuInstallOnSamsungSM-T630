@@ -80,7 +80,7 @@ fi
 
 printf 'kernel_fault_markers: '
 dmesg 2>/dev/null |
-    grep -ciE 'kernel panic|internal error: oops|kgsl.*fault|watchdog.*lockup' || true
+    grep -ciE 'kernel panic|internal error: oops|kgsl.*fault|watchdog.*lockup|h/w is overloaded|msm_vidc.*state.*error' || true
 
 printf 'desktop_battery: '
 timeout 5 upower -i /org/freedesktop/UPower/devices/DisplayDevice 2>/dev/null |
@@ -95,8 +95,14 @@ timeout 5 upower -i /org/freedesktop/UPower/devices/DisplayDevice 2>/dev/null |
         }'
 
 printf 'accelerometer: '
-timeout 5 busctl get-property net.hadess.SensorProxy /net/hadess/SensorProxy \
-    net.hadess.SensorProxy HasAccelerometer 2>/dev/null || echo unavailable
+accelerometer=$(timeout 5 busctl get-property net.hadess.SensorProxy \
+    /net/hadess/SensorProxy net.hadess.SensorProxy HasAccelerometer \
+    2>/dev/null || true)
+case "$accelerometer" in
+    'b true') echo available=yes ;;
+    'b false') echo available=no ;;
+    *) echo unavailable ;;
+esac
 
 printf 'runtime_filesystem: '
 df -h /run | tail -1

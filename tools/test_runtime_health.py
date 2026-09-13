@@ -44,6 +44,17 @@ class RuntimeHealthTests(unittest.TestCase):
         self.assertIn('/org/freedesktop/UPower/devices/DisplayDevice', text)
         self.assertIn('desktop_battery:', text)
 
+    def test_critical_video_and_gpu_faults_are_counted(self):
+        text = (ROOT / 'tools/check_runtime_health.sh').read_text()
+        self.assertIn('kgsl.*fault', text)
+        self.assertIn('h/w is overloaded', text)
+        self.assertIn('msm_vidc.*state.*error', text)
+
+    def test_accelerometer_output_is_human_readable(self):
+        text = (ROOT / 'tools/check_runtime_health.sh').read_text()
+        self.assertIn("'b true') echo available=yes", text)
+        self.assertIn("'b false') echo available=no", text)
+
 
 if __name__ == '__main__':
     unittest.main()

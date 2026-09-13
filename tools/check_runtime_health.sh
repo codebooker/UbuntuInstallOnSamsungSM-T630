@@ -24,8 +24,16 @@ nmcli -t -f DEVICE,TYPE,STATE device status 2>/dev/null |
 printf 'bluetooth: '
 if [ -d /sys/class/bluetooth/hci0 ]; then
     timeout 5 bluetoothctl show 2>/dev/null |
-        sed -n 's/^[[:space:]]*Powered:[[:space:]]*/powered=/p' |
-        head -1
+        awk '
+            /^[[:space:]]*Powered:/ { powered=$2 }
+            /UUID: Audio Source/ { source="yes" }
+            /UUID: Audio Sink/ { sink="yes" }
+            END {
+                if (!powered) powered="unknown"
+                if (!source) source="no"
+                if (!sink) sink="no"
+                print "powered=" powered " audio_source=" source " audio_sink=" sink
+            }'
 else
     echo unavailable
 fi
@@ -35,6 +43,44 @@ timeout 5 runuser -u tablet -- env XDG_RUNTIME_DIR=/run/user/1000 \
     PULSE_SERVER=unix:/run/user/1000/pulse/native \
     pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null |
     head -1 || echo unavailable
+
+printf 'audio_defaults: '
+sink=$(timeout 5 runuser -u tablet -- env XDG_RUNTIME_DIR=/run/user/1000 \
+    PULSE_SERVER=unix:/run/user/1000/pulse/native \
+    pactl get-default-sink 2>/dev/null || true)
+source=$(timeout 5 runuser -u tablet -- env XDG_RUNTIME_DIR=/run/user/1000 \
+    PULSE_SERVER=unix:/run/user/1000/pulse/native \
+    pactl get-default-source 2>/dev/null || true)
+if [ -n "$sink" ] && [ -n "$source" ]; then
+    printf 'sink=%s source=%s\n' "$sink" "$source"
+else
+    echo unavailable
+fi
+
+printf 'device_permissions: '
+if [ "$(stat -c '%U:%G:%a' /dev/fuse 2>/dev/null)" = root:root:666 ] && \
+   [ "$(stat -c '%U:%G:%a' /dev/kgsl-3d0 2>/dev/null)" = root:render:660 ] && \
+   [ "$(stat -c '%U:%G:%a' /dev/ion 2>/dev/null)" = root:render:660 ] && \
+   [ "$(stat -c '%U:%G:%a' /dev/video32 2>/dev/null)" = root:render:660 ] && \
+   [ "$(stat -c '%U:%G:%a' /dev/video33 2>/dev/null)" = root:render:660 ] && \
+   [ "$(stat -c '%U:%G:%a' /dev/dri/renderD128 2>/dev/null)" = root:render:660 ] && \
+   [ "$(stat -c '%U:%G:%a' /dev/snd/controlC0 2>/dev/null)" = root:audio:660 ]; then
+    echo valid
+else
+    echo mismatch
+fi
+
+printf 'camera_stack: '
+if [ -e /run/t630-camera-ready ] || pgrep -x cameraserver >/dev/null 2>&1 || \
+   pgrep -f '^/usr/local/libexec/t630-camera-capture( |$)' >/dev/null 2>&1; then
+    echo active
+else
+    echo stopped
+fi
+
+printf 'kernel_fault_markers: '
+dmesg 2>/dev/null |
+    grep -ciE 'kernel panic|internal error: oops|kgsl.*fault|watchdog.*lockup' || true
 
 printf 'accelerometer: '
 timeout 5 busctl get-property net.hadess.SensorProxy /net/hadess/SensorProxy \

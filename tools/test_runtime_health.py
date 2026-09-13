@@ -18,6 +18,27 @@ class RuntimeHealthTests(unittest.TestCase):
         self.assertNotIn('GENERAL.CONNECTION', text)
         self.assertNotIn('device show wlan0', text)
 
+    def test_bluetooth_health_includes_audio_profile_registration(self):
+        text = (ROOT / 'tools/check_runtime_health.sh').read_text()
+        self.assertIn('/UUID: Audio Source/', text)
+        self.assertIn('/UUID: Audio Sink/', text)
+        self.assertIn('audio_source=', text)
+        self.assertIn('audio_sink=', text)
+
+    def test_shared_device_permissions_are_observed_not_repaired(self):
+        text = (ROOT / 'tools/check_runtime_health.sh').read_text()
+        self.assertIn("stat -c '%U:%G:%a' /dev/fuse", text)
+        self.assertIn("stat -c '%U:%G:%a' /dev/video32", text)
+        self.assertIn('device_permissions:', text)
+        self.assertNotIn('chmod ', text)
+        self.assertNotIn('chown ', text)
+
+    def test_health_output_does_not_emit_controller_or_network_identifiers(self):
+        text = (ROOT / 'tools/check_runtime_health.sh').read_text()
+        self.assertNotIn('GENERAL.CONNECTION', text)
+        self.assertNotIn('GENERAL.HWADDR', text)
+        self.assertNotIn('Address:', text)
+
 
 if __name__ == '__main__':
     unittest.main()

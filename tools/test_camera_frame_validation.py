@@ -113,6 +113,7 @@ class CameraFrameValidationTests(unittest.TestCase):
         self.assertNotIn("gamma=", front)
         self.assertIn("gamma gamma=2.5", rear)
         self.assertIn("t630-yuv-tune 640 480 900 1320", rear)
+        self.assertIn("/home/tablet/.config/t630-camera/rear-color", rear)
         self.assertIn('color_filter=(cat)', front)
 
     def test_rear_color_filter_is_bounded_and_streaming(self):
@@ -123,7 +124,19 @@ class CameraFrameValidationTests(unittest.TestCase):
         self.assertIn("blue_gain > 2000", source)
         self.assertIn("signal(SIGPIPE, SIG_IGN)", source)
         self.assertIn("truncated I420 frame", source)
+        self.assertIn("load_color_offset", source)
+        self.assertIn("frame_number % 15", source)
         self.assertIn("-Werror", build)
+
+    def test_color_slider_is_bounded_and_atomic(self):
+        slider = (ROOT / "ubuntu/t630-camera-color.py").read_text()
+        desktop = (ROOT / "ubuntu/t630-camera-color.desktop").read_text()
+        self.assertIn("Gtk.Scale.new_with_range", slider)
+        self.assertIn("-100, 100, 1", slider)
+        self.assertIn('os.replace(temporary, SETTINGS)', slider)
+        self.assertIn('"Warmer"', slider)
+        self.assertIn('"Cooler"', slider)
+        self.assertIn("Exec=/usr/local/bin/t630-camera-color", desktop)
 
     def test_rear_color_filter_reduces_yellow_chroma(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -140,6 +153,14 @@ class CameraFrameValidationTests(unittest.TestCase):
             self.assertEqual(len(result), len(frame))
             self.assertGreater(result[4], frame[4])
             self.assertLess(result[5], frame[5])
+
+            setting = Path(directory) / "color"
+            setting.write_text("20\n")
+            cooler = subprocess.run(
+                [str(binary), "2", "2", "900", "1320", str(setting)],
+                input=frame, check=True, capture_output=True).stdout
+            self.assertGreater(cooler[4], result[4])
+            self.assertLess(cooler[5], result[5])
 
 if __name__ == "__main__":
     unittest.main()

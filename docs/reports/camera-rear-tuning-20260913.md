@@ -29,11 +29,20 @@ more HAL state changes.
 The known-good AUTO request now feeds a small Ubuntu-native I420 filter before
 GStreamer. The first physical trial at 0.92× red and 1.25× blue was reported as
 much improved but still slightly yellow, so the current profile applies 0.90×
-red and 1.32× blue in BT.601 space only to the rear
-source. A deterministic 2×2 yellow test moved U/V from 90/150 to 98/144 while
+red and 1.32× blue in BT.601 space only to the rear. Physical inspection then
+accepted the result as okay and not too blue; slight warmth remains.
+A deterministic 2×2 yellow test moved U/V from 90/150 to 98/144 while
 keeping its four luma values within two levels. Live aggregate chroma also moved
-away from yellow. Physical judgment of the final color remains the acceptance
-gate.
+away from yellow.
+
+A touch/S Pen-friendly **Rear Camera Color** app now gives the user a live
+warmer/cooler range around the accepted profile. It persists one integer from
+−100 through +100 using an atomic replacement. The root-owned filter treats
+missing, malformed, and out-of-range values as zero, reloads the value every 15
+frames, and maps the full range to bounded red gains 1.00×–0.80× and blue gains
+1.02×–1.62×. No camera restart or privileged UI action is required. Live UI
+validation drove the filter through both endpoints and back to +34 cooler while
+the same camera process and stream remained active.
 
 ## Stock driver panic and safer teardown
 
@@ -53,9 +62,11 @@ The control plane now:
 - retains a bounded, exact-process-group TERM/KILL fallback.
 
 A live rear close after these changes ended with `session closed` and preserved
-the boot ID. An initial implementation used Bash process substitution, but this
-rootfs has no `/dev/fd`; the deployed version uses a portable `ps | while read`
-pipeline.
+the boot ID. After final color acceptance, another close also removed the
+capture client, color filter, GStreamer process, and PipeWire node while
+preserving the boot. An initial implementation used Bash process substitution,
+but this rootfs has no `/dev/fd`; the deployed version uses a portable
+`ps | while read` pipeline.
 
 ## Clean-boot findings
 

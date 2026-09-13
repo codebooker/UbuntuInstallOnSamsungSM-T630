@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Rear Camera Color
+Comment=Adjust the rear camera from warmer to cooler
+Exec=/usr/local/bin/t630-camera-color
+Icon=camera-photo-symbolic
+Terminal=false
+Categories=Settings;Utility;
+StartupNotify=true

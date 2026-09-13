@@ -11,6 +11,16 @@ static uint8_t clip_byte(int value) {
     return (uint8_t)value;
 }
 
+static int load_color_offset(const char *path) {
+    if (path == NULL) return 0;
+    FILE *file = fopen(path, "r");
+    if (file == NULL) return 0;
+    int value = 0;
+    int matched = fscanf(file, "%d", &value);
+    fclose(file);
+    return matched == 1 && value >= -100 && value <= 100 ? value : 0;
+}
+
 static int read_frame(uint8_t *buffer, size_t size) {
     size_t offset = 0;
     while (offset < size) {
@@ -79,14 +89,17 @@ static void tune_i420(uint8_t *frame, int width, int height,
 }
 
 int main(int argc, char **argv) {
-    if (argc != 5) {
-        fprintf(stderr, "usage: %s width height red-permille blue-permille\n", argv[0]);
+    if (argc != 5 && argc != 6) {
+        fprintf(stderr,
+                "usage: %s width height red-permille blue-permille [color-offset-file]\n",
+                argv[0]);
         return 2;
     }
     const int width = atoi(argv[1]);
     const int height = atoi(argv[2]);
     const int red_gain = atoi(argv[3]);
     const int blue_gain = atoi(argv[4]);
+    const char *settings_path = argc == 6 ? argv[5] : NULL;
     if (width < 2 || height < 2 || width % 2 != 0 || height % 2 != 0 ||
         red_gain < 500 || red_gain > 2000 ||
         blue_gain < 500 || blue_gain > 2000) {
@@ -100,6 +113,8 @@ int main(int argc, char **argv) {
     signal(SIGPIPE, SIG_IGN);
 
     int status = 0;
+    unsigned int frame_number = 0;
+    int color_offset = 0;
     for (;;) {
         int input = read_frame(frame, frame_size);
         if (input == 0) break;
@@ -108,8 +123,19 @@ int main(int argc, char **argv) {
             status = 1;
             break;
         }
-        tune_i420(frame, width, height, red_gain, blue_gain);
+        if (frame_number % 15 == 0) {
+            int updated = load_color_offset(settings_path);
+            if (frame_number == 0 || updated != color_offset) {
+                color_offset = updated;
+                fprintf(stderr, "color tuning: offset=%d red=%d blue=%d\n",
+                        color_offset, red_gain - color_offset,
+                        blue_gain + 3 * color_offset);
+            }
+        }
+        tune_i420(frame, width, height, red_gain - color_offset,
+                  blue_gain + 3 * color_offset);
         if (write_frame(frame, frame_size) != 0) break;
+        frame_number++;
     }
     free(frame);
     return status;

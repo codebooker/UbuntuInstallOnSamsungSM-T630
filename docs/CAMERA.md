@@ -3,8 +3,8 @@
 Camera support is an active compatibility experiment. The front camera is
 available to GNOME Camera as a standard PipeWire video source on the physical
 SM-T630. The separate Rear Camera launcher starts rear ID 0 with a guarded
-manual exposure baseline and rear-only tone correction; physical confirmation
-of the latest color profile remains.
+manual exposure baseline, rear-only tone correction, and a physically accepted
+userspace color profile.
 
 ## What works
 
@@ -102,7 +102,12 @@ trial entered an active session without delivering a frame. The bridge therefore
 keeps the known-good AUTO request and passes only rear I420 through the small
 source-built `t630-yuv-tune` filter. Its current 0.90× red and 1.32× blue gains
 move the measured chroma away from yellow while leaving luma essentially
-unchanged; final visual tuning is still in progress.
+unchanged. Physical inspection found the final profile acceptable and not too
+blue, although a little warmth remains. The **Rear Camera Color** app exposes a
+−100 (warmer) to +100 (cooler) slider around that accepted profile. It writes a
+single bounded integer atomically to the user's configuration directory; the
+running filter reloads it twice per second, so adjustment requires neither root
+access nor a fragile camera restart. The setting persists across launches.
 
 The provider allows one camera client at a time. `t630-camera-control` therefore
 stops the current bridge before selecting `front` or `rear`; it never keeps both
@@ -145,6 +150,8 @@ are deliberately left in place; live module removal is not attempted.
 - `camera/t630-camera-capture.c` is the Android NDK capture probe.
 - `camera/t630-yuv-tune.c` is the bounded streaming I420 red/blue correction
   used only for the rear source.
+- `ubuntu/t630-camera-color.py` and its desktop file provide the live,
+  touch-friendly warmer/cooler control.
 - `camera/t630-sensorservice-hidl.cpp` registers the stock framework HIDL
   sensor adapter without starting Android's Java SystemServer.
 - `ubuntu/t630-android-property-seed.c` supplies the small set of Android

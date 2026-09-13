@@ -30,7 +30,7 @@ explicit, previously validated sysfs paths instead.
 | System suspend | Experimental | Guarded manual shallow suspend and wake passed; automatic idle suspend remains disabled |
 | GPU | Experimental | Turnip/Zink can render GNOME, but a KGSL fault was reproduced; software fallback is retained |
 | Video | Mostly working | FFmpeg and GStreamer H.264/VP9 use the stock decoder. A real WebKit process selected it, but no accelerated browser launcher is shipped because this kernel cannot provide WebKit's normal user-namespace sandbox |
-| Camera | Partial | Front exposure works. Rear ID 0 requires its still template and AE off; the current 30 ms / ISO 800 profile plus gamma 2.5 measured mean luma 160 with no near-white clipping. A userspace red/blue correction addresses inactive rear AWB; final visual color confirmation remains |
+| Camera | Partial | Front exposure works. Rear ID 0 requires its still template and AE off; the current 30 ms / ISO 800 profile plus gamma 2.5 measured mean luma 160 with no near-white clipping. The accepted userspace red/blue correction can be adjusted live with the Rear Camera Color slider |
 | Security | Lab configuration | GNOME password lock works, but the retained recovery compositor and USB root console mean this is not a hardened full-device login boundary |
 
 ## Known limitations
@@ -48,8 +48,9 @@ explicit, previously validated sysfs paths instead.
   characterized.
 - Camera support still depends on proprietary files extracted from the owner's
   matching stock firmware; those files cannot be redistributed here. Both
-  cameras are integrated with GNOME, but rear color remains under physical
-  tuning after its manual sensor, tone, and userspace white-balance correction.
+  cameras are integrated with GNOME. Rear exposure and color are physically
+  accepted and user-adjustable, but exposure is not scene-aware and needs
+  wider-lighting tests.
   See [CAMERA.md](CAMERA.md).
 
 For the complete test history, see the dated files in `docs/reports/`, including

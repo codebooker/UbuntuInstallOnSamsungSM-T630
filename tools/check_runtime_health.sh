@@ -82,6 +82,18 @@ printf 'kernel_fault_markers: '
 dmesg 2>/dev/null |
     grep -ciE 'kernel panic|internal error: oops|kgsl.*fault|watchdog.*lockup' || true
 
+printf 'desktop_battery: '
+timeout 5 upower -i /org/freedesktop/UPower/devices/DisplayDevice 2>/dev/null |
+    awk '
+        /^[[:space:]]*state:/ { state=$2 }
+        /^[[:space:]]*percentage:/ { percentage=$2 }
+        END {
+            if (state && percentage)
+                print "state=" state " percentage=" percentage
+            else
+                print "unavailable"
+        }'
+
 printf 'accelerometer: '
 timeout 5 busctl get-property net.hadess.SensorProxy /net/hadess/SensorProxy \
     net.hadess.SensorProxy HasAccelerometer 2>/dev/null || echo unavailable

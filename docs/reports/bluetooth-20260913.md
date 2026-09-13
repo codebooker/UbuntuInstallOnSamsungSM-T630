@@ -116,3 +116,10 @@ On physical boot `84251a48-c3c6-44cf-81bf-5d9f046fb4f8`, WirePlumber restarted
 cleanly with the new override. BlueZ then advertised both Audio Source and Audio
 Sink profiles. The 30% `Tablet_Speakers` sink and the `Tablet_Microphone` source
 remained present and default; WirePlumber logged no BlueZ-monitor failure.
+
+After the later cold boot, opening GNOME Settings directly to its Bluetooth
+panel made the adapter discoverable, pairable, and actively scanning while
+preserving both audio profiles. Closing that exact panel stopped discovery and
+returned discoverable/pairable to off. This verifies the desktop's pairing
+control lifecycle without leaving the lab tablet exposed. No external device
+was paired during this test.

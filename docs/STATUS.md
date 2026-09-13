@@ -25,7 +25,7 @@ explicit, previously validated sysfs paths instead.
 | Speakers | Working | Stock calibration and guarded amplifier sequencing; GNOME volume control works |
 | Microphone | Working | Built-in microphone exposed as the normal PipeWire source through a demand-driven bridge |
 | Sensors | Mostly working | Accelerometer, light, proximity, magnetometer, compass, and automatic brightness tested; physical rotation and suspend/resume remain to validate |
-| Charging | Working | Charger detection and charge state observed |
+| Charging | Working | Charger detection and charge state are exposed through UPower to GNOME; 100% fully charged was verified after a cold boot |
 | Display sleep | Working | Power-key blank/lock/wake works |
 | System suspend | Experimental | Guarded manual shallow suspend and wake passed; automatic idle suspend remains disabled |
 | GPU | Experimental | Turnip/Zink can render GNOME, but a KGSL fault was reproduced; software fallback is retained |

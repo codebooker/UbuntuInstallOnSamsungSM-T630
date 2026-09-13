@@ -39,6 +39,11 @@ class RuntimeHealthTests(unittest.TestCase):
         self.assertNotIn('GENERAL.HWADDR', text)
         self.assertNotIn('Address:', text)
 
+    def test_desktop_battery_uses_upower_display_device(self):
+        text = (ROOT / 'tools/check_runtime_health.sh').read_text()
+        self.assertIn('/org/freedesktop/UPower/devices/DisplayDevice', text)
+        self.assertIn('desktop_battery:', text)
+
 
 if __name__ == '__main__':
     unittest.main()

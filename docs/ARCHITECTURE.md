@@ -38,7 +38,12 @@ button behavior.
   and Linux's standard sensor-proxy interface.
 - GPU experiments use Mesa Turnip/Zink through KGSL, with health checks and an
   automatic software-rendered fallback.
-- Video playback has a process-scoped adapter to the stock Qualcomm decoder.
+- Video playback has an exact-device-guarded, process-scoped adapter to the
+  stock Qualcomm decoder. FFmpeg uses it for the touch-friendly Videos launcher;
+  the opt-in GStreamer mode also translates Samsung's format, buffer-plane and
+  end-of-stream conventions. Build the redistributable adapter on a Linux
+  target (or with a suitable cross compiler in `CC`) using
+  `tools/build_t630_video_adapter.sh`.
 - Camera development runs the stock camera HAL in an isolated Android
   Binder/VNDK compatibility environment with stock assets mounted read-only.
   Native SensorService and the stock framework HIDL adapter satisfy the rear

@@ -81,6 +81,13 @@ class VideoAdapterTests(unittest.TestCase):
         self.assertIn("video3[23] 0:994 660", mdev)
         self.assertNotIn("video3[23] 0:0 666", mdev)
 
+    def test_adapter_has_reproducible_build_helper(self):
+        builder = (ROOT / "tools/build_t630_video_adapter.sh").read_text()
+        self.assertIn("${CC:-cc}", builder)
+        self.assertIn("-shared -fPIC -O2 -Wall -Wextra -Werror", builder)
+        self.assertIn("t630_v4l2_probe.c", builder)
+        self.assertIn("-ldl -pthread", builder)
+
 
 if __name__ == "__main__":
     unittest.main()

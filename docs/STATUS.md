@@ -21,7 +21,7 @@ SM-T630 on the exact `T630XXSBDZE3` baseline.
 | System suspend | Experimental | Guarded manual shallow suspend and wake passed; automatic idle suspend remains disabled |
 | GPU | Experimental | Turnip/Zink can render GNOME, but a KGSL fault was reproduced; software fallback is retained |
 | Video | Partial | Stock decoder adapter passed tested H.264 and VP9 playback; browser integration is absent |
-| Camera | Partial | Front S5K4HA works at 640x480 in GNOME Camera through an on-demand I420/PipeWire bridge. Rear S5K3L6 is blocked by HAL EEPROM CRC/module validation |
+| Camera | Partial | Front S5K4HA works at 640x480 in GNOME Camera through an on-demand I420/PipeWire bridge. Rear S5K3L6 starts with the correct DV2 profile but produces no CSI start-of-frame; EEPROM CRC failures are also present |
 | Security | Lab configuration | GNOME password lock works, but the retained recovery compositor and USB root console mean this is not a hardened full-device login boundary |
 
 ## Known limitations

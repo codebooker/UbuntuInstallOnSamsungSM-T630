@@ -31,6 +31,11 @@ static const t630_property properties[] = {
     {0x01000001, "1", "config.headless"},
     {0x07000001, "lahaina", "ro.board.platform"},
     {0x07000001, "lahaina", "ro.product.board"},
+    /* Board revision 5 is what the stock bootloader supplies on this unit.
+     * Samsung's camera HAL consults it while choosing between the DV1 and DV2
+     * S5K3L6 rear-sensor descriptions. */
+    {0x01000001, "5", "ro.boot.revision"},
+    {0x11000001, "gtact4prowifixx", "ro.product.name"},
     {0x04000001, "user", "ro.build.type"},
     {0x01000001, "0", "ro.debuggable"},
     {0x02000001, "35", "ro.build.version.sdk"},

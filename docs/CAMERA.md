@@ -30,9 +30,11 @@ releases the sensor without leaving its PipeWire source behind.
 
 ## What does not work yet
 
-- Camera ID 0 (rear, S5K3L6) opens and starts its sensor, but the Samsung HAL
-  rejects its EEPROM module data and reports CRC/module-version errors. The
-  request then fails before delivering a usable buffer.
+- Camera ID 0 (rear, S5K3L6) opens and starts its sensor. Supplying the stock
+  `ro.boot.revision=5` value makes Samsung's HAL correctly select its DV2 sensor
+  profile, but the CSI path receives no start-of-frame event and the request
+  times out. Most rear EEPROM sections also fail the stock kernel's CRC checks;
+  this remains under investigation.
 - The stack still depends on proprietary binaries extracted from the owner's
   exact `T630XXSBDZE3` stock firmware. They cannot be distributed here.
 
@@ -62,7 +64,7 @@ calibration, raw logs, or captured images. The repository intentionally carries
 only the independently written compatibility source and the instructions for
 reconstructing a runtime from the user's matching stock package.
 
-Rear-camera work remains separate because its failure is at module-calibration
-validation, not at the Ubuntu frame handoff solved for the front camera. The
-remaining front-camera work is physical orientation checking and wider
-application compatibility testing.
+Rear-camera work remains separate because the sensor starts but its CSI path
+does not deliver a frame; bypassing calibration checks would only hide one of
+the symptoms. The remaining front-camera work is physical orientation checking
+and wider application compatibility testing.

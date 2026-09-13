@@ -78,6 +78,16 @@ MIME associations. Video32/33 and ION are root:render 0660, with exact node,
 device-number and sysfs-driver checks. VPU firmware staging runs before every
 GNOME launch. Browser video acceleration remains unimplemented.
 
+Later camera coexistence testing found that the camera module's `mdev -s` cold
+scan reset existing audio, graphics and codec nodes to root ownership. The
+camera mount helper now immediately reapplies exact device-number/driver-checked
+permissions, including DRM renderD128 and all kernel-advertised major-116 ALSA
+nodes. After a clean reboot, a camera start/stop followed by a normal-user
+1280x720 H.264 hardware decode passed; speaker audio remained unmuted. A
+generated 320x240 H.264 stream still stalls this vendor decoder, while generated
+320x240 VP9 and 1280x720 H.264 complete, so the launcher retains software
+fallback for unsupported/problematic streams.
+
 ## GPU rendering
 
 KGSL reports Adreno642Lv1. Ubuntu Mesa 25.2.8's packaged Vulkan driver enumerates

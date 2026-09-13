@@ -86,12 +86,13 @@ def main():
                 else "frame is nearly uniform; aim the lens at a lit, detailed target"
             ),
         }
-        print(json.dumps(result, sort_keys=True))
     finally:
         path.unlink(missing_ok=True)
-        subprocess.run(["sudo", "-n", CONTROL, "disable"], check=False,
-                       timeout=25, stdout=subprocess.DEVNULL,
+        subprocess.run(["sudo", "-n", CONTROL, "disable"], check=True,
+                       timeout=15, stdout=subprocess.DEVNULL,
                        stderr=subprocess.DEVNULL)
+    # Never report a capture pass before exclusive camera cleanup also passes.
+    print(json.dumps(result, sort_keys=True))
 
 
 if __name__ == "__main__":

@@ -28,6 +28,13 @@ reports only aggregate luma statistics as JSON, then deletes the raw stream and
 turns the camera off in a `finally` block. It never writes a photograph to the
 Ubuntu filesystem.
 
+The camera module's cold device scan is followed immediately by the same
+guarded permission repair used during desktop startup. This preserves normal
+user access to conventional `/dev` endpoints, current ALSA nodes, DRM render,
+KGSL/ION and the hardware codec nodes. Without that repair, opening a camera
+could leave already-running audio functional while preventing later audio,
+graphics and video processes from opening their devices.
+
 Android log capture is capped at 4 MiB in `/run`. A live stress test sent more
 than 6 MiB of printable camera-log traffic; the file stayed below its cap, the
 logger remained alive, and the front stream continued running. This prevents a
@@ -56,6 +63,11 @@ stops the current bridge before selecting `front` or `rear`; it never keeps both
 sensors powered. Both source transitions and cleanup were verified through
 PipeWire, and the Rear Camera desktop launcher opened GNOME Camera with the rear
 source active.
+
+Bridge teardown first requests a normal exit, then bounds an unresponsive
+GStreamer/capture group and escalates only that still-validated owned process
+group. The volatile validator reports success only after this cleanup passes,
+preventing a delivered frame from hiding a stuck camera process.
 
 ## What does not work yet
 

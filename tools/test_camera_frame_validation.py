@@ -29,7 +29,23 @@ class CameraFrameValidationTests(unittest.TestCase):
         self.assertIn('/run/user/1000', text)
         self.assertIn('path.unlink(missing_ok=True)', text)
         self.assertIn('["sudo", "-n", CONTROL, "disable"]', text)
+        self.assertIn('check=True', text)
+        self.assertLess(text.index('CONTROL, "disable"'),
+                        text.index('print(json.dumps(result'))
         self.assertNotIn("/data/", text)
+
+    def test_camera_rescan_reapplies_desktop_permissions(self):
+        mounts = (ROOT / "camera/t630-camera-mounts.sh").read_text()
+        scan = mounts.index("/proc/1/root/bin/busybox mdev -s")
+        repair = mounts.index("python3 /usr/local/share/t630/t630-device-permissions.py")
+        self.assertGreater(repair, scan)
+        self.assertNotIn("chmod 666 /dev/null", mounts)
+
+    def test_camera_control_bounds_owned_group_teardown(self):
+        control = (ROOT / "ubuntu/t630-camera-control").read_text()
+        self.assertIn('while pid_matches "$file" "$marker"', control)
+        self.assertIn('kill -KILL -- "-$pid"', control)
+        self.assertIn('test "$attempt" -lt 16', control)
 
 
 if __name__ == "__main__":

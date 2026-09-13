@@ -85,10 +85,10 @@ if [[ ! -d /sys/module/camera ]]; then
     insmod /opt/t630/vendor/lib/modules/camera.ko
 fi
 /proc/1/root/bin/busybox mdev -s
-# mdev resolves /etc/mdev.conf against Ubuntu's root even though the binary is
-# supplied by the initramfs. Restore the conventional permissions required by
-# unprivileged desktop processes after its cold scan.
-chmod 666 /dev/null /dev/zero /dev/full /dev/random /dev/urandom /dev/tty /dev/ptmx
+# A camera cold scan must not revoke access from the already-running desktop,
+# audio server, GPU, or video player. Reapply only the validated conventional,
+# ALSA, render, codec and KGSL/ION ownership rules after mdev returns.
+python3 /usr/local/share/t630/t630-device-permissions.py
 
 test -c /dev/media0
 test -c /dev/video0

@@ -30,10 +30,15 @@ stop_group() {
         read -r pid <"$file"
         kill -TERM -- "-$pid" 2>/dev/null || true
         attempt=0
-        while kill -0 "$pid" 2>/dev/null; do
+        while pid_matches "$file" "$marker"; do
             attempt=$((attempt + 1))
-            test "$attempt" -lt 20 || return 1
-            sleep 1
+            if [ "$attempt" -eq 10 ]; then
+                # The bridge holds no user data. Bound a stuck GStreamer/camera
+                # teardown, but signal only the still-validated owned group.
+                kill -KILL -- "-$pid" 2>/dev/null || true
+            fi
+            test "$attempt" -lt 16 || return 1
+            sleep .5
         done
     fi
     rm -f "$file"

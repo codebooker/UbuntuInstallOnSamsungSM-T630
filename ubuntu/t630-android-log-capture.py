@@ -11,6 +11,27 @@ import time
 
 SOCKET_PATH = "/dev/socket/logdw"
 OUTPUT_PATH = "/run/t630-android-log.txt"
+MAX_OUTPUT_BYTES = 4 * 1024 * 1024
+
+
+def encode_record(packet: bytes, timestamp: float) -> bytes:
+    fields = [
+        part.decode("utf-8", "replace")
+        for part in re.findall(rb"[\x20-\x7e]{2,}", packet)
+    ]
+    if not fields:
+        return b""
+    return f"{timestamp:.3f} {' | '.join(fields)}\n".encode("utf-8")
+
+
+def write_bounded(output, record: bytes, limit: int = MAX_OUTPUT_BYTES) -> None:
+    if not record:
+        return
+    output.seek(0, os.SEEK_END)
+    if output.tell() + len(record) > limit:
+        output.seek(0)
+        output.truncate()
+    output.write(record)
 
 
 def main() -> int:
@@ -35,18 +56,16 @@ def main() -> int:
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
 
-    with open(OUTPUT_PATH, "a", buffering=1) as output:
+    # Camera debug can be extremely verbose. Keep one bounded current log in
+    # tmpfs so a long camera session cannot exhaust /run and break unrelated
+    # desktop services.
+    with open(OUTPUT_PATH, "a+b", buffering=0) as output:
         while True:
             try:
                 packet = server.recv(65535)
             except OSError:
                 return 0
-            fields = [
-                part.decode("utf-8", "replace")
-                for part in re.findall(rb"[\x20-\x7e]{2,}", packet)
-            ]
-            if fields:
-                output.write(f"{time.monotonic():.3f} {' | '.join(fields)}\n")
+            write_bounded(output, encode_record(packet, time.monotonic()))
 
 
 if __name__ == "__main__":

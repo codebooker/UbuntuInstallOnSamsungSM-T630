@@ -21,6 +21,11 @@ a complete Android system the watchdog reports failures through system_server
 and tombstoned. Neither exists here, and leaving it enabled can terminate the
 hybrid camera stack during an ordinary HAL timeout.
 
+Android log capture is capped at 4 MiB in `/run`. A live stress test sent more
+than 6 MiB of printable camera-log traffic; the file stayed below its cap, the
+logger remained alive, and the front stream continued running. This prevents a
+long or verbose camera session from exhausting the tablet's small `/run` tmpfs.
+
 The runtime mounts stock system/vendor/APEX content read-only and uses a
 separate Ubuntu-owned `/data` directory. It does not mount Android calibration
 or identity partitions writable.
@@ -50,8 +55,9 @@ source active.
 - The first recovered rear frame sequence was almost completely dark. CSI,
   CSID and IFE interrupts plus request completion were all healthy, but a
   well-lit physical target still needs to be captured before claiming image
-  quality. Several rear EEPROM sections report the same stock-kernel CRC
-  failures seen earlier.
+  quality. The accelerometer simultaneously reported the tablet lying flat and
+  face-up, with the rear lens pointed into its supporting surface. Several rear
+  EEPROM sections report the same stock-kernel CRC failures seen earlier.
 - The stack still depends on proprietary binaries extracted from the owner's
   exact `T630XXSBDZE3` stock firmware. They cannot be distributed here.
 

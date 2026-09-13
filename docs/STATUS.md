@@ -3,6 +3,15 @@
 Last updated: 2026-09-13. Unless stated otherwise, results are from one physical
 SM-T630 on the exact `T630XXSBDZE3` baseline.
 
+## Diagnostic safety
+
+Do not recursively read arbitrary `name` attributes below `/sys` on the stock
+DZE3 kernel. A read of a Qualcomm GLINK packet-device `name` attribute reached
+`drivers/soc/qcom/glink_pkt.c:name_show()` with an invalid device object and
+caused a kernel null-pointer panic. In particular, avoid commands equivalent to
+`find /sys ... -name name -exec grep ...`. Runtime checks in this repository use
+explicit, previously validated sysfs paths instead.
+
 | Area | State | Notes |
 | --- | --- | --- |
 | Boot | Working | Stock downstream kernel with a replacement Ubuntu initramfs; Ubuntu root on userdata |
@@ -12,7 +21,7 @@ SM-T630 on the exact `T630XXSBDZE3` baseline.
 | Keyboard | Working | Maliit/GNOME on-screen keyboard with Shift, Enter, Backspace, and Hide |
 | Physical keys | Working | Volume, Power, Home, Back, Recents, and red Active button mapped |
 | Wi-Fi | Working | Reconnect survives interface renaming; SSH works over the LAN |
-| Bluetooth | Working | WCN6850 UART initialization, firmware handoff, idle wake, and BlueZ discovery tested |
+| Bluetooth | Working | WCN6850 startup retry, firmware handoff, idle wake, BlueZ discovery, and synchronized UART teardown physically tested |
 | Speakers | Working | Stock calibration and guarded amplifier sequencing; GNOME volume control works |
 | Microphone | Working | Built-in microphone exposed as the normal PipeWire source through a demand-driven bridge |
 | Sensors | Mostly working | Accelerometer, light, proximity, magnetometer, compass, and automatic brightness tested; physical rotation and suspend/resume remain to validate |

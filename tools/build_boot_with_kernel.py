@@ -19,6 +19,10 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("kernel", type=Path)
     parser.add_argument("--name", default="bluetooth-h4-v2")
+    parser.add_argument(
+        "--purpose",
+        default="Enable the H4 and Qualcomm IBS-aware Bluetooth UART transports",
+    )
     args = parser.parse_args()
 
     kernel = args.kernel.resolve()
@@ -100,7 +104,7 @@ def main() -> int:
         "model": "SM-T630",
         "stock_build": "T630XXSBDZE3",
         "kernel_release": "5.4.274-qgki-31225846-abT630XXSBDZE3",
-        "purpose": "Enable the H4 and Qualcomm IBS-aware Bluetooth UART transports",
+        "purpose": args.purpose,
         "source_boot_sha256": sha(source_boot.read_bytes()),
         "boot_sha256": sha(image.read_bytes()),
         "boot_bytes": image.stat().st_size,

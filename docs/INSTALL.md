@@ -38,8 +38,10 @@ Before unlocking or flashing:
 5. Copy off anything you care about. Bootloader unlock and the eventual Ubuntu
    installation erase userdata.
 
-Unlocking permanently trips Knox. Relocking while custom images are installed
-can brick the device. Do not relock as part of this guide.
+Unlocking wiped the test tablet but did not by itself change its Knox warranty
+bit. Booting custom software later changed that bit permanently. Relocking while
+custom images are installed can brick the device. Do not relock as part of this
+guide.
 
 ## 3. Unlock the bootloader
 

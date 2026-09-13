@@ -9,9 +9,10 @@ full-screen GNOME desktop from internal storage.
 
 > [!CAUTION]
 > This is a development port, not a finished installer. Unlocking the
-> bootloader wipes the tablet and permanently trips Samsung Knox. A wrong image
-> or partition target can make the tablet unbootable. Do not use files for an
-> SM-T636, SM-T638, Tab S9, or any other model.
+> bootloader wipes the tablet; booting custom software can permanently trip the
+> Samsung Knox warranty state. A wrong image or partition target can make the
+> tablet unbootable. Do not use files for an SM-T636, SM-T638, Tab S9, or any
+> other model.
 
 ## Current status
 

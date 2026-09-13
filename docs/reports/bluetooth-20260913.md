@@ -30,6 +30,42 @@ removed because that utility remains attached as a monitor after printing its
 answer. The launcher also handles a transient D-Bus-activated `bluetoothd`
 without waiting forever on the UART owner.
 
+A later panic-reboot exposed another bounded startup race: the WCN6850 once
+returned a stray `0xff` byte and timed out while changing the UART to 3.2 Mbps.
+The firmware loader already powers the controller off on any failed attempt;
+the launcher now makes up to three clean attempts, with a settle delay between
+them, before declaring Bluetooth unavailable. A manual second attempt on the
+same boot completed normally and restored the powered BlueZ adapter.
+
+Stopping that live UART owner then reproduced a kernel use-after-free in
+`hci_ibs_wake_retrans_timeout()`: the downstream `qca_close()` used
+non-synchronous timer deletion and freed its state while the callback was still
+running. Patch 0008 backports the teardown guarantee used by current upstream
+Linux. Because Linux 5.4 does not provide `timer_shutdown_sync()`, it uses
+`del_timer_sync()` before and after draining the QCA workqueue so queued work
+cannot leave a rearmed timer behind.
+
+### Physical verification of synchronized teardown
+
+The replacement LTO kernel and boot image were built from the exact saved
+production config and release string. The kernel `Image` SHA-256 is
+`bdee4acf92c0a27ae0158fb121e9fe2dce5c66ce868d19e8d4828b2ff59cb882`;
+the AVB-padded boot image SHA-256 is
+`2bfa801e391476fb9e4f597d31846fc2113b8c0c761130caa4a7fef4dec1876a`.
+The guarded writer verified the old v7 boot hash, wrote only `sda19`, read the
+new hash back, and verified `sda20`, `sda21`, `sda22`, and `sde19` unchanged.
+
+Physical boot `056cf97f-4035-4b53-8809-8218437b3a82` reached GNOME with Wi-Fi,
+the 30% speaker sink, sensors, and a powered Bluetooth adapter. On an earlier
+boot, the revised launcher encountered the known transient high-speed UART
+timeout and recovered on its next bounded attempt.
+
+The panic reproduction was then repeated deliberately: terminating the live
+Bluetooth launcher closed the QCA line discipline and UART owner. The boot ID
+stayed unchanged, no kernel exception was logged, and a fresh launcher restored
+the powered adapter on its first attempt. This physically verifies patch 0008
+against the previously reproducible timer use-after-free.
+
 ## Physical verification
 
 Clean boot `79fdbd99-b920-459c-bd1f-ee2886e431b0` established all of the

@@ -24,9 +24,50 @@ loader_pid=
 daemon_pid=
 daemon_owned=false
 if ! pgrep -f "^(python3|/usr/bin/python3) $loader " >/dev/null; then
-    python3 "$loader" --firmware-dir "$firmware" --address-file "$address" \
-        >>/var/log/t630-bluetooth-loader.log 2>&1 &
-    loader_pid=$!
+    loader_attempt=1
+    while [ "$loader_attempt" -le 3 ]; do
+        echo "Starting Bluetooth controller (attempt $loader_attempt/3)"
+        python3 "$loader" --firmware-dir "$firmware" --address-file "$address" \
+            >>/var/log/t630-bluetooth-loader.log 2>&1 &
+        loader_pid=$!
+
+        attach_wait=0
+        while [ ! -d /sys/class/bluetooth/hci0 ]; do
+            if ! kill -0 "$loader_pid" 2>/dev/null; then
+                if wait "$loader_pid"; then
+                    loader_status=0
+                else
+                    loader_status=$?
+                fi
+                loader_pid=
+                echo "Bluetooth controller attempt $loader_attempt failed (status $loader_status)" >&2
+                break
+            fi
+            attach_wait=$((attach_wait + 1))
+            if [ "$attach_wait" -ge 30 ]; then
+                echo "Bluetooth controller attempt $loader_attempt timed out" >&2
+                kill "$loader_pid" 2>/dev/null || true
+                wait "$loader_pid" 2>/dev/null || true
+                loader_pid=
+                break
+            fi
+            sleep 1
+        done
+
+        if [ -d /sys/class/bluetooth/hci0 ]; then
+            break
+        fi
+        loader_attempt=$((loader_attempt + 1))
+        if [ "$loader_attempt" -le 3 ]; then
+            # The loader powers the controller off on failure. Give rfkill and
+            # the UART a moment to settle before beginning again at ROM speed.
+            sleep 1
+        fi
+    done
+    if [ ! -d /sys/class/bluetooth/hci0 ]; then
+        echo "SM-T630 Bluetooth controller failed after 3 attempts" >&2
+        exit 1
+    fi
 fi
 cleanup() {
     if [ "$daemon_owned" = true ] && [ -n "$daemon_pid" ]; then
@@ -42,12 +83,11 @@ trap cleanup EXIT INT TERM HUP
 
 attempt=0
 while [ ! -d /sys/class/bluetooth/hci0 ]; do
-    if [ -n "$loader_pid" ] && ! kill -0 "$loader_pid" 2>/dev/null; then
-        wait "$loader_pid"
+    attempt=$((attempt + 1))
+    if [ "$attempt" -ge 30 ]; then
+        echo "Existing Bluetooth controller loader did not create hci0" >&2
         exit 1
     fi
-    attempt=$((attempt + 1))
-    test "$attempt" -lt 30
     sleep 1
 done
 

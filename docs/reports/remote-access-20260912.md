@@ -78,6 +78,22 @@ depend on systemd PID 1. This remains a root-admin experimental tablet, not a
 hardened multi-user deployment; possession of the dedicated key grants full root.
 No router port forwarding or Internet exposure was configured.
 
+## Link-event race fix — 2026-09-13
+
+NetworkManager can dispatch several rapid link events during Wi-Fi startup.
+The dispatcher previously released its lock immediately after forking the
+screen server, before Python had renamed itself or bound port 8765. A second
+dispatcher could miss it in `pgrep`, start another copy, and leave an
+address-in-use traceback even though one server remained functional.
+
+The screen server now holds its own nonblocking single-instance lock. The
+dispatcher matches the exact command line and keeps its existing startup lock
+until the loopback HTTP endpoint answers or the owned child fails. Two
+simultaneous live dispatcher invocations were run after stopping the old
+server. Exactly one process and one `127.0.0.1:8765` listener remained, the log
+was empty, the endpoint returned HTTP 200, and a 1920x1200 PNG frame crossed the
+authenticated SSH tunnel successfully.
+
 ## Disable
 
 Using USB serial, first disable the dedicated dispatcher hook (remove its execute

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """Read-only live scanout view. Loopback only; use an authenticated SSH tunnel."""
 import ctypes
+import fcntl
 import http.server
 import io
 import subprocess
@@ -26,6 +27,12 @@ if sys.argv[1:] == ['--snapshot']:
     raise SystemExit(0)
 if sys.argv[1:]:
     raise SystemExit('Use --snapshot or no arguments')
+
+service_lock = open('/run/t630-screen-service.lock', 'a')
+try:
+    fcntl.flock(service_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+except BlockingIOError:
+    raise SystemExit(0)
 
 ctypes.CDLL(None).prctl(15,b't630-screen',0,0,0)
 page = b'''<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ubuntu tablet - live view</title>

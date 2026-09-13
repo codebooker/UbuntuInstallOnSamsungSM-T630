@@ -23,6 +23,26 @@ sshd_pid=$(cat /run/t630-sshd.pid 2>/dev/null || true)
 if test -z "$sshd_pid" || ! kill -0 "$sshd_pid" 2>/dev/null || test "$(cat /proc/"$sshd_pid"/comm 2>/dev/null)" != sshd; then
     /usr/sbin/sshd -f /etc/ssh/sshd_config_t630 -E /var/log/t630-sshd.log 9>&-
 fi
-if ! /usr/bin/pgrep -x t630-screen >/dev/null; then
-    /usr/bin/nohup /usr/bin/python3 /usr/local/libexec/t630-screen </dev/null >/run/t630-screen.log 2>&1 9>&- &
+screen_pid=$(/usr/bin/pgrep -fo '^/usr/bin/python3 /usr/local/libexec/t630-screen$' 2>/dev/null || true)
+if test -z "$screen_pid"; then
+    /usr/bin/nohup /usr/bin/python3 /usr/local/libexec/t630-screen \
+        </dev/null >/run/t630-screen.log 2>&1 9>&- &
+    screen_pid=$!
 fi
+
+# Keep the remote-start lock until the child has acquired its own lock and
+# bound the loopback endpoint. NetworkManager can dispatch several rapid link
+# events; without this handshake a second invocation can race Python's process
+# rename and launch another server against the same port.
+attempt=0
+until /usr/bin/curl --fail --silent --max-time 2 http://127.0.0.1:8765/ \
+        >/dev/null; do
+    if ! kill -0 "$screen_pid" 2>/dev/null; then
+        wait "$screen_pid" 2>/dev/null || true
+        echo 'Tablet screen service exited before its loopback endpoint was ready.' >&2
+        exit 1
+    fi
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 10
+    sleep 1
+done

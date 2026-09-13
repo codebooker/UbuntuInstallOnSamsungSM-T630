@@ -20,7 +20,7 @@ explicit, previously validated sysfs paths instead.
 | S Pen | Working | Position and clicking corrected; GNOME keyboard accepts pen input |
 | Keyboard | Working | Maliit/GNOME on-screen keyboard with Shift, Enter, Backspace, and Hide |
 | Physical keys | Working | Volume, Power, Home, Back, Recents, and red Active button mapped |
-| Wi-Fi | Working | Reconnect survives interface renaming; SSH works over the LAN |
+| Wi-Fi / remote access | Working | Reconnect survives interface renaming; SSH and the single-instance loopback screen service work over the LAN |
 | Bluetooth | Working | WCN6850 startup retry, firmware handoff, idle wake, BlueZ discovery, synchronized teardown, and supervised recovery physically tested |
 | Speakers | Working | Stock calibration and guarded amplifier sequencing; GNOME volume control works |
 | Microphone | Working | Built-in microphone exposed as the normal PipeWire source through a demand-driven bridge |

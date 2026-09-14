@@ -21,7 +21,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-stock-assets"
-VERSION = "1.0.0+dze3"
+VERSION = "1.0.1+dze3"
 BASELINE = "SM-T630 T630XXSBDZE3"
 
 # Static, locally extracted inputs only. Mutable SSC registry/socinfo state,
@@ -119,8 +119,10 @@ def collect(source_root: Path,
             tree_map: dict[str, str] = TREE_MAP,
             file_map: dict[str, str] = FILE_MAP,
             excluded=frozenset(EXCLUDED_SOURCE_PATHS)):
+    if source_root.is_symlink():
+        raise ValueError("source root must be a real directory")
     source_root = source_root.resolve(strict=True)
-    if not source_root.is_dir() or source_root.is_symlink():
+    if not source_root.is_dir():
         raise ValueError("source root must be a real directory")
     entries: dict[str, tuple[str, Path | str, int]] = {}
 
@@ -247,6 +249,8 @@ def build(source_root: Path, output: Path, epoch: int,
           excluded=frozenset(EXCLUDED_SOURCE_PATHS)) -> str:
     if epoch < 0:
         raise ValueError("SOURCE_DATE_EPOCH must be non-negative")
+    if source_root.is_symlink():
+        raise ValueError("source root must be a real directory")
     source_root = source_root.resolve(strict=True)
     validate_critical(source_root, critical_hashes)
     entries = collect(source_root, tree_map, file_map, excluded)
@@ -255,7 +259,7 @@ def build(source_root: Path, output: Path, epoch: int,
 Version: {VERSION}
 Architecture: arm64
 Maintainer: local SM-T630 owner
-Depends: t630-hardware-runtime (= 0.1.1)
+Depends: t630-hardware-runtime (= 0.1.2)
 Section: non-free/admin
 Priority: optional
 Description: private exact-stock assets for Samsung SM-T630 DZE3

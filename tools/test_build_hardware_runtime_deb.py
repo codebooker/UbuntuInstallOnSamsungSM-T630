@@ -41,6 +41,7 @@ class HardwareRuntimePackageTests(unittest.TestCase):
             with tarfile.open(data_path, "r:xz") as archive:
                 names = {item.name.removeprefix("./") for item in archive.getmembers()}
             self.assertIn("usr/local/sbin/t630-audio-start", names)
+            self.assertIn("etc/t630-install-id", names)
             self.assertIn("usr/local/libexec/t630-bluetooth/t630_qca_bt.py", names)
             self.assertIn("usr/local/sbin/t630-sensors-start", names)
             self.assertIn(

@@ -230,9 +230,11 @@ The redistributable hardware orchestration is a separate source-only package:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_hardware_runtime_deb.py
 ```
 
-This creates `output/t630-hardware-runtime_0.1.1_all.deb`. It contains the text
+This creates `output/t630-hardware-runtime_0.1.2_all.deb`. It contains the text
 scripts and policy that coordinate Wi-Fi, Bluetooth, audio, microphone,
 sensors, and IPA, plus the system copy of the owner-neutral WirePlumber policy.
+It owns the exact `SM-T630-T630XXSBDZE3-Ubuntu-v1` installation marker checked
+by device services.
 It recommends, but does not embed, the compiled sensor packages or
 stock-derived firmware and calibration.
 
@@ -260,7 +262,7 @@ SOURCE_DATE_EPOCH=1700000000 python3 tools/build_stock_assets_deb.py SOURCE_ROOT
 
 On the development tablet, `SOURCE_ROOT` is `/` because its static stock copies
 have already been validated and staged. The output is
-`output/private/t630-stock-assets_1.0.0+dze3_arm64.deb`. It contains proprietary
+`output/private/t630-stock-assets_1.0.1+dze3_arm64.deb`. It contains proprietary
 Samsung/Qualcomm files and must never be shared, uploaded, or committed. The
 builder verifies critical DZE3 inputs, records every selected file's size and
 SHA256 in an internal manifest, and rejects mutable/device-identity sources.
@@ -307,11 +309,27 @@ release-set metapackage:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_release_meta_deb.py
 ```
 
-This creates `output/t630-release-base_0.1.0_arm64.deb`. It contains no device
+This creates `output/t630-release-base_0.1.1_arm64.deb`. It contains no device
 payload; its exact-version dependencies prevent a fresh root from mixing
 incompatible first-boot, desktop, hardware, native, sensor, pd-mapper, or DZE3
 stock-asset revisions. Camera's Android compatibility runtime is deliberately
 outside this base set while its release boundary remains unfinished.
+
+Validate a complete package directory without changing a root filesystem:
+
+```sh
+python3 tools/assemble_release_root.py PACKAGE_DIRECTORY
+```
+
+The validator checks all ten exact filenames, Debian package names and
+versions, SHA256 values, and the owner-only mode of the private stock package.
+Offline installation additionally requires an Ubuntu 24.04 root containing a
+regular `.t630-offline-root` file whose exact content is
+`SM-T630 OFFLINE RELEASE ROOT`. The tool rejects `/`, symlinked roots, existing
+human accounts, home data, initialized machine identity, host SSH keys, and
+network credentials before accepting `--apply`. It re-runs that identity audit
+after package installation. This guarded apply path exists, but has not yet
+passed the fresh-root rehearsal.
 
 Do not overwrite a mapped live library merely to test the package. Extract it
 to a temporary directory and run the dependency/symbol probes described in the

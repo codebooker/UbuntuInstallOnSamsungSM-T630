@@ -5,9 +5,9 @@
 `tools/build_stock_assets_deb.py` now converts a prepared exact-stock source
 tree into a deterministic, local-only Debian package:
 
-- name: `t630-stock-assets_1.0.0+dze3_arm64.deb`
-- size: 37,666,456 bytes
-- SHA256: `45e18e3a4c6ea3315110ddf5bc8f8340e6b78136581bcdfbffffbcb9bfd465b4`
+- name: `t630-stock-assets_1.0.1+dze3_arm64.deb`
+- size: 37,666,460 bytes
+- SHA256: `934f3c361fedc806eef90b4b92a6f93c906492b6b29339cb4e2cf85c0c7b461e`
 - selected static entries: 592
 
 Two builds on the tablet with `SOURCE_DATE_EPOCH=1700000000` were byte-for-byte
@@ -41,7 +41,7 @@ without copying either link.
 Native extraction confirmed the private package metadata and DZE3 dependency,
 an empty SSC registry and socinfo tree, absence of both excluded symlinks, and a
 matching packaged Wi-Fi-module hash. The package depends on
-`t630-hardware-runtime (= 0.1.1)` and is labeled in the Debian `non-free/admin`
+`t630-hardware-runtime (= 0.1.2)` and is labeled in the Debian `non-free/admin`
 section.
 
 ## Remaining installer boundary

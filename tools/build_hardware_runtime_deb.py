@@ -13,8 +13,9 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-hardware-runtime"
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 FILES = {
+    "etc/t630-install-id": ("ubuntu/t630-install-id", 0o644),
     "etc/NetworkManager/conf.d/90-t630-network.conf": ("ubuntu/90-t630-network.conf", 0o644),
     "etc/udev/rules.d/61-t630-sensors.rules": ("ubuntu/61-t630-sensors.rules", 0o644),
     "usr/local/bin/t630-microphone-bridge": ("ubuntu/t630-microphone-bridge", 0o755),

@@ -5,9 +5,9 @@
 The redistributable hardware orchestration is now built by
 `tools/build_hardware_runtime_deb.py` as a deterministic Debian package:
 
-- name: `t630-hardware-runtime_0.1.1_all.deb`
-- size: 31,436 bytes
-- SHA256: `4c0338a386d206925b74d59ce56779623be7bca32269e2862c011d75b71af40b`
+- name: `t630-hardware-runtime_0.1.2_all.deb`
+- size: 31,492 bytes
+- SHA256: `821f7dec058a73149e2704f3ea8179058e009a425df562a09aafa16b03a6b632`
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
 arm64 `dpkg-deb` parsed and extracted the result on the tablet. The payload
@@ -23,6 +23,11 @@ microphone bridge, Qualcomm Bluetooth helper, and startup/supervision scripts
 for audio, Bluetooth, sensors, and IPA. It also contains the speaker and
 microphone routing helpers, audio cleanup and device-permission helpers, and the
 audio/video firmware staging scripts.
+
+Version 0.1.2 also owns `/etc/t630-install-id` with the exact
+`SM-T630-T630XXSBDZE3-Ubuntu-v1` value already enforced by hardware launchers.
+This closes the previous fresh-root gap where the live system had the marker
+but no release package would install it.
 
 The two WirePlumber policies are stored below
 `/usr/local/share/t630/owner-config`. Desktop runtime 0.1.1 copies those fixed
@@ -41,7 +46,7 @@ boot contained no tracked fault markers.
 
 ## Remaining package boundary
 
-Version 0.1.1 depends on desktop runtime 0.1.1 and recommends the reproducible
+Version 0.1.2 depends on desktop runtime 0.1.1 and recommends the reproducible
 `libssc`, `hexagonrpcd`, and `iio-sensor-proxy` t6303 builds plus the local-only
 `t630-stock-assets` package. It deliberately excludes
 `pd-mapper`, patched GDM/elogind components, camera and video adapters,

@@ -79,6 +79,15 @@ class StockAssetsPackageTests(unittest.TestCase):
         self.assertIn("opt/t630/vendor/firmware/wlan/qca_cld/wlan_mac.bin",
                       builder.EXCLUDED_SOURCE_PATHS)
 
+    def test_symlinked_source_root_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = self.source(root)
+            link = root / "source-link"
+            link.symlink_to(source, target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, "real directory"):
+                builder.collect(link, {}, {}, frozenset())
+
 
 if __name__ == "__main__":
     unittest.main()

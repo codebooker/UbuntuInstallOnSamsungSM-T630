@@ -13,7 +13,9 @@
    reproducible, including the audio protection-domain mapper. Factory-archive
    preparation, remaining compiled login/camera components, generic-root
    assembly, and the destructive rehearsal remain. An exact-version base
-   metapackage now prevents incompatible component combinations.
+   metapackage now prevents incompatible component combinations, and the
+   guarded offline assembler validates the full package directory before it can
+   touch an explicitly marked Ubuntu 24.04 root.
 3. Camera capture, front-camera tuning, and photo-flash integration.
 4. Bluetooth headset playback, microphone, and reconnect testing.
 5. Four-edge and post-resume sensor/rotation validation.

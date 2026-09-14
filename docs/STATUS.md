@@ -35,7 +35,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Flashlight | Working | Rear LED current and PMIC switch mapped; GNOME Quick Settings provides a brightness slider and a leased toggle that fails off after 15 seconds if its controller disappears |
 | Optional I/O | Characterized | Kernel support exists for microSD, USB host/role switch, Samsung NFC, GNSS framework, and USB-C DisplayPort. The exact NFC I2C path and the proprietary NFC/GNSS service boundaries are documented; physical accessory and bounded-service tests remain |
 | User setup | In progress | Desktop/session integration resolves the installer-selected owner rather than assuming `tablet`/UID 1000; deterministic first-boot and desktop-runtime packages pass native arm64 extraction, and the non-writing first-boot preview fills the physical display; fresh-root execution remains |
-| Release packaging | In progress | Nine exact-version component packages and a release metapackage build reproducibly and pass native extraction; factory-archive preparation, remaining login/camera components, fresh-root assembly, and recovery rehearsal remain |
+| Release packaging | In progress | Nine exact-version component packages and a release metapackage build reproducibly and pass native extraction; the guarded offline assembler validates the ten-file package closure; factory-archive preparation, remaining login/camera components, fresh-root execution, and recovery rehearsal remain |
 | Security | Lab configuration | GNOME password lock works, but the retained recovery compositor and USB root console mean this is not a hardened full-device login boundary |
 
 ## Known limitations
@@ -79,3 +79,5 @@ The pinned audio protection-domain service is recorded in the
 [pd-mapper package report](reports/pd-mapper-package-20260914.md).
 The exact-version dependency closure is recorded in the
 [release package-set report](reports/release-package-set-20260914.md).
+The fail-closed offline installation boundary is recorded in the
+[release-root assembly report](reports/release-root-assembly-gate-20260914.md).

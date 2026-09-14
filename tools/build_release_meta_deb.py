@@ -14,7 +14,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-release-base"
-VERSION = "0.1.7"
+VERSION = "0.1.8"
 DEPENDENCIES = (
     "t630-first-boot (= 0.1.1)",
     "t630-desktop-runtime (= 0.1.1)",
@@ -22,7 +22,7 @@ DEPENDENCIES = (
     "t630-boot-runtime (= 0.1.0)",
     "t630-polkit-runtime (= 0.1.0)",
     "t630-login-runtime (= 0.1.0)",
-    "t630-camera-runtime (= 0.1.2)",
+    "t630-camera-runtime (= 0.1.3)",
     "t630-native-userspace (= 0.1.0)",
     "t630-pd-mapper (= 0.1.0)",
     "libssc (= 0.4.4-t6303)",

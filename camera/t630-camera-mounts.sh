@@ -8,7 +8,21 @@ test "$(grep '^PARTNAME=' /sys/class/block/sda26/uevent)" = PARTNAME=super
 test "$(cat /sys/class/block/sda26/size)" = 18432000
 super_device=$(cat /sys/class/block/sda26/dev)
 [[ "$super_device" =~ ^[0-9]+:[0-9]+$ ]]
-eval "$(/usr/bin/python3 /usr/local/share/t630/t630_account.py env)"
+camera_static=/var/lib/t630-camera/static
+camera_runtime=/run/t630-camera
+
+test "$(sha256sum "$camera_static/runtime/apex_payload.img" | cut -d' ' -f1)" = \
+    933852072eda61c000f1e0f34570c92f420e02ad765735685645c73bab561f9a
+test "$(sha256sum "$camera_static/i18n/apex_payload.img" | cut -d' ' -f1)" = \
+    1a81d87cf37e8767ab1cc996d2e955f4f2657261ac7ffabc52df8c3bbac53c61
+test "$(sha256sum "$camera_static/vndk30/apex_payload.img" | cut -d' ' -f1)" = \
+    cbf2391730c65de571ec48b6e30bba2099d6f09576613628cc4359453a0ce36b
+test "$(sha256sum "$camera_static/camera/apex_payload.img" | cut -d' ' -f1)" = \
+    ccc35ded4ac562dcd2b4dbfe0d3aadad36feb25660d1977ae6b53d8be9fb124f
+test "$(sha256sum "$camera_static/system/cameraserver" | cut -d' ' -f1)" = \
+    5429480613566f22182d5ba99ea3af35d3b586fa290a88e5c895dcf6eee70202
+test "$(sha256sum "$camera_static/vendor/com.qti.chi.override.so" | cut -d' ' -f1)" = \
+    cdcb884968c7522bc9005615bee732d4b0265bde70f2828b0b7f31c35097b524
 
 system_table="0 12036096 linear $super_device 2048
 12036096 16248 linear $super_device 17401856"
@@ -60,13 +74,26 @@ if ! mountpoint -q /mnt/stock-vendor-full; then
     mount -t f2fs -o ro "$vendor_device" /mnt/stock-vendor-full
 fi
 mount_bind_ro /mnt/t630-stock-system/system /system
-mount_image "$T630_OWNER_HOME/t630-vndk30-apex/apex_payload.img" /mnt/t630-vndk30
-mount_image "$T630_OWNER_HOME/t630-apex/runtime/apex_payload.img" /mnt/t630-runtime
-mount_image "$T630_OWNER_HOME/t630-apex/i18n/apex_payload.img" /mnt/t630-i18n
-mount_image "$T630_OWNER_HOME/t630-camera-apex/apex_payload.img" /mnt/t630-camera
+mount_image "$camera_static/vndk30/apex_payload.img" /mnt/t630-vndk30
+mount_image "$camera_static/runtime/apex_payload.img" /mnt/t630-runtime
+mount_image "$camera_static/i18n/apex_payload.img" /mnt/t630-i18n
+mount_image "$camera_static/camera/apex_payload.img" /mnt/t630-camera
 
-mount_bind_ro "$T630_OWNER_HOME/t630-vendor-view" /vendor
-mount_bind_ro "$T630_OWNER_HOME/t630-linkerconfig" /linkerconfig
+install -d -o root -g root -m 0755 \
+    "$camera_runtime/vendor-view" "$camera_runtime/linkerconfig"
+for name in apex app bin bt_firmware build.prop default.prop dsp etc firmware \
+        firmware-modem firmware_mnt gpu lib lib64 odm overlay recovery-from-boot.p \
+        rfs saiv tima_measurement_info ueventd.rc vm-system; do
+    ln -sfn "/mnt/stock-vendor-full/$name" "$camera_runtime/vendor-view/$name"
+done
+install -o root -g root -m 0644 \
+    /usr/local/share/t630/camera-templates/vendor-manifest.xml \
+    "$camera_runtime/vendor-view/manifest.xml"
+install -o root -g root -m 0644 \
+    /usr/local/share/t630/camera-templates/ld.config.txt \
+    "$camera_runtime/linkerconfig/ld.config.txt"
+mount_bind_ro "$camera_runtime/vendor-view" /vendor
+mount_bind_ro "$camera_runtime/linkerconfig" /linkerconfig
 # Camera HAL cache and warm-start state are machine data, not user data.  An
 # empty directory is intentional: the exact DZE3 HAL recreates every required
 # file on first camera use from the read-only stock image and hardware.
@@ -97,11 +124,11 @@ done
 # build. Their hashes and purpose are documented, but the files are not
 # redistributable and are deliberately excluded from this repository.
 if ! mountpoint -q /system/bin/cameraserver; then
-    mount --bind "$T630_OWNER_HOME/t630-system-overrides/cameraserver" /system/bin/cameraserver
+    mount --bind "$camera_static/system/cameraserver" /system/bin/cameraserver
 fi
 chi=/mnt/stock-vendor-full/lib64/hw/com.qti.chi.override.so
 if ! mountpoint -q "$chi"; then
-    mount --bind "$T630_OWNER_HOME/t630-vendor-overrides/com.qti.chi.override.so" "$chi"
+    mount --bind "$camera_static/vendor/com.qti.chi.override.so" "$chi"
 fi
 
 ln -sf /usr/local/lib/t630-android-property-seed.so /dev/t630-android-property-seed.so

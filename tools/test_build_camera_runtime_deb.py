@@ -79,7 +79,7 @@ class CameraRuntimePackageTests(unittest.TestCase):
             control_path.write_bytes(members["control.tar.xz"])
             with tarfile.open(control_path, "r:xz") as archive:
                 control = archive.extractfile("./control").read().decode()
-            self.assertIn("Version: 0.1.2", control)
+            self.assertIn("Version: 0.1.3", control)
             self.assertIn("t630-stock-assets (= 1.0.1+dze3)", control)
             self.assertIn("must be reconstructed locally", control)
 
@@ -93,6 +93,8 @@ class CameraRuntimePackageTests(unittest.TestCase):
         self.assertNotIn("/data/vendor/camera/t630-camera-capture", bridge)
         self.assertIn("/var/lib/t630-camera/android-data", mounts)
         self.assertNotIn('"$T630_OWNER_HOME/t630-android-data"', mounts)
+        self.assertIn("/var/lib/t630-camera/static", mounts)
+        self.assertNotIn("T630_OWNER_HOME", mounts)
 
 
 if __name__ == "__main__":

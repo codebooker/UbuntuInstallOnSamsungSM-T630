@@ -26,8 +26,14 @@ rehearsal directory. The runtime, i18n, VNDK 30, and Samsung camera APEX
 payloads plus both patched binaries were each byte-for-byte identical to the
 files used by the working camera stack.
 
-No proprietary payload was copied to the Mac or repository. The remaining
-camera installer boundary is the writable `/data/vendor/camera` seed: classify
-its stock-derived calibration inputs separately from files the HAL can safely
-generate on first use, then move that state to an account-neutral root-owned
-location.
+No proprietary payload was copied to the Mac or repository. The accepted
+output now lives at `/var/lib/t630-camera/static`. After a clean boot,
+camera-runtime 0.1.3 mounted all four payloads and both patches from that path,
+built its vendor/linker views under `/run`, and delivered eight contrasting
+front-camera frames (mean luma 113.21, standard deviation 97.33). No camera
+mount referenced the selected owner's home.
+
+The writable boundary was also resolved independently: an empty
+`/var/lib/t630-camera/android-data/vendor/camera` regenerated all required
+cache, custom-info, warm-start, configuration-dump, and flash-state files on
+first use. No stock-derived writable seed is required.

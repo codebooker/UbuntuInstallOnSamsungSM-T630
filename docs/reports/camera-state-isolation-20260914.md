@@ -18,7 +18,7 @@ None is seeded into a fresh installation.
 
 ## Persistent path acceptance
 
-Camera-runtime 0.1.2 creates root-owned
+Camera-runtime 0.1.3 creates root-owned
 `/var/lib/t630-camera/android-data/vendor/camera` and bind-mounts that hierarchy
 at `/data` only while the isolated Android compatibility runtime is active. It
 does not depend on the installer-selected account name or home directory.
@@ -30,9 +30,9 @@ frames, generated the missing rear flash-state file, and completed the bounded
 camera teardown. The old per-user directory was not read or modified.
 
 The upgraded camera package has SHA256
-`ab475d8df972e23c02d3d92dec380c37ece3e3d88d52dfdcbba24ac6b3ae6d1d`.
-The corresponding release-base 0.1.7 package has SHA256
-`d2ad6b14f92b38c7aeba292e490c17a64228e66df8b920ee17165bd4d6e992b0`.
+`7afd2321d075b56a605847606ed83790ea80169b179566200a38d782d908d619`.
+The corresponding release-base 0.1.8 package has SHA256
+`8f88105853441981198dec3c5c1acf215a73d715c89d41f1e131db6e4214cc0e`.
 The preserved 3.1 GB clean release root accepted both upgrades and passed all
 package, application, identity, native-linkage, camera-boundary, and mount-leak
 checks.

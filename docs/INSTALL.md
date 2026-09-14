@@ -286,7 +286,7 @@ static private camera boundary locally:
 ```sh
 python3 tools/prepare_camera_static_assets.py \
   /mnt/t630-stock-system/system /mnt/t630-stock-vendor \
-  /opt/t630/private-camera-static
+  /var/lib/t630-camera/static
 ```
 
 The command verifies complete DZE3 source and output hashes, extracts four APEX
@@ -369,7 +369,7 @@ SOURCE_DATE_EPOCH=1700000000 python3 tools/build_camera_runtime_deb.py \
   build/camera
 ```
 
-This creates `output/t630-camera-runtime_0.1.2_arm64.deb`. It contains the
+This creates `output/t630-camera-runtime_0.1.3_arm64.deb`. It contains the
 launchers, GNOME integration, safety controls, templates, and independently
 built helpers. It contains no stock Android libraries, firmware image,
 calibration, mutable camera state, or photograph. Those non-redistributable
@@ -383,7 +383,7 @@ release-set metapackage:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_release_meta_deb.py
 ```
 
-This creates `output/t630-release-base_0.1.7_arm64.deb`. It contains no device
+This creates `output/t630-release-base_0.1.8_arm64.deb`. It contains no device
 payload; its exact-version dependencies prevent a fresh root from mixing
 incompatible first-boot, desktop, hardware, login, native, sensor, pd-mapper,
 camera, or DZE3 stock-asset revisions. The camera package's redistributable

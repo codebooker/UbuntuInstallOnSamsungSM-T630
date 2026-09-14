@@ -25,6 +25,9 @@
    read-only `system`/`vendor` mappings directly from physical or sparse
    `super`; the camera runtime physically passed with those mappings and its
    guarded shutdown removed them, eliminating the second per-user vendor copy.
+   The four required APEX payloads and two narrowly patched binaries are now
+   reconstructed locally with complete input/output hashes and matched the
+   working runtime byte-for-byte. Writable camera-data seeding remains.
 3. Broader camera lighting/application tests and photo-flash integration.
 4. Bluetooth headset playback, microphone, and reconnect testing.
 5. Four-edge and post-resume sensor/rotation validation.

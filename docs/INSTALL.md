@@ -280,6 +280,20 @@ python3 tools/extract_dynamic_partition.py /dev/sda26 \
 It verifies all LP metadata checksums before printing a device-mapper table.
 Do not substitute an unverified table or write through the resulting mapping.
 
+Once the exact stock logical partitions are mounted read-only, reconstruct the
+static private camera boundary locally:
+
+```sh
+python3 tools/prepare_camera_static_assets.py \
+  /mnt/t630-stock-system/system /mnt/t630-stock-vendor \
+  /opt/t630/private-camera-static
+```
+
+The command verifies complete DZE3 source and output hashes, extracts four APEX
+payloads, and applies only the audited seven-byte and five-byte compatibility
+patches. The output is private and must not be committed or redistributed.
+Writable camera-data seeding is not yet part of this command.
+
 The desktop and hardware packages intentionally exclude native compiled
 compatibility libraries, patched login components, compiled hardware daemons,
 and stock-derived firmware. Those boundaries are supplied by the separate

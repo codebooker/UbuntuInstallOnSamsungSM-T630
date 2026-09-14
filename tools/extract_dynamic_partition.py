@@ -166,9 +166,12 @@ def main() -> None:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--device", help="major:minor source for a read-only dm table")
     args = parser.parse_args()
-    source = args.source.expanduser().resolve(strict=True)
+    source = args.source.expanduser()
+    if source.is_symlink():
+        parser.error("source must not be a symlink")
+    source = source.resolve(strict=True)
     mode = source.stat().st_mode
-    if not (stat.S_ISREG(mode) or stat.S_ISBLK(mode)) or source.is_symlink():
+    if not (stat.S_ISREG(mode) or stat.S_ISBLK(mode)):
         parser.error("source must be a regular image or block device")
     with ImageReader(source) as reader:
         partitions = parse_metadata(reader)

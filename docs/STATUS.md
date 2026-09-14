@@ -88,6 +88,8 @@ The reproducible password-login boundary is recorded in the
 [login runtime report](reports/login-runtime-package-20260914.md).
 The redistributable camera boundary and physical package-path test are recorded
 in the [camera runtime report](reports/camera-runtime-package-20260914.md).
+The hash-gated local reconstruction of the private static camera layer is in the
+[camera static reconstruction report](reports/camera-static-reconstruction-20260914.md).
 The fail-closed offline installation boundary is recorded in the
 [release-root assembly report](reports/release-root-assembly-gate-20260914.md).
 The successful package apply and first-boot backend exercise are recorded in the

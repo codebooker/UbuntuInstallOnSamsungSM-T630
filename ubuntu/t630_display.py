@@ -181,8 +181,9 @@ class DisplaySettings:
 
 
 class ControlSocket:
-    def __init__(self, settings):
+    def __init__(self, settings, owner_uid, owner_gid):
         self.settings = settings
+        self.owner_uid = owner_uid
         if os.path.lexists(SOCKET):
             info = os.lstat(SOCKET)
             if not stat.S_ISSOCK(info.st_mode) or info.st_uid != 0:
@@ -191,7 +192,7 @@ class ControlSocket:
             os.unlink(SOCKET)
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.sock.bind(SOCKET)
-        os.chown(SOCKET, 0, 1000)
+        os.chown(SOCKET, 0, owner_gid)
         os.chmod(SOCKET, 0o660)
         self.sock.listen(4)
         self.sock.setblocking(False)
@@ -202,7 +203,7 @@ class ControlSocket:
             conn.settimeout(.2)
             try:
                 _, uid, _ = struct.unpack('3i', conn.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
-                if uid not in (0, 1000):
+                if uid not in (0, self.owner_uid):
                     raise ValueError('Unauthorized local user')
                 data = bytearray()
                 while not data.endswith(b'\n') and len(data) <= 64:

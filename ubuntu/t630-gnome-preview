@@ -10,6 +10,7 @@ if [ "${T630_GPU_RENDERER:-0}" = 1 ] && [ -f /etc/t630/gpu-trial-restore-softwar
     mv /etc/t630/gpu-trial-restore-software /etc/t630/gpu.disabled
 fi
 test -S /run/user/0/wayland-0
+eval "$(/usr/bin/python3 /usr/local/share/t630/t630_account.py env)"
 if [ "${T630_MANAGED_SESSION:-0}" = 1 ] && [ "${T630_LOGIN_SESSION_WRAPPED:-0}" != 1 ]; then
     exec /usr/local/libexec/t630-managed-session /usr/local/bin/t630-gnome-preview
 fi
@@ -20,9 +21,9 @@ if [ "${T630_GPU_RENDERER:-0}" = 1 ]; then
     chgrp render /dev/kgsl-3d0 /dev/ion
     chmod 660 /dev/kgsl-3d0 /dev/ion
 fi
-install -d -m 700 -o tablet -g tablet /run/user/1000
+install -d -m 700 -o "$T630_OWNER_UID" -g "$T630_OWNER_GID" "/run/user/$T630_OWNER_UID"
 install -d -m 1777 -o root -g root /tmp/.X11-unix
-chgrp tablet /run/user/0 /run/user/0/wayland-0
+chgrp "$T630_OWNER_GID" /run/user/0 /run/user/0/wayland-0
 chmod 710 /run/user/0
 chmod 660 /run/user/0/wayland-0
 # Every managed session start must reconnect its normal-user audio servers,
@@ -31,12 +32,12 @@ chmod 660 /run/user/0/wayland-0
 if [ "${T630_LOGIN_SESSION_WRAPPED:-0}" = 1 ]; then
     nohup /usr/local/sbin/t630-audio-start </dev/null >>/var/log/t630-audio-start.log 2>&1 &
 fi
-exec /usr/bin/setpriv --reuid=1000 --regid=1000 --init-groups /usr/bin/env \
-    HOME=/home/tablet USER=tablet LOGNAME=tablet \
-    XDG_RUNTIME_DIR=/run/user/1000 \
-    XDG_CONFIG_HOME=/home/tablet/.config/t630-gnome-preview \
-    XDG_DATA_HOME=/home/tablet/.local/share/t630-gnome-preview \
-    XDG_CACHE_HOME=/home/tablet/.cache/t630-gnome-preview \
+exec /usr/bin/setpriv --reuid="$T630_OWNER_UID" --regid="$T630_OWNER_GID" --init-groups /usr/bin/env \
+    HOME="$T630_OWNER_HOME" USER="$T630_OWNER" LOGNAME="$T630_OWNER" \
+    XDG_RUNTIME_DIR="/run/user/$T630_OWNER_UID" \
+    XDG_CONFIG_HOME="$T630_OWNER_HOME/.config/t630-gnome-preview" \
+    XDG_DATA_HOME="$T630_OWNER_HOME/.local/share/t630-gnome-preview" \
+    XDG_CACHE_HOME="$T630_OWNER_HOME/.cache/t630-gnome-preview" \
     WAYLAND_DISPLAY=/run/user/0/wayland-0 \
     XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=GNOME \
     LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER="${T630_GALLIUM_DRIVER:-llvmpipe}" \

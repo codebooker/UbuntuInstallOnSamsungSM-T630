@@ -6,6 +6,8 @@ export PATH
 test "$(id -u)" = 0
 test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
 test ! -e /etc/t630/audio.disabled || exit 0
+eval "$(python3 /usr/local/share/t630/t630_account.py env)"
+runtime=/run/user/$T630_OWNER_UID
 exec 9>/run/t630-audio-start.lock
 flock -n 9 || exit 0
 python3 /usr/local/share/t630/t630-device-permissions.py
@@ -25,8 +27,8 @@ if [ -e /run/t630-audio-ready ]; then
         awk '$2 == "t630_speakers" {found=1} END {exit !found}' && \
        /usr/local/bin/t630-gnome-run timeout 3 pactl list short sources 2>/dev/null | \
         awk '$2 == "t630_microphone" {found=1} END {exit !found}' && \
-       test -s /run/user/1000/t630-microphone-bridge.pid && \
-       kill -0 "$(cat /run/user/1000/t630-microphone-bridge.pid)" 2>/dev/null; then
+       test -s "$runtime/t630-microphone-bridge.pid" && \
+       kill -0 "$(cat "$runtime/t630-microphone-bridge.pid")" 2>/dev/null; then
         exit 0
     fi
     # elogind may recreate the runtime directory after a desktop restart.
@@ -34,15 +36,15 @@ if [ -e /run/t630-audio-ready ]; then
     python3 /usr/local/share/t630/t630-audio-session-cleanup.py
     unlink /run/t630-audio-ready
 fi
-old_bridge=$(cat /run/user/1000/t630-microphone-bridge.pid 2>/dev/null || true)
+old_bridge=$(cat "$runtime/t630-microphone-bridge.pid" 2>/dev/null || true)
 if [ -n "$old_bridge" ]; then
     kill "$old_bridge" 2>/dev/null || true
 fi
-old_capture=$(pgrep -u 1000 -x arecord || true)
+old_capture=$(pgrep -u "$T630_OWNER_UID" -x arecord || true)
 if [ -n "$old_capture" ]; then
     kill $old_capture 2>/dev/null || true
 fi
-if ! pgrep -u 1000 -x pipewire >/dev/null; then
+if ! pgrep -u "$T630_OWNER_UID" -x pipewire >/dev/null; then
     nohup /usr/local/bin/t630-gnome-run pipewire 9>&- </dev/null >/var/log/t630-pipewire.log 2>&1 &
 fi
 attempt=0
@@ -52,7 +54,7 @@ until /usr/local/bin/t630-gnome-run timeout 2 pw-cli info 0 >/dev/null 2>&1; do
     sleep 1
 done
 for process in pipewire-pulse wireplumber; do
-    if ! pgrep -u 1000 -x "$process" >/dev/null; then
+    if ! pgrep -u "$T630_OWNER_UID" -x "$process" >/dev/null; then
         nohup /usr/local/bin/t630-gnome-run "$process" 9>&- </dev/null >"/var/log/t630-$process.log" 2>&1 &
     fi
 done
@@ -82,15 +84,15 @@ for module in $(/usr/local/bin/t630-gnome-run pactl list short modules | \
          /source_name=t630_microphone/ {print $1}'); do
     /usr/local/bin/t630-gnome-run pactl unload-module "$module"
 done
-rm -f /run/user/1000/t630-mic.pipe
-mkfifo /run/user/1000/t630-mic.pipe
-chown 1000:1000 /run/user/1000/t630-mic.pipe
+rm -f "$runtime/t630-mic.pipe"
+mkfifo "$runtime/t630-mic.pipe"
+chown "$T630_OWNER_UID:$T630_OWNER_GID" "$runtime/t630-mic.pipe"
 nohup /usr/local/bin/t630-gnome-run sh -c \
-    'exec arecord -q -D hw:0,0 -f S16_LE -r 48000 -c 1 -t raw > /run/user/1000/t630-mic.pipe' \
+    'exec arecord -q -D hw:0,0 -f S16_LE -r 48000 -c 1 -t raw > "$XDG_RUNTIME_DIR/t630-mic.pipe"' \
     9>&- </dev/null >>/var/log/t630-microphone-bridge.log 2>&1 &
 bootstrap_capture=$!
 /usr/local/bin/t630-gnome-run pactl load-module module-pipe-source \
-    source_name=t630_microphone file=/run/user/1000/t630-mic.pipe \
+    source_name=t630_microphone file="$runtime/t630-mic.pipe" \
     format=s16le rate=48000 channels=1 channel_map=mono \
     source_properties=device.description=Tablet_Microphone
 kill "$bootstrap_capture" 2>/dev/null || true
@@ -104,7 +106,14 @@ until /usr/local/bin/t630-gnome-run pactl set-sink-mute t630_speakers 1; do
     test "$attempt" -lt 20
     sleep 1
 done
-trap '/usr/local/bin/t630-gnome-run pactl set-sink-mute t630_speakers 1 || true; bridge=$(cat /run/user/1000/t630-microphone-bridge.pid 2>/dev/null || true); test -z "$bridge" || kill "$bridge" 2>/dev/null || true; python3 /usr/local/share/t630/t630-speaker-route.py off || true; python3 /usr/local/share/t630/t630-microphone-route.py off || true' EXIT
+cleanup_audio() {
+    /usr/local/bin/t630-gnome-run pactl set-sink-mute t630_speakers 1 || true
+    bridge=$(cat "$runtime/t630-microphone-bridge.pid" 2>/dev/null || true)
+    test -z "$bridge" || kill "$bridge" 2>/dev/null || true
+    python3 /usr/local/share/t630/t630-speaker-route.py off || true
+    python3 /usr/local/share/t630/t630-microphone-route.py off || true
+}
+trap cleanup_audio EXIT
 /usr/local/bin/t630-gnome-run pactl set-sink-volume t630_speakers 30%
 /usr/local/bin/t630-gnome-run pactl set-default-sink t630_speakers
 /usr/local/bin/t630-gnome-run pactl set-source-volume t630_microphone 100%

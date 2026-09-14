@@ -7,6 +7,12 @@ test "${1:-}" = reboot
 cd /
 exec </dev/null
 touch /run/t630-stopping
+owner_name=$(cat /run/ubuntu/etc/t630/owner)
+case "$owner_name" in
+    ''|*[!a-z0-9_-]*) echo 'Invalid installed owner; refusing restart.'; exit 1 ;;
+esac
+owner_uid=$(chroot /run/ubuntu /usr/bin/id -u "$owner_name")
+test "$owner_uid" -ge 1000
 for name in sshd t630-screen gdm gdm3 elogind weston-terminal weston weston-keyboard NetworkManager wpa_supplicant chronyd seatd systemd-udevd dbus-daemon; do
     chroot /run/ubuntu /usr/bin/pkill -TERM -x "$name" || true
 done
@@ -53,9 +59,9 @@ if [ -r /sys/class/block/dm-0/dm/name ] &&
    [ "$(cat /sys/class/block/dm-0/dm/name)" = t630-stock-system ]; then
     chroot /run/ubuntu /usr/sbin/dmsetup remove t630-stock-system
 fi
-for target in /run/ubuntu/run/user/1000/doc /run/ubuntu/run/user/1000/gvfs \
+for target in "/run/ubuntu/run/user/$owner_uid/doc" "/run/ubuntu/run/user/$owner_uid/gvfs" \
               /run/ubuntu/run/user/105/doc /run/ubuntu/run/user/105/gvfs \
-              /run/ubuntu/run/user/1000 /run/ubuntu/run/user/105 \
+              "/run/ubuntu/run/user/$owner_uid" /run/ubuntu/run/user/105 \
               /run/ubuntu/sys/fs/cgroup/elogind /run/ubuntu/sys/fs/cgroup \
               /run/ubuntu/dev/shm /run/ubuntu/dev/pts /run/ubuntu/dev \
               /run/ubuntu/proc /run/ubuntu/sys /run/ubuntu/run /run/ubuntu; do

@@ -32,6 +32,8 @@ full-screen GNOME desktop from internal storage.
 | Stock hardware video decoding | Working for tested FFmpeg and GStreamer H.264/VP9 playback |
 | Browser video acceleration | WebKit hardware selection verified; safe launcher blocked by the stock kernel's missing user-namespace support |
 | Cameras | Front and rear GNOME previews work at 720×480; rear exposure, autofocus, tone, and live color adjustment work; HD Snapshot and flash remain |
+| First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow implemented; generic release image still pending |
+| Android applications | Deferred until all native Ubuntu and installer work is complete; current kernel-only approach is ABI-incompatible with Samsung modules |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).
 
@@ -58,8 +60,8 @@ be treated as a porting task, not as a reason to remove those checks.
 4. Read the current [camera bring-up notes](docs/CAMERA.md) for that experimental stack.
 5. Use the chronological [bring-up reports](docs/reports/) for measurements,
    regressions, and recovery details.
-6. See the [completion roadmap](docs/ROADMAP.md) for Android-app support and the
-   required end-user installer experience.
+6. See the [completion roadmap](docs/ROADMAP.md) for the end-user installer and
+   the deliberately deferred Android-app work.
 
 At present the repository can reproduce the conservative diagnostic boot image
 from matching stock firmware. Packaging the tested persistent Ubuntu filesystem

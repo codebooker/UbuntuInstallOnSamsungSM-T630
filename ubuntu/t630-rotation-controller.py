@@ -10,7 +10,11 @@ absolute, debounced transform to the Weston module that owns the DRM output.
 import os
 from pathlib import Path
 import subprocess
+import sys
 import time
+
+sys.path.insert(0, '/usr/local/share/t630')
+from t630_account import resolve_owner
 
 
 INSTALL_ID = "SM-T630-T630XXSBDZE3-Ubuntu-v1"
@@ -48,8 +52,9 @@ def mapped_transform(orientation):
 def main():
     from gi.repository import Gio, GLib
 
-    if os.getuid() != 1000:
-        raise SystemExit("Run through t630-gnome-run as the tablet user")
+    owner = resolve_owner()
+    if os.getuid() != owner.uid:
+        raise SystemExit("Run through t630-gnome-run as the selected owner")
     if Path("/etc/t630-install-id").read_text().strip() != INSTALL_ID:
         raise SystemExit("Refusing an unrecognized device installation")
 

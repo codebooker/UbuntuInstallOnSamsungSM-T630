@@ -47,8 +47,20 @@ build produced Image SHA-256
 `588c7d719d11c7b51b4df0509a4e2b9b29586b1faf7d8f46ea2da167ba6cdb67`
 and `Module.symvers` SHA-256
 `92306e5f2b025198a5e28ed2a76449c42089f6a88796cf42c7b99c8bffc98296`.
-Runtime module replacement and the complete desktop regression pass are the
-next physical gate. No Waydroid image or Google account has been installed yet.
+Further ABI isolation invalidated the boot-image-only plan. A build adding only
+`CONFIG_PID_NS` changed 157 of the 417 kernel symbol CRCs imported by the stock
+WCN6850 Wi-Fi module. A complete audit compared all modules in the installed
+vendor module tree against that build: all 235 modules were affected. The
+universal `module_layout` change alone prevents safely mixing those Samsung
+modules with the modified kernel; major drivers also contain many additional
+symbol mismatches.
+
+The stock module payload must never be force-loaded and its CRCs must never be
+patched. The historical v9 writer now fails closed. Android support is deferred
+until the project can produce one coherent Image and matching module payload,
+including the external Qualcomm WLAN/CNSS stack, then pass the complete native
+Ubuntu hardware regression suite. No Waydroid image or Google account has been
+installed.
 
 Primary references:
 

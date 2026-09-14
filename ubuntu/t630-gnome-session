@@ -9,7 +9,11 @@ flock -n 9 || exit 0
 gsettings set org.gnome.desktop.interface enable-animations false
 gsettings set org.gnome.desktop.interface color-scheme prefer-dark
 gsettings set org.gnome.desktop.interface scaling-factor 1
-gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us')]"
+if [ -x /usr/local/share/t630/t630-apply-user-profile.py ]; then
+    /usr/bin/python3 /usr/local/share/t630/t630-apply-user-profile.py
+else
+    gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us')]"
+fi
 gsettings set org.gnome.desktop.background picture-options none
 gsettings set org.gnome.desktop.background primary-color '#241331'
 gsettings set org.gnome.desktop.session idle-delay 0

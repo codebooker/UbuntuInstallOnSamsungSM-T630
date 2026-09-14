@@ -4,10 +4,12 @@ set -eu
 PATH=/usr/local/bin:/usr/bin:/bin
 export PATH
 
-test "$(id -u)" = 1000
+eval "$(python3 /usr/local/share/t630/t630_account.py env)"
+test "$(id -u)" = "$T630_OWNER_UID"
 test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
 
-fifo=/run/user/1000/t630-mic.pipe
+runtime=/run/user/$T630_OWNER_UID
+fifo=$runtime/t630-mic.pipe
 capture_pid=
 
 stop_capture() {
@@ -18,9 +20,9 @@ stop_capture() {
     fi
 }
 
-trap 'stop_capture; rm -f /run/user/1000/t630-microphone-bridge.pid' EXIT
+trap 'stop_capture; rm -f "$runtime/t630-microphone-bridge.pid"' EXIT
 trap 'exit 0' INT TERM HUP
-echo $$ >/run/user/1000/t630-microphone-bridge.pid
+echo $$ >"$runtime/t630-microphone-bridge.pid"
 
 while :; do
     state=$(pactl list short sources 2>/dev/null | \
@@ -28,7 +30,7 @@ while :; do
     case "$state" in
         RUNNING)
             if [ -z "$capture_pid" ] || ! kill -0 "$capture_pid" 2>/dev/null; then
-                arecord -q -D hw:0,0 -f S16_LE -r 48000 -c 1 -t raw >"$fifo" 2>>/run/user/1000/t630-microphone-capture.log &
+                arecord -q -D hw:0,0 -f S16_LE -r 48000 -c 1 -t raw >"$fifo" 2>>"$runtime/t630-microphone-capture.log" &
                 capture_pid=$!
             fi
             ;;

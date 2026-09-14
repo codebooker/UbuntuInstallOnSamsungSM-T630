@@ -1,5 +1,7 @@
 #!/bin/sh
-# Runs inside installed Ubuntu; no credentials or transient state in backup.
+# LAB BACKUP ONLY. This retains the installed human account and must never be
+# published or used as the base of a release installer. A release root must be
+# built from generic Ubuntu packages and pass audit_release_root.py.
 set -eu
 umask 077
 test ! -e /tmp/desktop-snapshot.tar.gz

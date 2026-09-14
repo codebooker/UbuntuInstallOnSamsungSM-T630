@@ -142,6 +142,33 @@ that has not yet been converted into a public, reproducible release artifact.
 Until that packaging work is complete, use the persistent scripts as auditable
 source and do not run the one-time formatter from an abbreviated guide.
 
+## Release-image and first-boot gates
+
+The current tablet is a development system and must not be cloned into a public
+image. A release filesystem must be assembled from generic Ubuntu packages,
+have no human account, and pass:
+
+```sh
+python3 tools/audit_release_root.py /absolute/path/to/candidate-root
+```
+
+The audit is read-only and reports categories only. It refuses an initialized
+machine ID, SSH host keys, Wi-Fi or Netplan state, home contents, human accounts,
+random seed, or an existing SM-T630 owner/setup marker.
+
+On a clean image, `t630-desktop-autostart` launches the touch-first setup wizard
+before GNOME. Its pages are Language, Accessibility, Keyboard, Network,
+Account, Time Zone, Privacy, and Finish. The backend validates a non-secret JSON
+profile such as `docs/examples/first-boot-profile.json`; the UI passes the
+password separately over stdin. It creates the human account and the narrow
+`t630-owner` group, then writes `/etc/t630/owner` last. Device services resolve
+the selected account through the local password database and do not assume
+`tablet`, UID 1000, a fixed GID, or a fixed home path.
+
+These components are implemented and tested, but the generic Ubuntu root image
+builder and complete end-to-end wipe/install/recovery rehearsal remain release
+gates. Do not redistribute the development tablet's filesystem.
+
 ## Recovery
 
 If the diagnostic boot fails, return to Download Mode and restore the exact

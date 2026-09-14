@@ -7,6 +7,7 @@ test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
 test -f /run/t630-camera-ready
 test -x /data/vendor/camera/t630-camera-capture
 test -x /usr/local/bin/t630-gnome-run
+owner_home=$(/usr/bin/python3 /usr/local/share/t630/t630_account.py home)
 
 width=720
 height=480
@@ -33,7 +34,7 @@ case "$camera" in
         # userspace without sending fragile preset requests to the HAL.
         test -x /usr/local/sbin/t630-yuv-tune
         color_filter=(/usr/local/sbin/t630-yuv-tune "$width" "$height" 900 1320
-            /home/tablet/.config/t630-camera/rear-color)
+            "$owner_home/.config/t630-camera/rear-color")
         ;;
     *) echo "usage: $0 [front|rear]" >&2; exit 2 ;;
 esac

@@ -26,7 +26,10 @@ class DevicePermissionTests(unittest.TestCase):
         self.assertIn("/sys/bus/platform/drivers/msm_drm", source)
         self.assertIn("Path('/sys/class/sound')", source)
         self.assertIn("assert major == 116", source)
-        self.assertIn("os.chown(node, 0, 29)", source)
+        self.assertIn("audio_gid = grp.getgrnam('audio').gr_gid", source)
+        self.assertIn("render_gid = grp.getgrnam('render').gr_gid", source)
+        self.assertIn("os.chown(node, 0, audio_gid)", source)
+        self.assertIn("os.chown(render, 0, render_gid)", source)
 
     def test_camera_node_creator_is_exactly_scoped(self):
         source = (ROOT / "ubuntu/t630-camera-nodes.py").read_text()

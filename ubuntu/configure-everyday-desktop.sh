@@ -1,8 +1,9 @@
 #!/bin/sh
-# Run as tablet inside its GNOME environment, not the root setup desktop.
+# Run as the selected owner inside GNOME, not the root setup desktop.
 set -eu
-test "$(id -u)" = 1000
-test "$XDG_CONFIG_HOME" = /home/tablet/.config/t630-gnome-preview
+eval "$(/usr/bin/python3 /usr/local/share/t630/t630_account.py env)"
+test "$(id -u)" = "$T630_OWNER_UID"
+test "$XDG_CONFIG_HOME" = "$T630_OWNER_HOME/.config/t630-gnome-preview"
 cd "$HOME"
 xdg-user-dirs-update
 xdg-settings set default-web-browser firefox.desktop

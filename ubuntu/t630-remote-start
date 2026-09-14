@@ -15,9 +15,10 @@ previous=796b7aa10e4467d8d31187d95b89d7d0767f6c0c93eb82ebd2cb6633bf64b812
 pre_login=9ea0f7c85c2f4e990c83654c29dd3a275468a5acc8f3c96441be9bd91c4aeccd
 pre_camera=9146f3cdd0f47460aaba1e062a28bddd1c8cb70fd5aac66e3f40c545d1975437
 pre_explicit_reboot=a0ac11cce4915e81138072712fad0385fb50eaddd27d7e91c90cda13f7f4e65c
+pre_owner_migration=f50044913572a64d10e018f99b562ea2969bd407f9ffbc9aca9c580cad64fb6a
 current=$(/usr/bin/sha256sum "$host/bin/stop-ubuntu" | /usr/bin/cut -d' ' -f1)
 updated=$(/usr/bin/sha256sum /usr/local/share/t630/stop-ubuntu | /usr/bin/cut -d' ' -f1)
-test "$current" = "$old" || test "$current" = "$previous" || test "$current" = "$pre_login" || test "$current" = "$pre_camera" || test "$current" = "$pre_explicit_reboot" || test "$current" = "$updated"
+test "$current" = "$old" || test "$current" = "$previous" || test "$current" = "$pre_login" || test "$current" = "$pre_camera" || test "$current" = "$pre_explicit_reboot" || test "$current" = "$pre_owner_migration" || test "$current" = "$updated"
 /usr/bin/install -m 755 /usr/local/share/t630/stop-ubuntu "$host/bin/stop-ubuntu"
 /usr/sbin/sshd -t -f /etc/ssh/sshd_config_t630
 sshd_pid=$(cat /run/t630-sshd.pid 2>/dev/null || true)

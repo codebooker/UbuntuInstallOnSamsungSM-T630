@@ -21,6 +21,8 @@ import time
 
 sys.path.insert(0, '/usr/local/lib/t630')
 from t630_display import DisplaySettings, ControlSocket, FlashlightSettings
+sys.path.insert(0, '/usr/local/share/t630')
+from t630_account import resolve_owner
 
 RUN = '/usr/local/bin/t630-gnome-run'
 LIGHT = Path('/sys/class/backlight/panel0-backlight')
@@ -117,6 +119,7 @@ def main():
     args = parser.parse_args()
     assert os.getuid() == 0
     assert Path('/etc/t630-install-id').read_text().strip() == 'SM-T630-T630XXSBDZE3-Ubuntu-v1'
+    owner = resolve_owner()
     candidates = [p for p in Path('/sys/class/input').glob('event*')
                   if (p / 'device/name').read_text().strip() == 'qpnp_pon']
     assert len(candidates) == 1
@@ -145,7 +148,7 @@ def main():
                 time.sleep(3)
                 return
             fd = os.open('/dev/input/' + candidates[0].name, os.O_RDONLY | os.O_NONBLOCK)
-            control = ControlSocket(settings)
+            control = ControlSocket(settings, owner.uid, owner.gid)
             pressed_at = None
             last_action = -1.0
             next_idle_check = time.monotonic() + 60

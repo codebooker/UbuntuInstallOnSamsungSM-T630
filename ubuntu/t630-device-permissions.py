@@ -10,8 +10,8 @@ import stat
 assert os.getuid() == 0
 lock = open('/run/t630-device-permissions.lock', 'a')
 fcntl.flock(lock, fcntl.LOCK_EX)
-assert grp.getgrnam('audio').gr_gid == 29
-assert grp.getgrnam('render').gr_gid == 994
+audio_gid = grp.getgrnam('audio').gr_gid
+render_gid = grp.getgrnam('render').gr_gid
 base = ''.join(name + ' 0:0 666\n' for name in ['null', 'zero', 'full', 'random', 'urandom', 'tty', 'ptmx'])
 source = Path('/usr/local/share/t630/mdev.conf')
 target = Path('/proc/1/root/etc/mdev.conf')
@@ -44,7 +44,7 @@ for name, device_number in conventional_nodes.items():
 for name in ('kgsl-3d0', 'ion'):
     node = Path('/dev') / name
     assert node.is_char_device() and not node.is_symlink()
-    os.chown(node, 0, 994)
+    os.chown(node, 0, render_gid)
     os.chmod(node, 0o660)
 video_nodes = {
     'video32': (81, 0),
@@ -57,7 +57,7 @@ for name, device_number in video_nodes.items():
     assert (os.major(device_stat.st_rdev), os.minor(device_stat.st_rdev)) == device_number
     driver = (Path('/sys/class/video4linux') / name / 'device/driver').resolve()
     assert driver == Path('/sys/bus/platform/drivers/msm_vidc_v4l2')
-    os.chown(node, 0, 994)
+    os.chown(node, 0, render_gid)
     os.chmod(node, 0o660)
 render = Path('/dev/dri/renderD128')
 render_stat = render.stat(follow_symlinks=False)
@@ -65,7 +65,7 @@ assert stat.S_ISCHR(render_stat.st_mode) and not render.is_symlink()
 assert (os.major(render_stat.st_rdev), os.minor(render_stat.st_rdev)) == (226, 128)
 assert (Path('/sys/class/drm/renderD128/device/driver').resolve() ==
         Path('/sys/bus/platform/drivers/msm_drm'))
-os.chown(render, 0, 994)
+os.chown(render, 0, render_gid)
 os.chmod(render, 0o660)
 
 # A later mdev scan also resets the already-created ALSA nodes. Repair only
@@ -86,6 +86,6 @@ if sound_class.is_dir():
             assert stat.S_ISCHR(info.st_mode) and info.st_rdev == number
         else:
             os.mknod(node, stat.S_IFCHR | 0o660, number)
-        os.chown(node, 0, 29)
+        os.chown(node, 0, audio_gid)
         os.chmod(node, 0o660)
 print('Validated mdev audio/render permission rules installed.')

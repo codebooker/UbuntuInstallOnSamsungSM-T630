@@ -12,8 +12,13 @@ import subprocess
 import time
 from gi.repository import Gio, GLib
 
-assert os.getuid() == 1000
-runtime = Path('/run/user/1000')
+import sys
+sys.path.insert(0, '/usr/local/share/t630')
+from t630_account import resolve_owner
+
+owner = resolve_owner()
+assert os.getuid() == owner.uid
+runtime = Path('/run/user') / str(owner.uid)
 lock = open(runtime / 't630-auth-watch.lock', 'w')
 try:
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -48,7 +53,7 @@ try:
             if not proc.name.isdigit():
                 continue
             try:
-                if proc.stat().st_uid != 1000:
+                if proc.stat().st_uid != owner.uid:
                     continue
                 executable = os.readlink(proc / 'exe')
                 if executable in (helper, helper + ' (deleted)'):
@@ -87,7 +92,7 @@ try:
                        GDK_BACKEND='wayland', GTK_IM_MODULE='wayland',
                        GTK_THEME='Adwaita:dark')
             children[pid] = subprocess.Popen([helper, str(pid)], env=env,
-                cwd='/home/tablet', stdin=subprocess.DEVNULL,
+                cwd=owner.home, stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(1)
 finally:

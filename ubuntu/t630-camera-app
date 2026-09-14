@@ -2,7 +2,8 @@
 # Start the hardware bridge on demand, run GNOME Camera, and release it on exit.
 set -euo pipefail
 
-test "$(id -u)" = 1000
+owner_uid=$(/usr/bin/python3 /usr/local/share/t630/t630_account.py uid)
+test "$(id -u)" = "$owner_uid"
 camera=${1:-front}
 case "$camera" in
     front|rear) ;;

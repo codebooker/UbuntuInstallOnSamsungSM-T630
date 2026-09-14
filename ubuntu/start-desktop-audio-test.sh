@@ -2,9 +2,10 @@
 # Manual user-session audio test; no new TCP listener or system service.
 set -eu
 test "$(id -u)" = 0
-usermod -aG audio tablet
+eval "$(python3 /usr/local/share/t630/t630_account.py env)"
+usermod -aG audio "$T630_OWNER"
 for process in pipewire pipewire-pulse wireplumber; do
-    if pgrep -u 1000 -x "$process" >/dev/null; then
+    if pgrep -u "$T630_OWNER_UID" -x "$process" >/dev/null; then
         echo "$process already running; refusing duplicate launch."
         exit 1
     fi

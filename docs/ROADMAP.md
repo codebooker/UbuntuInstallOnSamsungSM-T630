@@ -2,14 +2,18 @@
 
 ## Current priority order
 
-1. Automatic shallow suspend after verified password lock and display blanking.
-2. Android application support through Waydroid or a documented kernel blocker.
-3. Camera capture, front-camera tuning, and photo-flash integration.
-4. Bluetooth headset playback, microphone, and reconnect testing.
-5. Four-edge and post-resume sensor/rotation validation.
-6. GPU stability and browser-video isolation.
-7. microSD, USB host, GPS, NFC, and external-display coverage.
-8. A reproducible installer and recovery package.
+1. Complete automatic shallow-suspend acceptance while unplugged.
+2. Remove the development account from device integration and implement the
+   normal first-boot account flow.
+3. Build and exercise a reproducible installer and complete stock-recovery path.
+4. Camera capture, front-camera tuning, and photo-flash integration.
+5. Bluetooth headset playback, microphone, and reconnect testing.
+6. Four-edge and post-resume sensor/rotation validation.
+7. GPU stability and browser-video isolation.
+8. microSD, USB host, GPS, NFC, and external-display coverage.
+9. Android application support through a coherent kernel and matching module
+   payload. This is deliberately last because changing the required namespace
+   options invalidates every audited stock Samsung module.
 
 ## End-user installer requirement
 
@@ -36,7 +40,11 @@ The reference Tab S9 Ultra project uses Waydroid with an ARM64-only LineageOS
 image. The SM-T630 already exposes binderfs, binder/hwbinder/vndbinder, ashmem,
 overlayfs, cgroups, veth, bridge, and built-in IPv4 Netfilter/NAT support. Its
 current Samsung 5.4 configuration lacks PID, IPC, and user namespaces, two cgroup
-controllers, the Xtables CHECKSUM target, and the System V IPC dependency. The
-next gate is rebuilding the exact DZE3 kernel with those features enabled,
-preserving every existing device patch, and boot-testing that kernel before
-installing any Android image.
+controllers, the Xtables CHECKSUM target, and the System V IPC dependency.
+
+An isolation build proved that enabling the missing namespace and cgroup
+features changes the module-version ABI. All 235 audited stock modules are
+affected, so a boot-image-only Waydroid kernel is not a viable release path.
+Android work is deferred until the native Ubuntu installation is complete and
+the project can build and validate a coherent kernel plus matching module
+payload. No Android image should be installed before that gate passes.

@@ -124,7 +124,8 @@ class CameraFrameValidationTests(unittest.TestCase):
         self.assertIn('width=720', bridge)
         self.assertIn('height=480', bridge)
         self.assertIn('t630-yuv-tune "$width" "$height" 900 1320', rear)
-        self.assertIn("/home/tablet/.config/t630-camera/rear-color", rear)
+        self.assertIn('owner_home=$(/usr/bin/python3 /usr/local/share/t630/t630_account.py home)', bridge)
+        self.assertIn('"$owner_home/.config/t630-camera/rear-color"', rear)
         self.assertIn('color_filter=(cat)', front)
 
     def test_rear_color_filter_is_bounded_and_streaming(self):

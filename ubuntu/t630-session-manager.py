@@ -4,8 +4,12 @@ import os
 from pathlib import Path
 import re
 import signal
+import sys
 
 from gi.repository import Gio, GLib
+
+sys.path.insert(0, '/usr/local/share/t630')
+from t630_account import resolve_owner
 
 
 MANAGER_XML = """<node><interface name='org.gnome.SessionManager'>
@@ -26,7 +30,8 @@ session_id = os.environ.get('XDG_SESSION_ID', '')
 # systemd-logind normally returns cNN; this tablet's elogind can return a
 # numeric NN form after session recreation. Both originate from CreateSession
 # in the root-only wrapper and are valid local session identifiers.
-if os.geteuid() != 1000 or not re.fullmatch(r'c?[0-9]+', session_id):
+owner = resolve_owner()
+if os.geteuid() != owner.uid or not re.fullmatch(r'c?[0-9]+', session_id):
     raise SystemExit('Only for the registered tablet login session.')
 if Path('/etc/t630-install-id').read_text().strip() != 'SM-T630-T630XXSBDZE3-Ubuntu-v1':
     raise SystemExit('Wrong device installation.')

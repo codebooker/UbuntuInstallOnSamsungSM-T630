@@ -2,6 +2,10 @@
 import importlib.util
 from pathlib import Path
 import unittest
+import sys
+from types import SimpleNamespace
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ubuntu'))
 
 source = Path(__file__).resolve().parents[1] / 'ubuntu/t630-audio-session-cleanup.py'
 if not source.exists():
@@ -13,26 +17,33 @@ spec.loader.exec_module(module)
 
 class SelectionTests(unittest.TestCase):
     def setUp(self):
+        self.owner = SimpleNamespace(uid=1000, home='/home/tablet')
         self.env = {b'XDG_CONFIG_HOME': b'/home/tablet/.config/t630-gnome-preview',
                     b'XDG_RUNTIME_DIR': b'/run/user/1000'}
 
     def test_known_profile_servers_match(self):
         for name in ('pipewire', 'pipewire-pulse', 'wireplumber'):
-            self.assertTrue(module.matches(1000, '/usr/bin/' + name, name, self.env))
+            self.assertTrue(module.matches(1000, '/usr/bin/' + name, name, self.env, self.owner))
 
     def test_other_user_is_untouched(self):
-        self.assertFalse(module.matches(0, '/usr/bin/pipewire', 'pipewire', self.env))
+        self.assertFalse(module.matches(0, '/usr/bin/pipewire', 'pipewire', self.env, self.owner))
 
     def test_test_profile_is_untouched(self):
         self.env[b'XDG_CONFIG_HOME'] = b'/tmp/t630-render-test-private/config'
-        self.assertFalse(module.matches(1000, '/usr/bin/pipewire', 'pipewire', self.env))
+        self.assertFalse(module.matches(1000, '/usr/bin/pipewire', 'pipewire', self.env, self.owner))
 
     def test_unknown_binary_is_untouched(self):
-        self.assertFalse(module.matches(1000, '/usr/bin/gnome-shell', 'pipewire', self.env))
+        self.assertFalse(module.matches(1000, '/usr/bin/gnome-shell', 'pipewire', self.env, self.owner))
 
     def test_missing_runtime_is_untouched(self):
         del self.env[b'XDG_RUNTIME_DIR']
-        self.assertFalse(module.matches(1000, '/usr/bin/pipewire', 'pipewire', self.env))
+        self.assertFalse(module.matches(1000, '/usr/bin/pipewire', 'pipewire', self.env, self.owner))
+
+    def test_different_valid_owner_profile_matches(self):
+        owner = SimpleNamespace(uid=1234, home='/home/alice')
+        env = {b'XDG_CONFIG_HOME': b'/home/alice/.config/t630-gnome-preview',
+               b'XDG_RUNTIME_DIR': b'/run/user/1234'}
+        self.assertTrue(module.matches(1234, '/usr/bin/pipewire', 'pipewire', env, owner))
 
 
 if __name__ == '__main__':

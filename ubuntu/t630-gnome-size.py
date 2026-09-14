@@ -1,9 +1,14 @@
 #!/usr/bin/python3
 """Set only the isolated preview's virtual monitor, never the physical output."""
 import os
+import sys
 import time
 from gi.repository import Gio, GLib
-assert os.environ.get('XDG_CONFIG_HOME') == '/home/tablet/.config/t630-gnome-preview'
+sys.path.insert(0, '/usr/local/share/t630')
+from t630_account import resolve_owner
+owner = resolve_owner()
+assert os.getuid() == owner.uid
+assert os.environ.get('XDG_CONFIG_HOME') == f'{owner.home}/.config/t630-gnome-preview'
 bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
 for attempt in range(20):
     try:

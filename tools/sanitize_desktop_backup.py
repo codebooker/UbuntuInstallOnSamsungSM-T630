@@ -1,4 +1,9 @@
-"""Remove generated Netplan credentials; verify all retained archive contents."""
+"""Historical lab sanitizer; output is still not safe for public release.
+
+This removes the accidentally captured network state from one private backup,
+but intentionally does not claim to remove accounts or machine identity. New
+release images must be built generically and pass audit_release_root.py.
+"""
 import hashlib
 import json
 from pathlib import Path
@@ -49,6 +54,6 @@ with target.open('rb') as stream:
         h.update(block)
 report = {'artifact': str(target), 'sha256': h.hexdigest(), 'bytes': target.stat().st_size,
           'retained_entries_verified': len(seen), 'excluded_entries': removed,
-          'note': 'Earlier snapshot accidentally included generated /etc/netplan; this sanitized replacement excludes it.'}
+          'note': 'PRIVATE LAB ARTIFACT: network state removed, but account and machine identity may remain; never publish.'}
 (root / 'reports/desktop-snapshot-sanitized.json').write_text(json.dumps(report, indent=2) + '\n')
 print(json.dumps(report, indent=2))

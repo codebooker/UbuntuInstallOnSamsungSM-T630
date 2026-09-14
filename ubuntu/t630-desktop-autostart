@@ -6,10 +6,19 @@ test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
 if [ -e /etc/t630/desktop-autostart.disabled ]; then
     exit 0
 fi
+if [ ! -e /etc/t630/owner ]; then
+    test -x /usr/local/libexec/t630-first-boot
+    test -x /usr/local/share/t630/t630_first_boot.py
+    test -x /usr/local/share/t630/t630_account.py
+    /usr/local/libexec/t630-first-boot
+    test -e /etc/t630/owner
+    exec "$0" "$@"
+fi
 test -x /usr/local/bin/t630-gnome-preview
 test -x /usr/local/libexec/t630-gnome-session
 test -r /usr/local/lib/t630-cogl-sync.so
-test -d /home/tablet
+eval "$(/usr/bin/python3 /usr/local/share/t630/t630_account.py env)"
+test -d "$T630_OWNER_HOME"
 case "${1:-}" in
     --check) exit 0 ;;
     '') ;;
@@ -92,13 +101,13 @@ fi
 # In particular, do not inherit Weston's DRM compatibility preload or the
 # fallback keyboard's input-method overrides into GNOME.
 if [ "$gpu_renderer" = 1 ]; then
-    if /usr/bin/env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8 \
+    if /usr/bin/env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG="$T630_LOCALE" \
         HOME=/root T630_GNOME_FULLSCREEN=1 T630_GPU_RENDERER=1 T630_MANAGED_SESSION="$managed_session" \
         /usr/local/bin/t630-gnome-preview; then
         exit 0
     fi
     echo 'GPU session failed; retrying GNOME with the software renderer.'
 fi
-exec /usr/bin/env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8 \
+exec /usr/bin/env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG="$T630_LOCALE" \
     HOME=/root T630_GNOME_FULLSCREEN=1 T630_GPU_RENDERER=0 T630_MANAGED_SESSION="$managed_session" \
     /usr/local/bin/t630-gnome-preview

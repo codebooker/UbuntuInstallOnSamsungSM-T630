@@ -12,6 +12,9 @@ import subprocess
 import sys
 import time
 
+sys.path.insert(0, '/usr/local/share/t630')
+from t630_account import resolve_owner
+
 
 def bus_call(destination, path, method, *args):
     try:
@@ -95,8 +98,9 @@ def supervise(command, ready=desktop_ready, startup_timeout=45, stop_grace=5,
 
 
 def main():
-    if os.getuid() != 1000:
-        raise SystemExit('GPU session watcher must run as the tablet user.')
+    owner = resolve_owner()
+    if os.getuid() != owner.uid:
+        raise SystemExit('GPU session watcher must run as the selected owner.')
     if Path('/etc/t630-install-id').read_text().strip() != 'SM-T630-T630XXSBDZE3-Ubuntu-v1':
         raise SystemExit('Unexpected tablet installation.')
     command = sys.argv[1:]

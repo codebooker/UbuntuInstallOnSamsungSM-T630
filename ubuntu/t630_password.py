@@ -2,10 +2,15 @@
 """On-tablet password setup. Secrets go only to chpasswd stdin, never logs/argv."""
 import ctypes
 import subprocess
+import sys
 import threading
 import gi
 gi.require_version('Gtk','3.0')
 from gi.repository import Gtk, GLib
+
+sys.path.insert(0, '/usr/local/share/t630')
+from t630_account import resolve_owner
+owner = resolve_owner()
 
 class PasswordWindow(Gtk.Window):
     def __init__(self):
@@ -44,11 +49,11 @@ class PasswordWindow(Gtk.Window):
         def worker():
             password_saved=False
             try:
-                subprocess.run(['/usr/sbin/chpasswd'],input='tablet:'+secret+'\n',text=True,
+                subprocess.run(['/usr/sbin/chpasswd'],input=owner.username+':'+secret+'\n',text=True,
                                stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,
                                timeout=15,check=True)
                 password_saved=True
-                subprocess.run(['/usr/sbin/usermod','-aG','sudo','tablet'],
+                subprocess.run(['/usr/sbin/usermod','-aG','sudo',owner.username],
                                stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,
                                timeout=15,check=True)
                 success=True

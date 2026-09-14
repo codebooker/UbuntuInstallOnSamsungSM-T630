@@ -25,12 +25,25 @@ class WaydroidKernelTests(unittest.TestCase):
         text = '\n'.join(f'{key}=m' for key in module.REQUIRED)
         self.assertEqual(module.check(text), [])
 
-    def test_v9_writer_pins_source_target_and_protected_partitions(self):
+    def test_v9_writer_refuses_the_abi_incompatible_image(self):
         writer = source.with_name('write_waydroid_kernel_boot_v9.sh')
         subprocess.run(['sh', '-n', writer], check=True)
         text = writer.read_text()
-        self.assertIn('old_hash=2bfa801e391476fb9e4f597d31846fc2113b8c0c761130caa4a7fef4dec1876a', text)
-        self.assertIn('new_hash=57b5d0c8a1ef76f46ea0c6c039d30a2f13e7b3743c5c7d1a72eb5f4eb10a993b', text)
+        result = subprocess.run([writer, '--write'], capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('REFUSED', result.stderr)
+        self.assertIn('module ABI', result.stderr)
+        self.assertNotIn('/dev/sda19', text)
+        self.assertNotIn('\ndd ', text)
+
+    def test_wifi_safe_writer_pins_rollback_target_and_neighbors(self):
+        writer = source.with_name('write_wifi_safe_checksum_boot_v10.sh')
+        subprocess.run(['sh', '-n', writer], check=True)
+        text = writer.read_text()
+        self.assertIn('old_hash=57b5d0c8a1ef76f46ea0c6c039d30a2f13e7b3743c5c7d1a72eb5f4eb10a993b', text)
+        self.assertIn('new_hash=5394a2347dd4ed660af02e7197c48a38b91c6912a6a0667b4cd002dc16c21b61', text)
+        self.assertIn('PARTNAME=boot', text)
+        self.assertIn('dd if="$image" of=/dev/sda19', text)
         for partition in ('/dev/sda20', '/dev/sda21', '/dev/sda22', '/dev/sde19'):
             self.assertIn(partition, text)
 

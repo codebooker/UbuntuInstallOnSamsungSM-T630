@@ -10,10 +10,14 @@ import signal
 import sys
 from gi.repository import Gio, GLib
 
+sys.path.insert(0, '/usr/local/share/t630')
+from t630_account import resolve_owner
+
 if os.getuid() != 0 or Path('/etc/t630-install-id').read_text().strip() != 'SM-T630-T630XXSBDZE3-Ubuntu-v1':
     raise SystemExit('Only for the validated root desktop launcher.')
 if sys.argv[1:] != ['/usr/local/bin/t630-gnome-preview']:
     raise SystemExit('Only the installed GNOME launcher is accepted.')
+owner = resolve_owner()
 reader, writer = os.pipe()
 pid = os.fork()
 if pid == 0:
@@ -37,7 +41,7 @@ try:
         'org.freedesktop.login1', '/org/freedesktop/login1',
         'org.freedesktop.login1.Manager', 'CreateSession',
         GLib.Variant('(uusssssussbssa(sv))',
-                     (1000, pid, 't630-lab-session', 'wayland', 'user',
+                     (owner.uid, pid, 't630-session', 'wayland', 'user',
                       'GNOME', '', 0, '', '', False, '', '', [])),
         None, Gio.DBusCallFlags.NONE, 15000, None, None)
     info = reply.unpack()

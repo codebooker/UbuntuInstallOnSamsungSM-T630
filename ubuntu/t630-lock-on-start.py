@@ -6,9 +6,12 @@ for the lab recovery security boundary. No passwords are handled here.
 """
 import os
 import subprocess
+import sys
 import time
 
-assert os.getuid() == 1000
+sys.path.insert(0, '/usr/local/share/t630')
+from t630_account import resolve_owner
+assert os.getuid() == resolve_owner().uid
 
 
 def call(bus, dest, path, method, *args, timeout=2):

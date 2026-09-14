@@ -6,27 +6,25 @@ export GDK_BACKEND=wayland GTK_THEME=Adwaita:dark
 export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/0/t630-session-bus
 unset LD_PRELOAD
 test -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY"
+eval "$(/usr/bin/python3 /usr/local/share/t630/t630_account.py env)"
 case "${1:-controls}" in
     gnome)
         exec /usr/bin/env -u GDK_BACKEND T630_GNOME_FULLSCREEN=1 \
             /usr/local/bin/t630-gnome-preview
         ;;
     files|editor|terminal)
-        uid=$(/usr/bin/id -u tablet)
-        gid=$(/usr/bin/id -g tablet)
-        test "$uid" -ge 1000
-        /usr/bin/install -d -m 700 -o "$uid" -g "$gid" "/run/user/$uid"
+        /usr/bin/install -d -m 700 -o "$T630_OWNER_UID" -g "$T630_OWNER_GID" "/run/user/$T630_OWNER_UID"
         # Grant only traversal to this runtime directory and connection to the
         # compositor socket. Do not expose root's home or grant input-device access.
         # Samsung's tmpfs lacks POSIX ACL support. Use the tablet-only group;
         # no other users gain access, and the runtime directory cannot be listed.
-        /usr/bin/chgrp tablet /run/user/0 /run/user/0/wayland-0
+        /usr/bin/chgrp "$T630_OWNER_GID" /run/user/0 /run/user/0/wayland-0
         /usr/bin/chmod 710 /run/user/0
         /usr/bin/chmod 660 /run/user/0/wayland-0
-        exec /usr/bin/setpriv --reuid="$uid" --regid="$gid" --init-groups \
-            /usr/bin/env HOME=/home/tablet USER=tablet LOGNAME=tablet \
-            XDG_RUNTIME_DIR="/run/user/$uid" WAYLAND_DISPLAY=/run/user/0/wayland-0 \
-            DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/t630-session-bus" \
+        exec /usr/bin/setpriv --reuid="$T630_OWNER_UID" --regid="$T630_OWNER_GID" --init-groups \
+            /usr/bin/env HOME="$T630_OWNER_HOME" USER="$T630_OWNER" LOGNAME="$T630_OWNER" \
+            XDG_RUNTIME_DIR="/run/user/$T630_OWNER_UID" WAYLAND_DISPLAY=/run/user/0/wayland-0 \
+            DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$T630_OWNER_UID/t630-session-bus" \
             /usr/local/libexec/t630-user-app "$1"
         ;;
 esac

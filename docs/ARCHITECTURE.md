@@ -15,7 +15,11 @@ bootloader partitions are not replaced by the normal prototype path.
 ## Desktop stack
 
 The internal Qualcomm DRM device drives Weston. GNOME runs as the unprivileged
-`tablet` user in a managed, screen-sized nested session. The rootful Xwayland
+owner selected at first boot in a managed, screen-sized nested session. Runtime
+services resolve that account from `/etc/t630/owner` and the local password
+database instead of assuming a username, UID, GID, or home directory. The
+dedicated `t630-owner` group gates narrow camera, sensor, and rotation actions.
+The rootful Xwayland
 host is deliberately undecorated rather than protocol-fullscreen: Xwayland 24
 disconnects if a fullscreen xdg-shell surface changes between landscape and
 portrait aspect ratios. Weston's fallback panel is hidden so GNOME owns the
@@ -69,3 +73,9 @@ be audited and assigned its own verified constants.
 Runtime services avoid writing Android persist/calibration partitions. Required
 firmware and calibration are copied or mounted read-only from verified stock
 sources wherever possible.
+
+The first-boot backend accepts a non-secret validated profile separately from
+the password. The password is sent only to `chpasswd` over stdin. The owner
+marker is written last, after account, group, hostname, locale, keyboard and
+timezone setup complete, so a partial run cannot start the normal desktop as if
+provisioning had succeeded.

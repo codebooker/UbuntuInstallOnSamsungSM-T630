@@ -3,8 +3,13 @@
 import os
 from pathlib import Path
 import stat
+import sys
+
+sys.path.insert(0, '/usr/local/share/t630')
+from t630_account import resolve_owner
 
 assert os.getuid() == 0
+owner = resolve_owner()
 socket_path = Path('/tmp/.X11-unix/X3')
 lock_path = Path('/tmp/.X3-lock')
 active = {line.split()[-1] for line in Path('/proc/net/unix').read_text().splitlines()[1:]
@@ -17,7 +22,7 @@ for path in (socket_path, lock_path):
         info = path.lstat()
     except FileNotFoundError:
         continue
-    assert info.st_uid == 1000 and not stat.S_ISLNK(info.st_mode)
+    assert info.st_uid == owner.uid and not stat.S_ISLNK(info.st_mode)
     assert stat.S_ISSOCK(info.st_mode) if path == socket_path else stat.S_ISREG(info.st_mode)
     stale.append(path)
 if stale:

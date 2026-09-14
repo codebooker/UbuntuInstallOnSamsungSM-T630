@@ -3,6 +3,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grp.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -91,6 +92,7 @@ wet_module_init(struct weston_compositor *compositor, int *argc, char *argv[])
 {
 	struct t630_rotation *rotation;
 	struct wl_event_loop *loop;
+	struct group *owner_group;
 	struct stat info;
 	(void)argc;
 	(void)argv;
@@ -110,7 +112,9 @@ wet_module_init(struct weston_compositor *compositor, int *argc, char *argv[])
 	} else if (errno != ENOENT || mkfifo(ROTATION_FIFO, 0620) < 0) {
 		goto fail;
 	}
-	if (chown(ROTATION_FIFO, 0, 1000) < 0 || chmod(ROTATION_FIFO, 0620) < 0)
+	owner_group = getgrnam("t630-owner");
+	if (!owner_group || chown(ROTATION_FIFO, 0, owner_group->gr_gid) < 0 ||
+	    chmod(ROTATION_FIFO, 0620) < 0)
 		goto fail;
 
 	rotation->fd = open(ROTATION_FIFO, O_RDWR | O_NONBLOCK | O_CLOEXEC);

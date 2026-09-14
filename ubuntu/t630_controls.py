@@ -11,6 +11,10 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, Gio, GLib
 
+sys.path.insert(0, '/usr/local/share/t630')
+from t630_account import resolve_owner
+OWNER = resolve_owner()
+
 BATTERY = Path('/sys/class/power_supply/battery')
 BACKLIGHT = Path('/sys/class/backlight/panel0-backlight')
 
@@ -20,7 +24,7 @@ def read_status():
             return (BATTERY/name).read_text().strip()
         except OSError:
             return fallback
-    disk = shutil.disk_usage('/home/tablet')
+    disk = shutil.disk_usage(OWNER.home)
     return {'capacity': read('capacity', '?'), 'charging': read('status'),
             'free_gib': round(disk.free/1024**3, 1),
             'total_gib': round(disk.total/1024**3, 1)}
@@ -95,7 +99,7 @@ class Controls(Gtk.Application):
         row.pack_start(self.slider, True, True, 0)
         self.storage = self.label(outer, '', 'muted')
         self.message = self.label(outer, 'Touch and S Pen ready. USB is optional for Wi-Fi administration.', 'muted')
-        self.label(outer, 'Everyday apps use the tablet account. SSH remains the administrator connection.', 'muted')
+        self.label(outer, f'Everyday apps use the {OWNER.username} account. SSH remains the administrator connection.', 'muted')
         password_button = Gtk.Button(label='Set local password / enable sudo')
         password_button.connect('clicked',lambda _:self.launch('password'))
         outer.pack_start(password_button,False,False,0)

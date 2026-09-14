@@ -1,0 +1,10 @@
+--- a/techpack/audio/asoc/lahaina.c
++++ b/techpack/audio/asoc/lahaina.c
+@@ -7308,7 +7308,7 @@
+ }
+ #endif
+-static int lahaina_mi2s_cirrus_init(struct snd_soc_pcm_runtime *rtd)
++static int __maybe_unused lahaina_mi2s_cirrus_init(struct snd_soc_pcm_runtime *rtd)
+ {
+ 	struct snd_soc_dai **codec_dais = rtd->codec_dais;
+ 

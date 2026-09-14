@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
-test "$(/usr/bin/id -un)" = tablet
+eval "$(/usr/bin/python3 /usr/local/share/t630/t630_account.py env)"
+test "$(/usr/bin/id -u)" = "$T630_OWNER_UID"
 export GTK_IM_MODULE=t630-wayland
 export GTK_IM_MODULE_FILE=/usr/local/share/t630/gtk-immodules.cache
 exec 9>"$XDG_RUNTIME_DIR/t630-session-start.lock"
@@ -10,10 +11,10 @@ if ! /usr/bin/dbus-send --session --dest=org.freedesktop.DBus --type=method_call
 fi
 /usr/bin/flock -u 9
 exec 9>&-
-cd /home/tablet
+cd "$T630_OWNER_HOME"
 case "${1:-}" in
-    files) exec /usr/bin/thunar /home/tablet/Documents ;;
+    files) exec /usr/bin/thunar "$T630_OWNER_HOME/Documents" ;;
     editor) exec /usr/bin/mousepad ;;
-    terminal) exec /usr/bin/xfce4-terminal --disable-server --default-working-directory=/home/tablet ;;
+    terminal) exec /usr/bin/xfce4-terminal --disable-server --default-working-directory="$T630_OWNER_HOME" ;;
     *) exit 2 ;;
 esac

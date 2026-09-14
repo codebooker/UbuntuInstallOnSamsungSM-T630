@@ -8,6 +8,7 @@ test "$(grep '^PARTNAME=' /sys/class/block/sda26/uevent)" = PARTNAME=super
 test "$(cat /sys/class/block/sda26/size)" = 18432000
 super_device=$(cat /sys/class/block/sda26/dev)
 [[ "$super_device" =~ ^[0-9]+:[0-9]+$ ]]
+eval "$(/usr/bin/python3 /usr/local/share/t630/t630_account.py env)"
 
 system_table="0 12036096 linear $super_device 2048
 12036096 16248 linear $super_device 17401856"
@@ -42,17 +43,17 @@ if ! mountpoint -q /mnt/t630-stock-system; then
     mount -t f2fs -o ro /dev/dm-0 /mnt/t630-stock-system
 fi
 mount_bind_ro /mnt/t630-stock-system/system /system
-mount_image /home/tablet/stock-vendor-full.img /mnt/stock-vendor-full
-mount_image /home/tablet/t630-vndk30-apex/apex_payload.img /mnt/t630-vndk30
-mount_image /home/tablet/t630-apex/runtime/apex_payload.img /mnt/t630-runtime
-mount_image /home/tablet/t630-apex/i18n/apex_payload.img /mnt/t630-i18n
-mount_image /home/tablet/t630-camera-apex/apex_payload.img /mnt/t630-camera
+mount_image "$T630_OWNER_HOME/stock-vendor-full.img" /mnt/stock-vendor-full
+mount_image "$T630_OWNER_HOME/t630-vndk30-apex/apex_payload.img" /mnt/t630-vndk30
+mount_image "$T630_OWNER_HOME/t630-apex/runtime/apex_payload.img" /mnt/t630-runtime
+mount_image "$T630_OWNER_HOME/t630-apex/i18n/apex_payload.img" /mnt/t630-i18n
+mount_image "$T630_OWNER_HOME/t630-camera-apex/apex_payload.img" /mnt/t630-camera
 
-mount_bind_ro /home/tablet/t630-vendor-view /vendor
-mount_bind_ro /home/tablet/t630-linkerconfig /linkerconfig
+mount_bind_ro "$T630_OWNER_HOME/t630-vendor-view" /vendor
+mount_bind_ro "$T630_OWNER_HOME/t630-linkerconfig" /linkerconfig
 mkdir -p /data
 if ! mountpoint -q /data; then
-    mount --bind /home/tablet/t630-android-data /data
+    mount --bind "$T630_OWNER_HOME/t630-android-data" /data
 fi
 mount_bind_ro /mnt/t630-runtime /apex/com.android.runtime
 mount_bind_ro /mnt/t630-i18n /apex/com.android.i18n
@@ -72,11 +73,11 @@ done
 # build. Their hashes and purpose are documented, but the files are not
 # redistributable and are deliberately excluded from this repository.
 if ! mountpoint -q /system/bin/cameraserver; then
-    mount --bind /home/tablet/t630-system-overrides/cameraserver /system/bin/cameraserver
+    mount --bind "$T630_OWNER_HOME/t630-system-overrides/cameraserver" /system/bin/cameraserver
 fi
 chi=/mnt/stock-vendor-full/lib64/hw/com.qti.chi.override.so
 if ! mountpoint -q "$chi"; then
-    mount --bind /home/tablet/t630-vendor-overrides/com.qti.chi.override.so "$chi"
+    mount --bind "$T630_OWNER_HOME/t630-vendor-overrides/com.qti.chi.override.so" "$chi"
 fi
 
 ln -sf /usr/local/lib/t630-android-property-seed.so /dev/t630-android-property-seed.so

@@ -9,20 +9,25 @@ from pathlib import Path
 import re
 import sys
 
-if os.getuid() not in (0, 1000) or len(sys.argv) < 2:
+sys.path.insert(0, '/usr/local/share/t630')
+from t630_account import resolve_locale, resolve_owner
+
+owner = resolve_owner()
+if os.getuid() not in (0, owner.uid) or len(sys.argv) < 2:
     raise SystemExit('Usage: t630-gnome-run COMMAND [ARGS...]')
 sessions = []
 for proc in Path('/proc').iterdir():
     if not proc.name.isdigit():
         continue
     try:
-        if proc.stat().st_uid != 1000:
+        if proc.stat().st_uid != owner.uid:
             continue
         if os.readlink(proc / 'exe') != '/usr/bin/gnome-shell':
             continue
         values = dict(item.split(b'=', 1) for item in
                       (proc / 'environ').read_bytes().split(b'\0') if b'=' in item)
-        if values.get(b'XDG_CONFIG_HOME') == b'/home/tablet/.config/t630-gnome-preview':
+        expected = f'{owner.home}/.config/t630-gnome-preview'.encode()
+        if values.get(b'XDG_CONFIG_HOME') == expected:
             sessions.append((proc, values))
     except (OSError, ValueError):
         continue
@@ -33,8 +38,8 @@ env = {name: values[name.encode()].decode() for name in
        ('DBUS_SESSION_BUS_ADDRESS', 'XAUTHORITY', 'XDG_RUNTIME_DIR', 'XDG_SESSION_ID',
         'XDG_CONFIG_HOME', 'XDG_DATA_HOME', 'XDG_CACHE_HOME')
        if name.encode() in values}
-env.update(HOME='/home/tablet', USER='tablet', LOGNAME='tablet',
-           PATH='/usr/local/bin:/usr/bin:/bin', LANG='C.UTF-8',
+env.update(HOME=owner.home, USER=owner.username, LOGNAME=owner.username,
+           PATH='/usr/local/bin:/usr/bin:/bin', LANG=resolve_locale(),
            WAYLAND_DISPLAY='t630-gnome-0', XDG_SESSION_TYPE='wayland',
            XDG_CURRENT_DESKTOP='GNOME', GDK_BACKEND='wayland',
            GSK_RENDERER='cairo', LIBGL_ALWAYS_SOFTWARE='1',
@@ -52,8 +57,8 @@ if os.getuid() == 0:
             with target.open('w') as stream:
                 stream.write(str(os.getpid()))
             break
-    os.initgroups('tablet', 1000)
-    os.setgid(1000)
-    os.setuid(1000)
-os.chdir('/home/tablet')
+    os.initgroups(owner.username, owner.gid)
+    os.setgid(owner.gid)
+    os.setuid(owner.uid)
+os.chdir(owner.home)
 os.execvpe(sys.argv[1], sys.argv[1:], env)

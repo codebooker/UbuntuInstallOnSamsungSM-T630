@@ -21,6 +21,7 @@ RUNTIME_FILES = (
     "ubuntu/t630-gnome-run.py",
     "ubuntu/t630-gnome-size.py",
     "ubuntu/t630-gpu-session-watch.py",
+    "ubuntu/t630-install-owner-assets.py",
     "ubuntu/t630-lock-on-start.py",
     "ubuntu/t630-managed-session.py",
     "ubuntu/t630-microphone-bridge",

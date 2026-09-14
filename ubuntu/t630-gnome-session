@@ -4,6 +4,9 @@ set -eu
 unset LD_PRELOAD GTK_IM_MODULE GTK_IM_MODULE_FILE QT_IM_MODULE GTK_THEME
 cd "$HOME"
 mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME"
+if [ -x /usr/local/libexec/t630-install-owner-assets ]; then
+    /usr/local/libexec/t630-install-owner-assets
+fi
 exec 9>"$XDG_RUNTIME_DIR/t630-gnome-preview.lock"
 flock -n 9 || exit 0
 gsettings set org.gnome.desktop.interface enable-animations false

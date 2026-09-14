@@ -4,8 +4,9 @@
 
 1. Remove the development account from device integration and implement the
    normal first-boot account flow. The account-neutral flow and reproducible
-   `t630-first-boot` package are implemented; fresh-image visual acceptance
-   remains.
+   `t630-first-boot` package are implemented; the account-neutral GNOME asset
+   migration and reproducible source-only desktop runtime package now work.
+   Fresh-image execution remains.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
 3. Camera capture, front-camera tuning, and photo-flash integration.
 4. Bluetooth headset playback, microphone, and reconnect testing.

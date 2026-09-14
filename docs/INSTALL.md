@@ -208,6 +208,25 @@ labels itself visibly, clears its password fields on exit, and closes without
 writing an owner marker. The normal no-argument path remains the real one-time
 setup flow and still refuses to run after an owner exists.
 
+The tracked, architecture-independent desktop integration is packaged
+separately:
+
+```sh
+SOURCE_DATE_EPOCH=1700000000 python3 tools/build_desktop_runtime_deb.py
+```
+
+This creates `output/t630-desktop-runtime_0.1.0_all.deb`. It depends on the
+matching first-boot package and contains the desktop launcher, login/session
+glue, input mappings, rotation, display controls, guarded suspend, and Tablet
+Controls extension source. On first GNOME launch, the extension is compiled and
+installed into the selected owner's isolated profile without assuming a user
+name, UID, GID, or home path. It preserves any other enabled extensions.
+
+The desktop package intentionally excludes native compiled compatibility
+libraries, patched login components, hardware daemons, and stock-derived
+firmware. Those require separate architecture-specific or locally generated
+packages before a complete release root can be assembled.
+
 ## Recovery
 
 If the diagnostic boot fails, return to Download Mode and restore the exact

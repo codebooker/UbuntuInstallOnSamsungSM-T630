@@ -36,4 +36,27 @@ name and size, charge state, candidate size/hash, and the exact currently
 installed boot hash. Write mode targets only `/dev/sda19`, verifies its complete
 readback, and then verifies vendor_boot, init_boot, dtbo, and vbmeta unchanged.
 
-Physical write and cold-boot acceptance are separate gates.
+## Physical acceptance
+
+The writer's read-only mode first passed against candidate SHA256 `1462fb6f…`
+and the installed boot SHA256 `5394a234…`. Write mode then changed only
+`/dev/sda19`, verified its complete readback as `1462fb6f…`, and verified
+vendor_boot, init_boot, DTBO, and vbmeta byte-for-byte unchanged.
+
+Cold boot `e1dbba7d-b920-49e3-884c-fbf24821b4f6` mounted the persistent Ubuntu
+root and exposed the USB recovery console. Full BOOT readback and both embedded
+startup/helper hashes matched the manifest. Without USB intervention, Qualcomm
+Wi-Fi connected and the new fallback launched SSH and the screen service in
+about one minute.
+
+The post-boot health sweep found Weston, GNOME, NetworkManager, Bluetooth,
+PipeWire speakers and microphone, sensor proxy, battery reporting, and expected
+device permissions healthy, with zero targeted kernel-fault markers. The
+embedded full shutdown helper then completed a second clean restart. Boot
+`1a5ab32d-9d13-49ab-94dd-b833faed1ff4` again brought up Wi-Fi and SSH
+automatically and passed the same health sweep with the boot image and both
+initramfs helper hashes unchanged.
+
+The persistent release boot image is physically accepted on the development
+SM-T630. Installing the identity-clean release root and rehearsing return to
+stock remain separate gates.

@@ -12,9 +12,10 @@
    stack, ARM64 compatibility packages, isolated GDM/elogind password-login
    runtime, and local-only stock-assets package are reproducible, including the
    audio protection-domain mapper and redistributable camera runtime.
-   A reproducible AVB-verified persistent boot candidate is assembled with the
-   current module-compatible kernel and initramfs; its guarded write and cold-
-   boot acceptance remain. The
+   The reproducible AVB-verified persistent boot image uses the current module-
+   compatible kernel and initramfs; its guarded write, two cold boots, full
+   shutdown, automatic remote startup, and health checks passed. Clean-root
+   installation and the return-to-stock rehearsal remain. The
    account-neutral Weston/Maliit host runtime is now packaged with reversible distro-file
    diversions. An exact-version base metapackage prevents incompatible
    component combinations, and the guarded offline assembler installed the

@@ -124,6 +124,6 @@ D-Bus/systemd-activated, while this port intentionally uses BusyBox as PID 1.
 `persistent/start-ubuntu` now runs a bounded one-shot fallback: for at most two
 minutes it waits for any connected Wi-Fi interface, then calls the same locked,
 idempotent remote starter. Images without the optional lab remote helper simply
-skip it. This source change will be physically cold-boot tested with the next
-boot-image assembly; the current boot image still requires the USB fallback if
-the dispatcher event is missed.
+skip it. The reproducible release boot image physically passed two cold boots;
+both brought up Wi-Fi, SSH, and the screen service automatically in about one
+minute without USB intervention.

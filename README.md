@@ -64,12 +64,12 @@ be treated as a porting task, not as a reason to remove those checks.
 6. See the [completion roadmap](docs/ROADMAP.md) for the end-user installer and
    the deliberately deferred Android-app work.
 
-The repository can reproduce both the conservative diagnostic image and an
-offline-verified persistent boot candidate from matching stock firmware. The
-persistent candidate remains gated from device writing until physical release
-acceptance is recorded. Packaging the tested Ubuntu filesystem into a safe
-public installer is still in progress; do not improvise the one-time userdata
-installation from the lab scripts unless you can recover the tablet
+The repository can reproduce both the conservative diagnostic image and the
+physically accepted persistent boot image from matching stock firmware. Its
+guarded BOOT-only write and two cold boots passed on the development SM-T630.
+Packaging and physically installing the identity-clean Ubuntu filesystem as a
+safe public installer is still in progress; do not improvise the one-time
+userdata installation from the lab scripts unless you can recover the tablet
 independently.
 
 ## Repository layout

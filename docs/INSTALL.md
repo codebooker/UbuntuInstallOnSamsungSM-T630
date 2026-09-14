@@ -169,6 +169,19 @@ These components are implemented and tested, but the generic Ubuntu root image
 builder and complete end-to-end wipe/install/recovery rehearsal remain release
 gates. Do not redistribute the development tablet's filesystem.
 
+The account-neutral portion is also built as a deterministic Debian package:
+
+```sh
+SOURCE_DATE_EPOCH=1700000000 python3 tools/build_first_boot_deb.py
+```
+
+This creates `output/t630-first-boot_0.1.0_all.deb`. It contains only tracked
+setup code and the non-secret example profile; it does not contain an owner
+marker, user account, password, machine identity, SSH key, or network profile.
+Building the package is not yet equivalent to building the complete release
+root—the remaining device runtime, compiled helpers, and matching stock-derived
+firmware still need their own reproducible packages.
+
 ## Recovery
 
 If the diagnostic boot fails, return to Download Mode and restore the exact

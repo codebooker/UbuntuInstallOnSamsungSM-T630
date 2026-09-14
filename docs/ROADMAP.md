@@ -4,7 +4,9 @@
 
 1. Complete automatic shallow-suspend acceptance while unplugged.
 2. Remove the development account from device integration and implement the
-   normal first-boot account flow.
+   normal first-boot account flow. The account-neutral flow and reproducible
+   `t630-first-boot` package are implemented; fresh-image visual acceptance
+   remains.
 3. Build and exercise a reproducible installer and complete stock-recovery path.
 4. Camera capture, front-camera tuning, and photo-flash integration.
 5. Bluetooth headset playback, microphone, and reconnect testing.

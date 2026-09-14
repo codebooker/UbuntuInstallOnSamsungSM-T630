@@ -11,11 +11,11 @@
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
    stack, ARM64 compatibility packages, and local-only stock-assets package are
    reproducible, including the audio protection-domain mapper. Factory-archive
-   preparation, remaining compiled login/camera components, generic-root
+   preparation, remaining compiled login/camera components, boot-image
    assembly, and the destructive rehearsal remain. An exact-version base
    metapackage now prevents incompatible component combinations, and the
-   guarded offline assembler validates the full package directory before it can
-   touch an explicitly marked Ubuntu 24.04 root.
+   guarded offline assembler installed the full package directory into a fresh,
+   identity-clean Ubuntu 24.04.5 ARM64 rehearsal root on the tablet.
 3. Camera capture, front-camera tuning, and photo-flash integration.
 4. Bluetooth headset playback, microphone, and reconnect testing.
 5. Four-edge and post-resume sensor/rotation validation.
@@ -48,6 +48,13 @@ the current hard-coded lab account is not a shippable default. Ubuntu 24.04's
 [release notes](https://documentation.ubuntu.com/release-notes/24.04/) say that
 OEM installs are not supported by its desktop installer, so this image needs a
 tested first-boot provisioning flow rather than a misleading OEM-mode shortcut.
+
+The packaged backend has now completed in the fresh rehearsal root using a
+non-personal sample account: UID/GID 1000, password state, owner group, locale,
+keyboard, time zone, hostname, and account-neutral desktop startup all passed.
+The backend refused a second run, and the release audit correctly rejected the
+personalized result. A physical clean-boot run through every touch UI page is
+still required before this flow is considered end-user accepted.
 
 ## Android applications
 

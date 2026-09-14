@@ -328,8 +328,29 @@ regular `.t630-offline-root` file whose exact content is
 `SM-T630 OFFLINE RELEASE ROOT`. The tool rejects `/`, symlinked roots, existing
 human accounts, home data, initialized machine identity, host SSH keys, and
 network credentials before accepting `--apply`. It re-runs that identity audit
-after package installation. This guarded apply path exists, but has not yet
-passed the fresh-root rehearsal.
+after package installation.
+
+The complete non-destructive rehearsal uses the previously signature-verified
+Ubuntu Base 24.04.5 ARM64 archive:
+
+```sh
+sudo python3 tools/prepare_rehearsal_root.py \
+  ubuntu-base-24.04.5-base-arm64.tar.gz /opt/t630/rehearsal/root
+sudo tools/provision_rehearsal_root.sh /opt/t630/rehearsal/root
+sudo python3 tools/assemble_release_root.py PACKAGE_DIRECTORY \
+  --root /opt/t630/rehearsal/root --apply
+sudo tools/check_rehearsal_root.sh /opt/t630/rehearsal/root
+```
+
+The preparer checks the pinned archive name and SHA256, rejects an existing or
+symlinked destination, extracts only archive paths that cannot traverse out of
+the root, adds the offline marker, and requires a clean identity audit. The
+provisioner blocks service startup, installs the package set's public Ubuntu
+dependencies, removes build-time machine identity, unmounts every temporary
+host filesystem, and requires the audit to pass again. The checker verifies
+package state, exact release-package versions, the device marker, native ELF
+linkage, and absence of leaked mounts. The first physical-tablet rehearsal
+completed with a clean 1.9 GB root and no broken packages.
 
 Do not overwrite a mapped live library merely to test the package. Extract it
 to a temporary directory and run the dependency/symbol probes described in the

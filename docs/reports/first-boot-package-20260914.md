@@ -34,7 +34,13 @@ byte-identical. The final artifact was parsed and extracted again by native
 arm64 `dpkg-deb`; its executable mode and preview flag were present and the
 extracted tree contained no owner marker.
 
-This closes packaging for the first-boot component itself. It does not close
-the release-image gate: the rest of the device runtime, compiled helpers, and
-matching stock-derived firmware still need reproducible packaging, followed by
-a fresh-root installation test and visual first-boot acceptance.
+The real backend was later executed inside the fresh Ubuntu 24.04.5 ARM64
+rehearsal root using a non-personal sample profile and password. It created the
+UID/GID 1000 owner, marked the password active, selected only existing device
+groups, wrote hostname/locale/keyboard/time-zone state, and passed the packaged
+desktop autostart check. A UTS namespace kept the rehearsal hostname change from
+touching the live tablet. A second backend run was refused, and the identity
+audit then reported exactly the expected owner/profile/home/account state.
+
+This closes package and backend execution for the first-boot component. A
+physical clean-boot walkthrough through all touch UI pages still remains.

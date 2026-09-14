@@ -28,10 +28,14 @@ exact-version metapackage is installed last. The device marker and identity
 audit are checked again afterward. Validation is the default and performs no
 root mutation.
 
-## Remaining gate
+## Fresh-root result
 
-The guard and package-directory audit are tested, but package installation into
-a freshly downloaded and independently verified Ubuntu 24.04 ARM64 root has not
-yet run. That disposable-root execution, first-boot provisioning, boot-image
-assembly, and a full recovery rehearsal remain before any destructive installer
-can be published.
+The guard subsequently installed the exact package set into a newly extracted,
+identity-clean Ubuntu Base 24.04.5 ARM64 root on the physical tablet. Offline
+configuration completed with no broken packages, no unresolved native-library
+links, no leaked host mounts, and a clean post-install identity audit. See the
+[fresh-root rehearsal](fresh-root-rehearsal-20260914.md).
+
+Boot-image assembly, a physical clean-boot walkthrough of the first-boot UI,
+and a full recovery rehearsal remain before any destructive installer can be
+published.

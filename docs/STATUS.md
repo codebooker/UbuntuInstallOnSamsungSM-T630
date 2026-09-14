@@ -32,7 +32,7 @@ explicit, previously validated sysfs paths instead.
 | Video | Mostly working | FFmpeg and GStreamer H.264/VP9 use the stock decoder. A real WebKit process selected it, but no accelerated browser launcher is shipped because this kernel cannot provide WebKit's normal user-namespace sandbox |
 | Camera | Partial | Both GNOME previews run at 720×480. Rear ID 0 uses 30 ms / ISO 800, gamma 2.5, working continuous autofocus, and a live color slider. The HAL supports HD, but Snapshot crashes above the current preview size |
 | Flashlight | Working | Rear LED current and PMIC switch mapped; GNOME Quick Settings provides a brightness slider and a leased toggle that fails off after 15 seconds if its controller disappears |
-| Optional I/O | Detected | Kernel support exists for microSD, USB host/role switch, Samsung NFC, GNSS framework, and USB-C DisplayPort; physical accessory and service tests remain |
+| Optional I/O | Characterized | Kernel support exists for microSD, USB host/role switch, Samsung NFC, GNSS framework, and USB-C DisplayPort. The exact NFC I2C path and the proprietary NFC/GNSS service boundaries are documented; physical accessory and bounded-service tests remain |
 | User setup | In progress | Desktop/session integration resolves the installer-selected owner rather than assuming `tablet`/UID 1000; the first-boot backend validates identity, locale, keyboard and timezone without storing the password |
 | Security | Lab configuration | GNOME password lock works, but the retained recovery compositor and USB root console mean this is not a hardened full-device login boundary |
 
@@ -58,4 +58,5 @@ explicit, previously validated sysfs paths instead.
   See [CAMERA.md](CAMERA.md).
 
 For the complete test history, see the dated files in `docs/reports/`, including
-the [GStreamer and WebKit video report](reports/gstreamer-video-20260913.md).
+the [GStreamer and WebKit video report](reports/gstreamer-video-20260913.md) and
+the [NFC/GNSS prerequisite audit](reports/nfc-gnss-prerequisites-20260914.md).

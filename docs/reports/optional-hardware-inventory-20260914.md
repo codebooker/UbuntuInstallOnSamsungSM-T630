@@ -13,8 +13,8 @@ passed a physical test.
 | microSD | `CONFIG_MMC`, `CONFIG_MMC_BLOCK`, `CONFIG_MMC_SDHCI_MSM`; two MMC hosts | Controller support is present. No card/block device was inserted during inventory. |
 | USB host | `CONFIG_USB_OTG`, `CONFIG_USB_ROLE_SWITCH`, `CONFIG_USB_XHCI_HCD`, DWC3 | Host support is present. The current cable negotiated sink/device mode, so a storage/HID host test remains. |
 | USB-C display | DRM exposes `card0-DP-1`; Samsung DisplayPort options are enabled | DisplayPort support is present. Connector reported disconnected and no monitor modes, as expected without an adapter/display. |
-| NFC | `CONFIG_NFC_FEATURE_SN100U`, `CONFIG_NFC_PN547`, `CONFIG_SAMSUNG_NFC=m`; matching `nfc_sec.ko` retained | Kernel and vendor module sources are present. The module was not active and no NFC device node existed; safe load/service work and a physical tag test remain. |
-| GNSS/GPS | `CONFIG_GNSS=y` | The generic kernel framework is present, but no GNSS device node or userspace provider was exposed. Vendor transport/firmware identification remains. |
+| NFC | SN100 feature path using the `pn547` compatibility ABI at I2C bus 22/address `0x2b`; matching `nfc_sec.ko` and NXP/Samsung HIDL payload retained | The exact controller path is identified. Auto-load remains prohibited until the driver's incomplete unload/power teardown is corrected and the proprietary service has a bounded bridge. |
+| GNSS/GPS | `CONFIG_GNSS=y`; Qualcomm GNSS 2.1 service, Samsung/Qualcomm HIDL libraries, location daemons, and configs retained | This is a proprietary HIDL/QMI integration rather than a missing `gpsd` package. Transport identification and an isolated GeoClue bridge remain. |
 
 ## Release tests still required
 
@@ -24,8 +24,11 @@ passed a physical test.
    host-role negotiation, hotplug and clean unmount.
 3. Connect a USB-C DisplayPort adapter and monitor; verify mode enumeration,
    mirroring/extension, rotation behavior and disconnect recovery.
-4. Bring up the exact Samsung NFC module only after its device-tree, firmware,
-   node permissions and shutdown behavior are audited; then test a passive tag.
-5. Identify the stock GNSS service/transport and proprietary dependencies before
-   starting it; verify a cold fix outdoors without writing Android calibration
-   partitions.
+4. Correct and test the exact Samsung NFC module's unload/power path, then add a
+   bounded NXP/Samsung service bridge and test a passive tag.
+5. Identify the Qualcomm GNSS transport and firmware nodes, then add an isolated
+   GeoClue bridge and verify a cold fix outdoors without writing Android
+   calibration partitions.
+
+See [the detailed NFC/GNSS prerequisite audit](nfc-gnss-prerequisites-20260914.md)
+before attempting either service.

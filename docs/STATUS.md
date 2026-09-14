@@ -22,7 +22,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Keyboard | Working | Maliit/GNOME on-screen keyboard with Shift, Enter, Backspace, and Hide |
 | Everyday apps | Working | Clean-root provisioning installs GNOME Software/PackageKit, native Mozilla Firefox, Files, Terminal, Text Editor, LibreOffice, Contacts, media codecs, and the standard GNOME utilities; Snap remains absent because the stock kernel lacks its namespace requirements |
 | Physical keys | Working | Volume, Power, Home, Back, Recents, and red Active button mapped |
-| Wi-Fi / remote access | Working | Reconnect survives interface renaming; SSH and the single-instance loopback screen service work over the LAN |
+| Wi-Fi / remote access | Working, boot fix pending | Wi-Fi reconnects and SSH/single-instance screen viewing work over LAN; the current image can miss NetworkManager's systemd-oriented dispatcher at cold boot, and the bounded BusyBox-supervisor fallback is staged for the next boot image |
 | Bluetooth | Working | WCN6850 startup retry, firmware handoff, idle wake, BlueZ discovery, synchronized teardown, and supervised recovery physically tested; WirePlumber Bluetooth audio policy is enabled, pending a paired-headset playback test |
 | Speakers | Working | Stock calibration and guarded amplifier sequencing; GNOME volume control works |
 | Microphone | Working | Built-in microphone exposed as the normal PipeWire source through a demand-driven bridge |

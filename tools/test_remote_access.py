@@ -31,6 +31,14 @@ class RemoteAccessTests(unittest.TestCase):
         self.assertIn("fcntl.LOCK_EX | fcntl.LOCK_NB", source)
         self.assertIn("('127.0.0.1',8765)", source)
 
+    def test_persistent_boot_has_non_systemd_remote_fallback(self):
+        startup = (ROOT / "persistent/start-ubuntu").read_text()
+        self.assertIn("TYPE,STATE", startup)
+        self.assertIn("wifi:connected", startup)
+        self.assertIn("/usr/local/sbin/t630-remote-start", startup)
+        self.assertIn("/run/remote-start.log", startup)
+        self.assertIn('attempt" -lt 60', startup)
+
     def test_live_view_tracks_the_real_output_transform(self):
         source = (ROOT / "ubuntu/t630_screen.py").read_text()
         self.assertIn("/run/t630-weston-rotation.state", source)

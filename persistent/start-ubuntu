@@ -76,6 +76,24 @@ service seatd /usr/bin/env SEATD_VTBOUND=0 /usr/sbin/seatd -l info
 service wpa /usr/sbin/wpa_supplicant -u -s
 service network /usr/sbin/NetworkManager --no-daemon --log-level=INFO
 service clock /usr/sbin/chronyd -d -f /etc/chrony/t630.conf
+# NetworkManager normally asks systemd to activate nm-dispatcher. PID 1 in this
+# recovery-hosted port is BusyBox, so provide a one-shot cold-boot fallback for
+# the optional lab remote runtime. Its own lock keeps this safe alongside a
+# dispatcher event, and release images without the helper do nothing here.
+(
+    attempt=0
+    while [ "$attempt" -lt 60 ]; do
+        if [ -x "$root/usr/local/sbin/t630-remote-start" ] &&
+           chroot "$root" /usr/bin/nmcli -t -f TYPE,STATE device status 2>/dev/null |
+               grep -qx 'wifi:connected'; then
+            chroot "$root" /usr/local/sbin/t630-remote-start
+            exit $?
+        fi
+        attempt=$((attempt + 1))
+        sleep 2
+    done
+    echo 'Connected Wi-Fi did not appear; optional remote startup skipped.'
+) >/run/remote-start.log 2>&1 &
 # Qualcomm firmware init can take time. It must not block the desktop/fallback.
 (
     for name in cnss_prealloc cnss_nl cnss_utils device_management_service_v01 wlan_firmware_service_v01 cnss2 qca_cld3_wlan; do

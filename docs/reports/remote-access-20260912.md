@@ -115,3 +115,15 @@ Using USB serial, first disable the dedicated dispatcher hook (remove its execut
 bits), then terminate the dedicated SSH listener and the `t630-screen` process.
 This closes network access without touching Wi-Fi or the desktop. Do not disable
 services from the only remaining SSH connection unless prepared to reconnect USB.
+
+## Non-systemd cold-boot fallback — 2026-09-14
+
+Two later clean boots reconnected Wi-Fi but did not launch SSH until the remote
+starter was invoked over USB. NetworkManager's packaged dispatcher is normally
+D-Bus/systemd-activated, while this port intentionally uses BusyBox as PID 1.
+`persistent/start-ubuntu` now runs a bounded one-shot fallback: for at most two
+minutes it waits for any connected Wi-Fi interface, then calls the same locked,
+idempotent remote starter. Images without the optional lab remote helper simply
+skip it. This source change will be physically cold-boot tested with the next
+boot-image assembly; the current boot image still requires the USB fallback if
+the dispatcher event is missed.

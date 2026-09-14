@@ -13,7 +13,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-hardware-runtime"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 FILES = {
     "etc/NetworkManager/conf.d/90-t630-network.conf": ("ubuntu/90-t630-network.conf", 0o644),
     "etc/udev/rules.d/61-t630-sensors.rules": ("ubuntu/61-t630-sensors.rules", 0o644),
@@ -71,7 +71,7 @@ Version: {VERSION}
 Architecture: all
 Maintainer: SM-T630 Ubuntu Port contributors
 Depends: t630-desktop-runtime (= 0.1.1), python3, network-manager, bluez, pipewire, pipewire-pulse, wireplumber, alsa-utils, iio-sensor-proxy, util-linux
-Recommends: t630-sensor-stack, t630-stock-assets
+Recommends: libssc (>= 0.4.4-t6303), hexagonrpcd (>= 0.4.0-t6303), iio-sensor-proxy (>= 3.9-t6303), t630-stock-assets
 Section: admin
 Priority: optional
 Description: hardware service orchestration for Ubuntu on Samsung SM-T630

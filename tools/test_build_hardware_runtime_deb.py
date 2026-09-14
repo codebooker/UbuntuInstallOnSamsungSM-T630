@@ -61,7 +61,10 @@ class HardwareRuntimePackageTests(unittest.TestCase):
             with tarfile.open(control_path, "r:xz") as archive:
                 control = archive.extractfile("./control").read().decode()
             self.assertIn("t630-desktop-runtime (= 0.1.1)", control)
-            self.assertIn("Recommends: t630-sensor-stack, t630-stock-assets", control)
+            self.assertIn("libssc (>= 0.4.4-t6303)", control)
+            self.assertIn("hexagonrpcd (>= 0.4.0-t6303)", control)
+            self.assertIn("iio-sensor-proxy (>= 3.9-t6303)", control)
+            self.assertIn("t630-stock-assets", control)
 
 
 if __name__ == "__main__":

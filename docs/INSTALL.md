@@ -230,16 +230,33 @@ The redistributable hardware orchestration is a separate source-only package:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_hardware_runtime_deb.py
 ```
 
-This creates `output/t630-hardware-runtime_0.1.0_all.deb`. It contains the text
+This creates `output/t630-hardware-runtime_0.1.1_all.deb`. It contains the text
 scripts and policy that coordinate Wi-Fi, Bluetooth, audio, microphone,
 sensors, and IPA, plus the system copy of the owner-neutral WirePlumber policy.
-It recommends, but does not embed, the compiled sensor stack or stock-derived
-firmware and calibration.
+It recommends, but does not embed, the compiled sensor packages or
+stock-derived firmware and calibration.
+
+Build the compiled Qualcomm sensor stack on an Ubuntu ARM64 machine or the
+tablet itself. The builder downloads only pinned, hash-checked source archives
+and writes packages without installing them into the running machine:
+
+```sh
+SOURCE_DATE_EPOCH=1700000000 tools/build_t630_sensor_stack.sh
+```
+
+This produces `libssc_0.4.4-t6303_arm64.deb`,
+`hexagonrpcd_0.4.0-t6303_arm64.deb`, and
+`iio-sensor-proxy_3.9-t6303_arm64.deb` below `output/sensors/`. The source and
+reference patch revisions are fixed in the builder and verified before any
+patch is applied. The packages do not contain Samsung firmware or sensor
+registry data; those belong to the local stock-assets boundary.
 
 The desktop and hardware packages intentionally exclude native compiled
 compatibility libraries, patched login components, compiled hardware daemons,
-and stock-derived firmware. Those require separate architecture-specific or
-locally generated packages before a complete release root can be assembled.
+and stock-derived firmware. The sensor packages and native-userspace package
+cover part of that architecture-specific boundary; the remaining components
+and locally generated assets must be packaged before a complete release root
+can be assembled.
 
 Build the small redistributable native layer on an Ubuntu ARM64 target with the
 required development headers installed:

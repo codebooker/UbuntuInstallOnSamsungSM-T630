@@ -5,9 +5,9 @@
 The redistributable hardware orchestration is now built by
 `tools/build_hardware_runtime_deb.py` as a deterministic Debian package:
 
-- name: `t630-hardware-runtime_0.1.0_all.deb`
-- size: 31,408 bytes
-- SHA256: `5cee82e555ec8c3bb213d400d374b9646ce720973df66bf7be3e34ceb68cf1ff`
+- name: `t630-hardware-runtime_0.1.1_all.deb`
+- size: 31,436 bytes
+- SHA256: `4c0338a386d206925b74d59ce56779623be7bca32269e2862c011d75b71af40b`
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
 arm64 `dpkg-deb` parsed and extracted the result on the tablet. The payload
@@ -41,11 +41,11 @@ boot contained no tracked fault markers.
 
 ## Remaining package boundary
 
-The package depends on desktop runtime 0.1.1 and recommends the not-yet-built
-`t630-sensor-stack` and `t630-stock-assets` packages. It deliberately excludes
-the compiled `hexagonrpcd`, patched sensor proxy, `pd-mapper`, patched
-GDM/elogind components, camera and video adapters, Bluetooth firmware, speaker
-calibration, Qualcomm firmware, Android libraries, SSH identity, and Wi-Fi
-credentials. Those components need architecture-specific builds or locally
-generated packages from the owner's matching Samsung firmware before a generic
-release root can be assembled.
+Version 0.1.1 depends on desktop runtime 0.1.1 and recommends the reproducible
+`libssc`, `hexagonrpcd`, and `iio-sensor-proxy` t6303 builds plus the
+not-yet-built `t630-stock-assets` package. It deliberately excludes
+`pd-mapper`, patched GDM/elogind components, camera and video adapters,
+Bluetooth firmware, speaker calibration, Qualcomm firmware, Android libraries,
+SSH identity, and Wi-Fi credentials. Those components need other
+architecture-specific builds or locally generated packages from the owner's
+matching Samsung firmware before a generic release root can be assembled.

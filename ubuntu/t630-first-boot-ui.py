@@ -36,10 +36,11 @@ TIMEZONES = ("America/New_York", "America/Chicago", "America/Denver",
 
 
 class FirstBoot(Gtk.Window):
-    def __init__(self):
-        if os.geteuid() != 0 or Path("/etc/t630/owner").exists():
+    def __init__(self, preview=False):
+        if os.geteuid() != 0 or (Path("/etc/t630/owner").exists() and not preview):
             raise SystemExit("First-boot setup is not required")
-        super().__init__(title="Welcome to Ubuntu")
+        self.preview = preview
+        super().__init__(title="Ubuntu setup preview" if preview else "Welcome to Ubuntu")
         self.set_default_size(1200, 800)
         self.fullscreen()
         self.connect("destroy", Gtk.main_quit)
@@ -50,6 +51,13 @@ class FirstBoot(Gtk.Window):
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
         outer.set_border_width(36)
         self.add(outer)
+        if self.preview:
+            banner = Gtk.Label(
+                label="Preview mode — closing this window will discard every entry and make no system changes.",
+                xalign=0,
+            )
+            banner.set_line_wrap(True)
+            outer.pack_start(banner, False, False, 0)
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.SLIDE_LEFT_RIGHT,
                                transition_duration=220)
         outer.pack_start(self.stack, True, True, 0)
@@ -60,11 +68,11 @@ class FirstBoot(Gtk.Window):
         nav.pack_start(self.status, True, True, 0)
         self.back = Gtk.Button(label="Back")
         self.back.connect("clicked", self.go_back)
-        nav.pack_end(self.back, False, False, 0)
         self.next = Gtk.Button(label="Next")
         self.next.get_style_context().add_class("suggested-action")
         self.next.connect("clicked", self.go_next)
         nav.pack_end(self.next, False, False, 0)
+        nav.pack_end(self.back, False, False, 0)
 
         self.build_pages()
         css = Gtk.CssProvider()
@@ -122,6 +130,7 @@ class FirstBoot(Gtk.Window):
         page.pack_start(self.network, False, False, 0)
         connect = Gtk.Button(label="Open Wi-Fi setup")
         connect.connect("clicked", self.open_wifi)
+        connect.set_sensitive(not self.preview)
         page.pack_start(connect, False, False, 0)
         GLib.timeout_add_seconds(2, self.refresh_network)
 
@@ -167,7 +176,10 @@ class FirstBoot(Gtk.Window):
         self.index = index
         self.stack.set_visible_child_name(self.pages[index][0])
         self.back.set_sensitive(index > 0 and not self.busy)
-        self.next.set_label("Create account" if index == len(self.pages) - 1 else "Next")
+        if index == len(self.pages) - 1:
+            self.next.set_label("Close preview" if self.preview else "Create account")
+        else:
+            self.next.set_label("Next")
         self.next.set_sensitive(not self.busy)
         self.status.set_text("")
         if index == len(self.pages) - 1:
@@ -193,6 +205,11 @@ class FirstBoot(Gtk.Window):
             return
         if self.index < len(self.pages) - 1:
             self.show_page(self.index + 1)
+            return
+        if self.preview:
+            self.password.set_text("")
+            self.confirm.set_text("")
+            self.destroy()
             return
         try:
             profile = self.selected_profile()
@@ -269,6 +286,8 @@ class FirstBoot(Gtk.Window):
 
 
 if __name__ == "__main__":
-    window = FirstBoot()
+    if sys.argv[1:] not in ([], ["--preview"]):
+        raise SystemExit("usage: t630-first-boot [--preview]")
+    window = FirstBoot(preview=sys.argv[1:] == ["--preview"])
     window.show_all()
     Gtk.main()

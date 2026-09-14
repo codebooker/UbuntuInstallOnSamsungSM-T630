@@ -53,6 +53,14 @@ class FirstBootUiTests(unittest.TestCase):
         self.assertIn("org.gnome.desktop.input-sources", profile)
         self.assertIn("org.gnome.system.location", profile)
 
+    def test_preview_mode_never_invokes_account_backend(self):
+        source = (ROOT / "ubuntu/t630-first-boot-ui.py").read_text()
+        preview_exit = source.index("if self.preview:", source.index("def go_next"))
+        backend_call = source.index("threading.Thread(target=self.apply")
+        self.assertLess(preview_exit, backend_call)
+        self.assertIn('self.next.set_label("Close preview"', source)
+        self.assertIn('and not preview', source)
+
 
 if __name__ == "__main__":
     unittest.main()

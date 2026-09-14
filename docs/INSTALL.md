@@ -189,12 +189,24 @@ The account-neutral portion is also built as a deterministic Debian package:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_first_boot_deb.py
 ```
 
-This creates `output/t630-first-boot_0.1.0_all.deb`. It contains only tracked
+This creates `output/t630-first-boot_0.1.1_all.deb`. It contains only tracked
 setup code and the non-secret example profile; it does not contain an owner
 marker, user account, password, machine identity, SSH key, or network profile.
 Building the package is not yet equivalent to building the complete release
 root—the remaining device runtime, compiled helpers, and matching stock-derived
 firmware still need their own reproducible packages.
+
+On an already provisioned development tablet, the UI can be rendered without
+changing any account or system setting:
+
+```sh
+/usr/local/libexec/t630-first-boot --preview
+```
+
+Preview mode disables the Wi-Fi launcher, never invokes the account backend,
+labels itself visibly, clears its password fields on exit, and closes without
+writing an owner marker. The normal no-argument path remains the real one-time
+setup flow and still refuses to run after an owner exists.
 
 ## Recovery
 

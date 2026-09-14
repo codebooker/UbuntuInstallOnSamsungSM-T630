@@ -79,6 +79,20 @@ Build Heimdall from `tools/heimdall-source` according to its upstream README.
 The physical test used Heimdall commit
 `8f3044db985fd9710038f04886b51240ddbb2834`.
 
+The native kernel build is separate from the deferred Android-container build.
+On a case-sensitive Linux filesystem, use a fresh extraction of Samsung's
+matching source and an empty output directory:
+
+```sh
+./tools/build_native_kernel.sh /absolute/path/to/fresh-source /absolute/path/to/empty-output
+```
+
+The builder authenticates the baseline source files, applies only the audited
+native hardware/compiler fixes, rejects the namespace options that would change
+the stock module ABI, and builds the Image plus matching modules. A successful
+compile is not permission to flash an image; boot packing and the guarded write
+checks below still apply.
+
 ## 5. Extract your matching stock images
 
 The repository never supplies Samsung firmware. Point the extractor at your own

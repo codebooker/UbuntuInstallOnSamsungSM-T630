@@ -26,3 +26,13 @@ bus devices must also be treated as unsafe. Runtime tools may read only exact,
 previously validated sysfs paths. Identity discovery should prefer `uevent`,
 `modalias`, driver symlinks, and device-tree `compatible` properties, and even
 those should be accessed only for a narrowly selected device.
+
+Source review found the direct cause in `drivers/spi/spi.c`: its `name_show()`
+converts `spi->dev.driver` to a `struct spi_driver` before checking whether the
+device has a driver. `spi0.0` is unbound, so the conversion manufactures an
+invalid pointer and the following dereference faults. Patch
+`0018-spi-name-handle-unbound-device.patch` returns an empty name for an unbound
+device before that conversion. The patch must pass a kernel build and a guarded
+boot before the sysfs endpoint is retested. The changed SPI object compiled
+successfully with the pinned Samsung/Android clang toolchain and existing exact
+source build tree; no new kernel or boot image was written to the tablet.

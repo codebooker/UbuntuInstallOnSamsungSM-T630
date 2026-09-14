@@ -1,0 +1,19 @@
+diff --git a/drivers/spi/spi.c b/drivers/spi/spi.c
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -69,9 +69,13 @@ static ssize_t name_show(struct device *dev, struct device_attribute *a, char *buf)
+ static ssize_t name_show(struct device *dev, struct device_attribute *a, char *buf)
+ {
+ 	const struct spi_device	*spi = to_spi_device(dev);
+-	const struct spi_driver *sdrv = to_spi_driver(spi->dev.driver);
++	const struct spi_driver *sdrv;
+ 
+-	if (sdrv->driver.name)
++	if (!spi->dev.driver)
++		return sprintf(buf, "\n");
++
++	sdrv = to_spi_driver(spi->dev.driver);
++	if (sdrv->driver.name)
+ 		return sprintf(buf, "%s\n", sdrv->driver.name);
+ 	return sprintf(buf, "\n");
+ }

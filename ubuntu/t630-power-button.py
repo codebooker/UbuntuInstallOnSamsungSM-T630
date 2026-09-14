@@ -98,12 +98,13 @@ def audio_playing():
     return any(stream.get('corked') is False for stream in streams)
 
 
-def suspend_result():
+def suspend_result(log=True):
     helper = Path('/usr/local/sbin/t630-suspend')
     if not helper.exists() or not Path('/etc/t630/suspend.enabled').exists():
         return {'slept': False, 'reason': 'policy disabled'}
     result = json.loads(subprocess.check_output([str(helper)], text=True, timeout=350))
-    print('Suspend: ' + json.dumps(result), flush=True)
+    if log:
+        print('Suspend: ' + json.dumps(result), flush=True)
     return result
 
 
@@ -154,6 +155,7 @@ def main():
             next_idle_check = time.monotonic() + 60
             previous_idle = None
             auto_suspend_at = None
+            last_auto_suspend_reason = None
             print('Power-key monitor ready; long presses and repeats ignored.', flush=True)
             try:
                 while True:
@@ -171,8 +173,9 @@ def main():
                         auto_suspend_at = now + 15
                     elif now >= auto_suspend_at:
                         try:
-                            result = suspend_result()
+                            result = suspend_result(log=False)
                             if result.get('slept') is True and result.get('power_wake') is True:
+                                last_auto_suspend_reason = None
                                 restore()
                                 command([RUN, 'env', 'DISPLAY=:3', 'xdotool',
                                          'key', 'Shift_L'])
@@ -190,12 +193,18 @@ def main():
                                 next_idle_check = last_action + 3
                                 auto_suspend_at = None
                             elif result.get('slept') is True:
+                                last_auto_suspend_reason = None
                                 # The lab RTC safety alarm woke a still-idle,
                                 # locked tablet. Return to sleep after settling.
                                 auto_suspend_at = time.monotonic() + 15
                             else:
                                 # Charging, USB, audio, or another temporary
-                                # readiness guard: retry quietly after a minute.
+                                # readiness guard: report only a changed reason,
+                                # then retry quietly after a minute.
+                                reason = result.get('reason', 'unknown readiness guard')
+                                if reason != last_auto_suspend_reason:
+                                    print('Automatic suspend waiting: ' + str(reason), flush=True)
+                                    last_auto_suspend_reason = reason
                                 auto_suspend_at = time.monotonic() + 60
                         except Exception as exc:
                             print(f'Automatic suspend not completed: {type(exc).__name__}',

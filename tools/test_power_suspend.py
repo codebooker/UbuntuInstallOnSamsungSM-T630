@@ -54,6 +54,15 @@ class PowerTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 power.manual_suspend()
 
+    def test_quiet_automatic_probe_does_not_spam_log(self):
+        with mock.patch.object(power, 'Path') as paths, \
+                mock.patch.object(power.subprocess, 'check_output',
+                                  return_value='{"slept":false,"reason":"external power"}'), \
+                mock.patch('builtins.print') as output:
+            paths.return_value.exists.return_value = True
+            self.assertEqual(power.suspend_result(log=False)['reason'], 'external power')
+            output.assert_not_called()
+
     def display(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)

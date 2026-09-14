@@ -22,7 +22,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Keyboard | Working | Maliit/GNOME on-screen keyboard with Shift, Enter, Backspace, and Hide |
 | Everyday apps | Working | Clean-root provisioning installs GNOME Software/PackageKit, native Mozilla Firefox, Files, Terminal, Text Editor, LibreOffice, Contacts, media codecs, and the standard GNOME utilities; Snap remains absent because the stock kernel lacks its namespace requirements |
 | Physical keys | Working | Volume, Power, Home, Back, Recents, and red Active button mapped |
-| Wi-Fi / remote access | Working, boot fix pending | Wi-Fi reconnects and SSH/single-instance screen viewing work over LAN; the current image can miss NetworkManager's systemd-oriented dispatcher at cold boot, and the bounded BusyBox-supervisor fallback is staged for the next boot image |
+| Wi-Fi / remote access | Working, boot candidate ready | Wi-Fi reconnects and SSH/single-instance screen viewing work over LAN; the bounded BusyBox-supervisor fallback is included in the reproducible next boot candidate, pending its physical cold-boot acceptance |
 | Bluetooth | Working | WCN6850 startup retry, firmware handoff, idle wake, BlueZ discovery, synchronized teardown, and supervised recovery physically tested; WirePlumber Bluetooth audio policy is enabled, pending a paired-headset playback test |
 | Speakers | Working | Stock calibration and guarded amplifier sequencing; GNOME volume control works |
 | Microphone | Working | Built-in microphone exposed as the normal PipeWire source through a demand-driven bridge |
@@ -94,5 +94,7 @@ The empty-state regeneration and account-neutral writable camera path are in the
 [camera state isolation report](reports/camera-state-isolation-20260914.md).
 The fail-closed offline installation boundary is recorded in the
 [release-root assembly report](reports/release-root-assembly-gate-20260914.md).
+The reproducible AVB-verified persistent image and guarded write boundary are
+recorded in the [release boot candidate report](reports/release-boot-candidate-20260914.md).
 The successful package apply and first-boot backend exercise are recorded in the
 [fresh-root rehearsal report](reports/fresh-root-rehearsal-20260914.md).

@@ -64,11 +64,13 @@ be treated as a porting task, not as a reason to remove those checks.
 6. See the [completion roadmap](docs/ROADMAP.md) for the end-user installer and
    the deliberately deferred Android-app work.
 
-At present the repository can reproduce the conservative diagnostic boot image
-from matching stock firmware. Packaging the tested persistent Ubuntu filesystem
-into a safe public installer is still on the roadmap. Do not improvise the
-one-time userdata installation from the lab scripts unless you can recover the
-tablet independently.
+The repository can reproduce both the conservative diagnostic image and an
+offline-verified persistent boot candidate from matching stock firmware. The
+persistent candidate remains gated from device writing until physical release
+acceptance is recorded. Packaging the tested Ubuntu filesystem into a safe
+public installer is still in progress; do not improvise the one-time userdata
+installation from the lab scripts unless you can recover the tablet
+independently.
 
 ## Repository layout
 

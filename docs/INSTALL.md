@@ -289,6 +289,30 @@ XPutImage splitter, read-only scanout capture, Weston rotation module, and GTK
 Wayland input module. The package configuration step regenerates GTK's module
 cache on the target. No stock firmware or Android binary is an input.
 
+Build the audio DSP protection-domain mapper from its pinned upstream source on
+Ubuntu ARM64:
+
+```sh
+SOURCE_DATE_EPOCH=1700000000 tools/build_pd_mapper_deb.sh
+```
+
+This produces `output/t630-pd-mapper_0.1.0_arm64.deb`. It installs only the
+source-built QRTR/LZMA daemon and its upstream license; it does not install or
+start anything on the build machine.
+
+After all nine component packages are available together, build the exact
+release-set metapackage:
+
+```sh
+SOURCE_DATE_EPOCH=1700000000 python3 tools/build_release_meta_deb.py
+```
+
+This creates `output/t630-release-base_0.1.0_arm64.deb`. It contains no device
+payload; its exact-version dependencies prevent a fresh root from mixing
+incompatible first-boot, desktop, hardware, native, sensor, pd-mapper, or DZE3
+stock-asset revisions. Camera's Android compatibility runtime is deliberately
+outside this base set while its release boundary remains unfinished.
+
 Do not overwrite a mapped live library merely to test the package. Extract it
 to a temporary directory and run the dependency/symbol probes described in the
 [native userspace package report](reports/native-userspace-package-20260914.md),

@@ -1,0 +1,34 @@
+# Exact-version base package set (2026-09-14)
+
+## Result
+
+`tools/build_release_meta_deb.py` now emits a deterministic dependency-only
+package for the native Ubuntu base:
+
+- name: `t630-release-base_0.1.0_arm64.deb`
+- size: 12,332 bytes
+- SHA256: `f8a93b012e1cd11269f723a2bfbefab7f1c7e6d8f99cc82fac0f807c6305373c`
+
+The package locks these nine components to the tested package revisions:
+
+- first-boot 0.1.1
+- desktop runtime 0.1.1
+- hardware runtime 0.1.1
+- native userspace 0.1.0
+- pd-mapper 0.1.0
+- libssc 0.4.4-t6303
+- hexagonrpcd 0.4.0-t6303
+- iio-sensor-proxy 3.9-t6303
+- private stock assets 1.0.0+dze3
+
+Two local builds were byte-identical. Native tablet extraction parsed all nine
+exact dependencies and the embedded JSON package-set record. The package itself
+contains no firmware, account, credential, or device state. The private stock
+package remains local-only even though its exact required version is named.
+
+This is dependency closure, not yet a release image. A fresh Ubuntu root still
+needs to be assembled, audited, booted, provisioned through first boot, and
+recovered back to stock before the metapackage can be called end-user ready.
+The Android camera compatibility environment is deliberately not part of this
+base package while its owner-neutral and redistributable boundaries remain
+unfinished.

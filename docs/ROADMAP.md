@@ -10,8 +10,10 @@
 2. Build and exercise a reproducible installer and complete stock-recovery path.
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
    stack, ARM64 compatibility packages, and local-only stock-assets package are
-   reproducible. Factory-archive preparation, remaining compiled login/hardware
-   components, generic-root assembly, and the destructive rehearsal remain.
+   reproducible, including the audio protection-domain mapper. Factory-archive
+   preparation, remaining compiled login/camera components, generic-root
+   assembly, and the destructive rehearsal remain. An exact-version base
+   metapackage now prevents incompatible component combinations.
 3. Camera capture, front-camera tuning, and photo-flash integration.
 4. Bluetooth headset playback, microphone, and reconnect testing.
 5. Four-edge and post-resume sensor/rotation validation.

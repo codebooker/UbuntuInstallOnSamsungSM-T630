@@ -268,6 +268,18 @@ SHA256 in an internal manifest, and rejects mutable/device-identity sources.
 Factory-ZIP-to-source-tree preparation is still being automated; this command
 alone is not yet the complete end-user flow.
 
+The dynamic-partition inspector can validate the stock `super` layout without
+extracting it on the Mac. On the tablet's recovery environment, use the raw
+device path exposed there; on a build host, use the decompressed sparse image:
+
+```sh
+python3 tools/extract_dynamic_partition.py /dev/sda26 \
+  --partition vendor --device MAJOR:MINOR
+```
+
+It verifies all LP metadata checksums before printing a device-mapper table.
+Do not substitute an unverified table or write through the resulting mapping.
+
 The desktop and hardware packages intentionally exclude native compiled
 compatibility libraries, patched login components, compiled hardware daemons,
 and stock-derived firmware. Those boundaries are supplied by the separate

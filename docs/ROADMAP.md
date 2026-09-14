@@ -21,6 +21,9 @@
    rehearsal root on the tablet. That clean root now also includes the verified
    native Firefox repository, GNOME Software/PackageKit, LibreOffice, and the
    normal desktop application set without Snap.
+   The factory dynamic-partition parser now verifies and emits the exact
+   read-only `system`/`vendor` mappings directly from physical or sparse
+   `super`, eliminating the need for a second per-user vendor image copy.
 3. Broader camera lighting/application tests and photo-flash integration.
 4. Bluetooth headset playback, microphone, and reconnect testing.
 5. Four-edge and post-resume sensor/rotation validation.

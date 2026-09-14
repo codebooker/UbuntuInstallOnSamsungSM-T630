@@ -28,12 +28,12 @@ class SensorStackBuilderTests(unittest.TestCase):
 
     def test_device_patches_and_package_versions_are_explicit(self):
         for patch in (
-            "use-t630-auto-brightness.patch",
             "hexagonrpcd-downstream-fastrpc.patch",
             "iio-sensor-proxy-downstream-fastrpc-subsystem.patch",
         ):
             self.assertIn(f'$repo/patches/{patch}', self.source)
             self.assertTrue((ROOT / "patches" / patch).is_file())
+        self.assertNotIn('$repo/patches/use-t630-auto-brightness.patch', self.source)
         self.assertIn("libssc 0.4.4-t6303", self.source)
         self.assertIn("hexagonrpcd 0.4.0-t6303", self.source)
         self.assertIn("iio-sensor-proxy 3.9-t6303", self.source)

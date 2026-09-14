@@ -8,7 +8,7 @@ boundary used by the working development tablet:
 
 | Package | Size | SHA256 |
 | --- | ---: | --- |
-| `libssc_0.4.4-t6303_arm64.deb` | 64,876 bytes | `22f8ab83a5799efe44bb4873eb89ab0a7b9e20c908bd42ee917c3fe42acf3807` |
+| `libssc_0.4.4-t6303_arm64.deb` | 64,874 bytes | `3522d445c183452e47d789211a9339669285acd6f0d54dcfb40553cd122c8fec` |
 | `hexagonrpcd_0.4.0-t6303_arm64.deb` | 24,486 bytes | `0b97140e1b803f0362da17b5e1bf1ed96295f68accd04fffdc00d15c4ffd2db9` |
 | `iio-sensor-proxy_3.9-t6303_arm64.deb` | 43,574 bytes | `1ffcc6881cf458e400d2efac744ba38564415a1f416e4c2ed9ef37fa0354bd29` |
 
@@ -25,10 +25,11 @@ an explicitly supplied Meson must be version 1.4 or newer.
 
 The build applies the reference project's registry-write, rename, listener
 buffer, synchronous-wait, and early-claim fixes. It then applies this
-repository's downstream FastRPC subsystem patch and selects the SM-T630 stock
-`auto_brightness` SSC stream. Source paths and package versions are explicit,
-and linker-cache maintenance is included for the two packages that install
-shared libraries.
+repository's downstream FastRPC subsystem patch and retains the SM-T630's
+proven `ambient_light` SSC stream rather than inheriting the reference S9
+Ultra's `auto_brightness` change. Source paths and package versions are
+explicit, and linker-cache maintenance is included for the two packages that
+install shared libraries.
 
 ## Native validation
 

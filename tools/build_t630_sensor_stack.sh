@@ -119,7 +119,6 @@ reference="$build/src/ubuntu-galaxy-tab-s9-ultra-bb55ceb87b61db7629c0820101ce788
 
 cd "$build/src/libssc"
 patch -p1 < "$reference/fix-ssc-sync-wait-busy-loop.patch"
-patch -p1 < "$repo/patches/use-t630-auto-brightness.patch"
 "$meson" setup output --prefix=/usr --libdir=lib/aarch64-linux-gnu \
   --buildtype=release
 "$meson" compile -C output

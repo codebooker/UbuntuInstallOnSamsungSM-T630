@@ -27,7 +27,8 @@ echo "release_packages:"
 chroot "$root" dpkg-query -W \
     -f='${Package} ${Version} ${db:Status-Status}\n' \
     t630-release-base t630-first-boot t630-desktop-runtime \
-    t630-hardware-runtime t630-boot-runtime t630-native-userspace t630-pd-mapper \
+    t630-hardware-runtime t630-boot-runtime t630-polkit-runtime \
+    t630-native-userspace t630-pd-mapper \
     libssc hexagonrpcd iio-sensor-proxy t630-stock-assets
 
 if [ "$(cat "$root/etc/t630-install-id")" != \
@@ -54,6 +55,11 @@ if chroot "$root" ldd /usr/bin/maliit-keyboard | grep -q 'not found'; then
     echo "maliit-keyboard has unresolved libraries" >&2
     exit 1
 fi
+if chroot "$root" ldd /usr/local/libexec/t630-polkit-agent |
+        grep -q 'not found'; then
+    echo "t630-polkit-agent has unresolved libraries" >&2
+    exit 1
+fi
 for path in \
     usr/libexec/weston-keyboard \
     usr/libexec/weston-keyboard.t630-stock \
@@ -70,6 +76,11 @@ for path in \
         exit 1
     fi
 done
+if [ ! -f "$root/usr/share/dbus-1/system-services/"\
+"org.freedesktop.PolicyKit1.service.t630-stock" ]; then
+    echo "PolicyKit service diversion is missing" >&2
+    exit 1
+fi
 echo "native_linkage: valid"
 
 if findmnt -rn -o TARGET | grep -q "^$root\(/\|$\)"; then

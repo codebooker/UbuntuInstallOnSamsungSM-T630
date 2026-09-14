@@ -36,6 +36,7 @@ class RehearsalScriptTests(unittest.TestCase):
         text = (TOOLS / "check_rehearsal_root.sh").read_text()
         self.assertIn("t630-release-base", text)
         self.assertIn("t630-boot-runtime", text)
+        self.assertIn("t630-polkit-runtime", text)
         self.assertIn("usr/bin/maliit-keyboard", text)
         self.assertIn("dpkg --root=", text)
         self.assertIn("native_linkage: valid", text)

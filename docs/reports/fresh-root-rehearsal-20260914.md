@@ -31,14 +31,14 @@ The corrected run passed the release audit.
 
 The initial guarded assembler pass verified and installed the ten-file DZE3
 release set. A second preserved clean root subsequently accepted the expanded
-eleven-file set, adding the packaged Weston/Maliit host runtime.
+twelve-file set, adding the packaged Weston/Maliit host and PolicyKit runtimes.
 Acceptance recorded:
 
-- all eleven exact package versions in `installed` state;
+- all twelve exact package versions in `installed` state;
 - empty `dpkg --audit` output;
 - exact `/etc/t630-install-id` value;
 - no unresolved libraries for `t630-capture`, the Weston rotation module,
-  Weston, or Maliit;
+  Weston, Maliit, or the PolicyKit agent;
 - no temporary host mounts left below the rehearsal root;
 - clean post-install identity audit;
 - 2.3 GB expanded root size after public dependencies and device packages;

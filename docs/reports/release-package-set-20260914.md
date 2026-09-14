@@ -5,16 +5,17 @@
 `tools/build_release_meta_deb.py` now emits a deterministic dependency-only
 package for the native Ubuntu base:
 
-- name: `t630-release-base_0.1.2_arm64.deb`
-- size: 12,340 bytes
-- SHA256: `ad91506a19dde78e1cf34fbe9b9e6b9f1801fdc75d9980261e8f88282a86c7e2`
+- name: `t630-release-base_0.1.3_arm64.deb`
+- size: 12,356 bytes
+- SHA256: `0fc7f51e94a5cef6befe9d0e5028011ef4a7fa507dbb1631d65f055c1677546e`
 
-The package locks these ten components to the tested package revisions:
+The package locks these eleven components to the tested package revisions:
 
 - first-boot 0.1.1
 - desktop runtime 0.1.1
 - hardware runtime 0.1.2
 - boot runtime 0.1.0
+- PolicyKit runtime 0.1.0
 - native userspace 0.1.0
 - pd-mapper 0.1.0
 - libssc 0.4.4-t6303
@@ -22,7 +23,7 @@ The package locks these ten components to the tested package revisions:
 - iio-sensor-proxy 3.9-t6303
 - private stock assets 1.0.1+dze3
 
-Two local builds were byte-identical. Native tablet extraction parsed all ten
+Two local builds were byte-identical. Native tablet extraction parsed all eleven
 exact dependencies and the embedded JSON package-set record. The package itself
 contains no firmware, account, credential, or device state. The private stock
 package remains local-only even though its exact required version is named.
@@ -35,5 +36,5 @@ base package while its owner-neutral and redistributable boundaries remain
 unfinished.
 
 `tools/assemble_release_root.py` independently pins the SHA256, package name,
-and version of the metapackage and all ten dependencies. Its package-only mode
-validated the tablet's eleven-file cache after the boot-runtime addition.
+and version of the metapackage and all eleven dependencies. Its package-only
+mode validated the tablet's twelve-file cache after the PolicyKit addition.

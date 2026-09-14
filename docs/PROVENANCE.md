@@ -21,6 +21,7 @@ Pinned development references:
 | AOSP `platform/external/avb` | `c5066a96caa7bf4150c0a8cc8cc14ab81733fdc7` |
 | Heimdall | `8f3044db985fd9710038f04886b51240ddbb2834` |
 | linux-msm `pd-mapper` | `5ecd2fe926aca7abfe40724177f63b942cff3947` |
+| Ubuntu `policykit-1-gnome` source | `0.105-7ubuntu5`; orig SHA256 `1784494963b8bf9a00eedc6cd3a2868fb123b8a5e516e66c5eda48df17ab9369`, Debian patch SHA256 `957ebefe04c896fc621ef8c578f6e77f04e72cd2092c6500b47e578ae91d1cf1` |
 | S9 Ultra inspiration/reference | `bb55ceb87b61db7629c0820101ce7884ff8d987b` |
 | Waydroid source reviewed for container/session integration | `5a51271131bfca8b7ee75ed067d09b26460f3a7b` |
 

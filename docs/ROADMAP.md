@@ -11,7 +11,7 @@
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
    stack, ARM64 compatibility packages, and local-only stock-assets package are
    reproducible, including the audio protection-domain mapper. Factory-archive
-   preparation, remaining compiled login/camera components, boot-image
+   preparation, remaining compiled GDM/elogind and camera components, boot-image
    assembly, and the destructive rehearsal remain. The account-neutral
    Weston/Maliit host runtime is now packaged with reversible distro-file
    diversions. An exact-version base metapackage prevents incompatible

@@ -59,8 +59,8 @@ class ReleaseAssemblyTests(unittest.TestCase):
             directory.cleanup()
 
     def test_package_set_is_complete_versioned_and_private(self):
-        self.assertEqual(len(assembly.EXPECTED), 11)
-        self.assertEqual(len(assembly.INSTALL_ORDER), 10)
+        self.assertEqual(len(assembly.EXPECTED), 12)
+        self.assertEqual(len(assembly.INSTALL_ORDER), 11)
         self.assertIn(assembly.META_PACKAGE, assembly.EXPECTED)
         for filename, (package, version, digest) in assembly.EXPECTED.items():
             self.assertTrue(filename.endswith(".deb"))
@@ -69,6 +69,7 @@ class ReleaseAssemblyTests(unittest.TestCase):
         private = assembly.EXPECTED["t630-stock-assets_1.0.1+dze3_arm64.deb"]
         self.assertEqual(private[1], "1.0.1+dze3")
         self.assertIn("t630-boot-runtime_0.1.0_all.deb", assembly.EXPECTED)
+        self.assertIn("t630-polkit-runtime_0.1.0_arm64.deb", assembly.EXPECTED)
 
     def test_missing_packages_fail_closed(self):
         with tempfile.TemporaryDirectory() as directory:

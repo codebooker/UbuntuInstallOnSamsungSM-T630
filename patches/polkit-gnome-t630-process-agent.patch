@@ -1,0 +1,112 @@
+diff --git a/src/main.c b/src/main.c
+index 2491b40..925c835 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -24,6 +24,8 @@
+ #endif
+ 
+ #include <string.h>
++#include <sys/stat.h>
++#include <unistd.h>
+ #include <gtk/gtk.h>
+ #include <glib/gi18n.h>
+ #include <polkitagent/polkitagent.h>
+@@ -178,12 +180,36 @@ register_client_to_gnome_session (void)
+         return TRUE;
+ }
+ 
++/* Register for one same-user process in the nested tablet session. Polkit and
++ * PAM still make every authorization decision; this only supplies a subject. */
++static gboolean
++target_alive (gpointer unused)
++{
++  if (!polkit_subject_exists_sync (session, NULL, NULL))
++    { g_main_loop_quit (loop); return G_SOURCE_REMOVE; }
++  return G_SOURCE_CONTINUE;
++}
++
+ int
+ main (int argc, char **argv)
+ {
+   gint ret;
+   PolkitAgentListener *listener;
+   GError *error;
++  gpointer registration = NULL;
++  guint64 target_pid;
++  struct stat target_stat;
++  gchar *target_path;
++  gchar *end = NULL;
++  uid_t caller_uid = getuid ();
++
++  if (caller_uid < 1000 || caller_uid >= 60000 || argc != 2) return 2;
++  target_pid = g_ascii_strtoull (argv[1], &end, 10);
++  if (!end || *end || target_pid < 2 || target_pid > G_MAXINT) return 2;
++  target_path = g_strdup_printf ("/proc/%u", (guint)target_pid);
++  if (stat (target_path, &target_stat) || target_stat.st_uid != caller_uid)
++    { g_free (target_path); return 2; }
++  g_free (target_path);
+ 
+   g_type_init ();
+   gtk_init (&argc, &argv);
+@@ -214,7 +240,7 @@ main (int argc, char **argv)
+   listener = polkit_gnome_listener_new ();
+ 
+   error = NULL;
+-  session = polkit_unix_session_new_for_process_sync (getpid (), NULL, &error);
++  session = polkit_unix_process_new_for_owner ((gint)target_pid, 0, caller_uid);
+   if (error != NULL)
+     {
+       g_warning ("Unable to determine the session we are in: %s", error->message);
+@@ -223,12 +249,13 @@ main (int argc, char **argv)
+     }
+ 
+   error = NULL;
+-  if (!polkit_agent_listener_register (listener,
++  registration = polkit_agent_listener_register (listener,
+                                        POLKIT_AGENT_REGISTER_FLAGS_NONE,
+                                        session,
+                                        "/org/gnome/PolicyKit1/AuthenticationAgent",
+                                        NULL, /* GCancellable */
+-                                       &error))
++                                       &error);
++  if (!registration)
+     {
+       g_printerr ("Cannot register authentication agent: %s\n", error->message);
+       g_error_free (error);
+@@ -240,13 +267,15 @@ main (int argc, char **argv)
+    */
+   session_bus_connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
+ 
+-  register_client_to_gnome_session();
++  g_timeout_add_seconds (2, target_alive, NULL);
+ 
+   g_main_loop_run (loop);
+ 
+   ret = 0;
+ 
+  out:
++  if (registration != NULL)
++    polkit_agent_listener_unregister (registration);
+   if (authority != NULL)
+     g_object_unref (authority);
+   if (session != NULL)
+diff --git a/src/polkitgnomeauthenticator.c b/src/polkitgnomeauthenticator.c
+index 250deb3..1a9dbda 100644
+--- a/src/polkitgnomeauthenticator.c
++++ b/src/polkitgnomeauthenticator.c
+@@ -307,8 +307,13 @@ session_request (PolkitAgentSession *session,
+     }
+ 
+   gtk_widget_show_all (GTK_WIDGET (authenticator->dialog));
+-  gtk_window_present_with_time (GTK_WINDOW (authenticator->dialog),
+-                                gdk_x11_get_server_time (gtk_widget_get_window (GTK_WIDGET (authenticator->dialog))));
++  /* Ubuntu's focus-timestamp patch is X11-specific. Never pass a Wayland
++   * window to its X11 accessor; authentication must survive showing a prompt. */
++  if (GDK_IS_X11_WINDOW (gtk_widget_get_window (GTK_WIDGET (authenticator->dialog))))
++    gtk_window_present_with_time (GTK_WINDOW (authenticator->dialog),
++                                 gdk_x11_get_server_time (gtk_widget_get_window (GTK_WIDGET (authenticator->dialog))));
++  else
++    gtk_window_present (GTK_WINDOW (authenticator->dialog));
+   password = polkit_gnome_authentication_dialog_run_until_response_for_prompt (POLKIT_GNOME_AUTHENTICATION_DIALOG (authenticator->dialog),
+                                                                                modified_request,
+                                                                                echo_on,

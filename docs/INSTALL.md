@@ -313,14 +313,25 @@ Weston configuration, Maliit touch keyboard customization, launcher icons,
 GNOME lock-screen guards, and chrony policy. It uses managed diversions for the
 two modified distro files and restores their originals when removed.
 
-After all ten component packages are available together, build the exact
+Build the process-scoped PolicyKit agent natively on Ubuntu ARM64:
+
+```sh
+SOURCE_DATE_EPOCH=1700000000 tools/build_t630_polkit_runtime.sh
+```
+
+This creates `output/t630-polkit-runtime_0.1.0_arm64.deb` from pinned Ubuntu
+source archives and the tracked T630 patch. It preserves PolicyKit/PAM policy,
+supports the installer-selected non-root account, and reversibly diverts the
+PolicyKit D-Bus activation file needed on this non-systemd host.
+
+After all eleven component packages are available together, build the exact
 release-set metapackage:
 
 ```sh
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_release_meta_deb.py
 ```
 
-This creates `output/t630-release-base_0.1.2_arm64.deb`. It contains no device
+This creates `output/t630-release-base_0.1.3_arm64.deb`. It contains no device
 payload; its exact-version dependencies prevent a fresh root from mixing
 incompatible first-boot, desktop, hardware, native, sensor, pd-mapper, or DZE3
 stock-asset revisions. Camera's Android compatibility runtime is deliberately
@@ -332,7 +343,7 @@ Validate a complete package directory without changing a root filesystem:
 python3 tools/assemble_release_root.py PACKAGE_DIRECTORY
 ```
 
-The validator checks all eleven exact filenames, Debian package names and
+The validator checks all twelve exact filenames, Debian package names and
 versions, SHA256 values, and the owner-only mode of the private stock package.
 Offline installation additionally requires an Ubuntu 24.04 root containing a
 regular `.t630-offline-root` file whose exact content is

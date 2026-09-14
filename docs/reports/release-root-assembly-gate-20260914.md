@@ -4,14 +4,14 @@
 
 `tools/assemble_release_root.py` now provides the fail-closed boundary between
 the tested packages and a future generic Ubuntu root. In validation-only mode
-it checks all eleven exact package filenames, SHA256 values, Debian package names,
+it checks all twelve exact package filenames, SHA256 values, Debian package names,
 and versions. It also requires the proprietary stock package to remain
 owner-only. The complete cache on the physical tablet passed this check.
 
 Hardware runtime 0.1.2 now owns `/etc/t630-install-id` with the exact value
 `SM-T630-T630XXSBDZE3-Ubuntu-v1`. The private stock package advanced to
-1.0.1+dze3 and depends on that runtime; release-base 0.1.2 also locks the
-account-neutral boot runtime at 0.1.0.
+1.0.1+dze3 and depends on that runtime; release-base 0.1.3 also locks the
+account-neutral boot and PolicyKit runtimes at 0.1.0.
 Native extraction confirmed the marker and both dependency contracts.
 
 ## Offline-root safety
@@ -37,7 +37,9 @@ configuration completed with no broken packages, no unresolved native-library
 links, no leaked host mounts, and a clean post-install identity audit. A second
 preserved clean root then accepted the Weston/Maliit boot runtime, including
 repeat install and removal with byte-exact restoration of both diverted distro
-files. See the
+files. The same root accepted the source-built PolicyKit agent, rejected a root
+caller, accepted a same-owner non-root process subject, restored its diverted
+D-Bus service exactly on removal, and passed final reinstall. See the
 [fresh-root rehearsal](fresh-root-rehearsal-20260914.md).
 
 Boot-image assembly, a physical clean-boot walkthrough of the first-boot UI,

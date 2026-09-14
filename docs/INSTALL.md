@@ -215,17 +215,31 @@ separately:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_desktop_runtime_deb.py
 ```
 
-This creates `output/t630-desktop-runtime_0.1.0_all.deb`. It depends on the
+This creates `output/t630-desktop-runtime_0.1.1_all.deb`. It depends on the
 matching first-boot package and contains the desktop launcher, login/session
 glue, input mappings, rotation, display controls, guarded suspend, and Tablet
 Controls extension source. On first GNOME launch, the extension is compiled and
 installed into the selected owner's isolated profile without assuming a user
-name, UID, GID, or home path. It preserves any other enabled extensions.
+name, UID, GID, or home path. It also installs the packaged WirePlumber policy
+into that owner's XDG configuration and preserves unrelated extensions and
+configuration.
 
-The desktop package intentionally excludes native compiled compatibility
-libraries, patched login components, hardware daemons, and stock-derived
-firmware. Those require separate architecture-specific or locally generated
-packages before a complete release root can be assembled.
+The redistributable hardware orchestration is a separate source-only package:
+
+```sh
+SOURCE_DATE_EPOCH=1700000000 python3 tools/build_hardware_runtime_deb.py
+```
+
+This creates `output/t630-hardware-runtime_0.1.0_all.deb`. It contains the text
+scripts and policy that coordinate Wi-Fi, Bluetooth, audio, microphone,
+sensors, and IPA, plus the system copy of the owner-neutral WirePlumber policy.
+It recommends, but does not embed, the compiled sensor stack or stock-derived
+firmware and calibration.
+
+The desktop and hardware packages intentionally exclude native compiled
+compatibility libraries, patched login components, compiled hardware daemons,
+and stock-derived firmware. Those require separate architecture-specific or
+locally generated packages before a complete release root can be assembled.
 
 Build the small redistributable native layer on an Ubuntu ARM64 target with the
 required development headers installed:

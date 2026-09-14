@@ -5,9 +5,9 @@
 The architecture-independent Ubuntu integration is now built by
 `tools/build_desktop_runtime_deb.py` as a deterministic Debian package:
 
-- name: `t630-desktop-runtime_0.1.0_all.deb`
-- size: 41,460 bytes
-- SHA256: `7b044524dd93f108f07b005c0eb4edc8cb18fe22003a8f1371da32cdf392b28a`
+- name: `t630-desktop-runtime_0.1.1_all.deb`
+- size: 41,716 bytes
+- SHA256: `ebf85f4fad2602670f400f80eb5b323c4b44fbaadb4b22c0fd8dfd5a697adc52`
 - regular files: 31
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
@@ -38,8 +38,16 @@ exact path; a clean owner profile creates the parent itself. The helper then
 installed the assets, wrote source digest
 `25669e72d37994339ce3fcb082053529d038dc3704deb8bc944211b6434883bf`,
 and retained `['t630-tablet-tools@local']` in GNOME's enabled-extension list.
-Three isolated tests cover unsafe symlink rejection, atomic compilation while
-preserving another extension, and the matching-digest no-recompile path.
+Version 0.1.1 extends the same owner helper to optional policy sources below
+`/usr/local/share/t630/owner-config`. It validates the two fixed WirePlumber
+files as regular non-symlinks and installs each through a same-directory
+temporary file and atomic replacement beneath the owner's `XDG_CONFIG_HOME`.
+Unrelated configuration is preserved and a missing optional source is harmless.
+The updated package was built reproducibly and extracted natively on the tablet.
+
+Four isolated tests cover unsafe extension and configuration symlink rejection,
+atomic compilation while preserving another extension, owner-policy copying,
+and the matching-digest no-recompile path.
 
 ## Remaining package boundary
 

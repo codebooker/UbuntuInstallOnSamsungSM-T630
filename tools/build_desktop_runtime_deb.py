@@ -13,7 +13,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-desktop-runtime"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 FILES = {
     "etc/polkit-1/rules.d/49-t630-sensorproxy.rules": ("ubuntu/49-t630-sensorproxy.rules", 0o644),

@@ -31,6 +31,14 @@ class OwnerAssetsTests(unittest.TestCase):
         )
         return source
 
+    def config_source(self, root):
+        source = root / "owner-config"
+        for relative in assets.CONFIG_FILES:
+            path = source / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(f"config {relative.name}\n")
+        return source
+
     def test_digest_rejects_symlinked_asset(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -46,18 +54,23 @@ class OwnerAssetsTests(unittest.TestCase):
             root = Path(directory)
             source = self.source(root)
             data = root / "data"
+            config_source = self.config_source(root)
+            config_home = root / "config"
             owner = types.SimpleNamespace(uid=1234)
             gets = types.SimpleNamespace(returncode=0, stdout="['other@example']\n")
             compiled = types.SimpleNamespace(returncode=0, stdout="")
             with mock.patch.object(assets, "resolve_owner", return_value=owner), \
                     mock.patch.object(assets.os, "geteuid", return_value=1234), \
                     mock.patch.object(assets.subprocess, "run", side_effect=[compiled, gets, compiled]) as run:
-                assets.install(source, data)
+                assets.install(source, data, config_source, config_home)
             target = data / "gnome-shell/extensions" / assets.EXTENSION_ID
             self.assertEqual((target / "extension.js").read_text(), "extension\n")
             self.assertTrue((target / ".t630-source-sha256").is_file())
             self.assertIn("other@example", run.call_args_list[-1].args[0][-1])
             self.assertIn(assets.EXTENSION_ID, run.call_args_list[-1].args[0][-1])
+            for relative in assets.CONFIG_FILES:
+                self.assertEqual((config_home / relative).read_bytes(),
+                                 (config_source / relative).read_bytes())
 
     def test_matching_digest_skips_recompile_but_enables_extension(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -72,8 +85,20 @@ class OwnerAssetsTests(unittest.TestCase):
             with mock.patch.object(assets, "resolve_owner", return_value=owner), \
                     mock.patch.object(assets.os, "geteuid", return_value=1234), \
                     mock.patch.object(assets.subprocess, "run", return_value=gets) as run:
-                assets.install(source, data)
+                assets.install(source, data, root / "absent-config", root / "config")
             self.assertEqual(run.call_count, 1)
+
+    def test_owner_config_rejects_symlink_without_touching_destination(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = self.config_source(root)
+            first = source / assets.CONFIG_FILES[0]
+            first.unlink()
+            (root / "outside").write_text("unsafe")
+            first.symlink_to(root / "outside")
+            with self.assertRaises(RuntimeError):
+                assets.install_owner_configs(source, root / "config")
+            self.assertFalse((root / "config" / assets.CONFIG_FILES[0]).exists())
 
 
 if __name__ == "__main__":

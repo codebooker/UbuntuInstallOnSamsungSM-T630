@@ -1,0 +1,51 @@
+# Source-only hardware runtime package (2026-09-14)
+
+## Result
+
+The redistributable hardware orchestration is now built by
+`tools/build_hardware_runtime_deb.py` as a deterministic Debian package:
+
+- name: `t630-hardware-runtime_0.1.0_all.deb`
+- size: 31,408 bytes
+- SHA256: `5cee82e555ec8c3bb213d400d374b9646ce720973df66bf7be3e34ceb68cf1ff`
+
+Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
+arm64 `dpkg-deb` parsed and extracted the result on the tablet. The payload
+contains only UTF-8 scripts and policy plus the repository license. It contains
+no home directory, `/opt/t630` development tree, firmware, calibration blob,
+compiled library, executable binary, owner state, credential, or device
+identity.
+
+## Included orchestration
+
+The package contains the tracked NetworkManager policy, sensor permission rule,
+microphone bridge, Qualcomm Bluetooth helper, and startup/supervision scripts
+for audio, Bluetooth, sensors, and IPA. It also contains the speaker and
+microphone routing helpers, audio cleanup and device-permission helpers, and the
+audio/video firmware staging scripts.
+
+The two WirePlumber policies are stored below
+`/usr/local/share/t630/owner-config`. Desktop runtime 0.1.1 copies those fixed
+files atomically into the installer-selected owner's `XDG_CONFIG_HOME`. This
+keeps the package owner-neutral and avoids a baked-in user name, UID, GID, or
+home path. A live migration on the development tablet produced byte-identical
+owner copies while retaining the enabled Tablet Controls extension.
+
+## Live health after migration
+
+After deploying the updated owner helper and source policies to the development
+tablet, IPA reported online, Wi-Fi was up, Bluetooth was powered, SensorProxy
+reported an accelerometer, PipeWire retained `t630_speakers` and
+`t630_microphone` as its defaults, the battery reported full, and the current
+boot contained no tracked fault markers.
+
+## Remaining package boundary
+
+The package depends on desktop runtime 0.1.1 and recommends the not-yet-built
+`t630-sensor-stack` and `t630-stock-assets` packages. It deliberately excludes
+the compiled `hexagonrpcd`, patched sensor proxy, `pd-mapper`, patched
+GDM/elogind components, camera and video adapters, Bluetooth firmware, speaker
+calibration, Qualcomm firmware, Android libraries, SSH identity, and Wi-Fi
+credentials. Those components need architecture-specific builds or locally
+generated packages from the owner's matching Samsung firmware before a generic
+release root can be assembled.

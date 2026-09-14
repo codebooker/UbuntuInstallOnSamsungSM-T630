@@ -8,6 +8,9 @@
    migration and reproducible source-only desktop runtime package now work.
    Fresh-image execution remains.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
+   The source-only desktop runtime and reproducibly built ARM64 compatibility
+   packages are complete; hardware services, locally generated stock assets,
+   generic-root assembly, and the destructive rehearsal remain.
 3. Camera capture, front-camera tuning, and photo-flash integration.
 4. Bluetooth headset playback, microphone, and reconnect testing.
 5. Four-edge and post-resume sensor/rotation validation.

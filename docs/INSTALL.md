@@ -227,6 +227,26 @@ libraries, patched login components, hardware daemons, and stock-derived
 firmware. Those require separate architecture-specific or locally generated
 packages before a complete release root can be assembled.
 
+Build the small redistributable native layer on an Ubuntu ARM64 target with the
+required development headers installed:
+
+```sh
+SOURCE_DATE_EPOCH=1700000000 tools/build_native_userspace.sh build/native-userspace
+SOURCE_DATE_EPOCH=1700000000 python3 tools/build_native_userspace_deb.py \
+  build/native-userspace
+```
+
+This produces `output/t630-native-userspace_0.1.0_arm64.deb`. The build compiles
+six repository-source artifacts: the Cogl refresh shim, downstream DRM shim,
+XPutImage splitter, read-only scanout capture, Weston rotation module, and GTK
+Wayland input module. The package configuration step regenerates GTK's module
+cache on the target. No stock firmware or Android binary is an input.
+
+Do not overwrite a mapped live library merely to test the package. Extract it
+to a temporary directory and run the dependency/symbol probes described in the
+[native userspace package report](reports/native-userspace-package-20260914.md),
+or install it as part of a stopped fresh-root assembly.
+
 ## Recovery
 
 If the diagnostic boot fails, return to Download Mode and restore the exact

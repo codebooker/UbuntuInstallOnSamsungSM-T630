@@ -71,7 +71,7 @@ class ReleaseAssemblyTests(unittest.TestCase):
         self.assertIn("t630-boot-runtime_0.1.0_all.deb", assembly.EXPECTED)
         self.assertIn("t630-polkit-runtime_0.1.0_arm64.deb", assembly.EXPECTED)
         self.assertIn("t630-login-runtime_0.1.0_arm64.deb", assembly.EXPECTED)
-        self.assertIn("t630-camera-runtime_0.1.0_arm64.deb", assembly.EXPECTED)
+        self.assertIn("t630-camera-runtime_0.1.1_arm64.deb", assembly.EXPECTED)
 
     def test_missing_packages_fail_closed(self):
         with tempfile.TemporaryDirectory() as directory:

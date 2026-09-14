@@ -21,6 +21,7 @@ class RemoteAccessTests(unittest.TestCase):
         helper = (ROOT / "ubuntu/stop-ubuntu-remote").read_text()
         launcher = (ROOT / "ubuntu/t630-remote-start").read_text()
         self.assertIn("/bin/busybox reboot -f", helper)
+        self.assertIn("t630-stock-vendor", helper)
         self.assertNotIn("\nreboot -f", helper)
         self.assertIn("pre_explicit_reboot=a0ac11c", launcher)
 

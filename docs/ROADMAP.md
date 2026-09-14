@@ -23,7 +23,8 @@
    normal desktop application set without Snap.
    The factory dynamic-partition parser now verifies and emits the exact
    read-only `system`/`vendor` mappings directly from physical or sparse
-   `super`, eliminating the need for a second per-user vendor image copy.
+   `super`; the camera runtime physically passed with those mappings and its
+   guarded shutdown removed them, eliminating the second per-user vendor copy.
 3. Broader camera lighting/application tests and photo-flash integration.
 4. Bluetooth headset playback, microphone, and reconnect testing.
 5. Four-edge and post-resume sensor/rotation validation.

@@ -162,7 +162,8 @@ are deliberately left in place; live module removal is not attempted.
 ## Source components
 
 - `camera/t630-camera-mounts.sh` validates the exact device baseline and builds
-  the read-only compatibility mount layout.
+  the read-only compatibility mount layout directly from the verified logical
+  `system` and `vendor` extents in physical `super`.
 - `camera/t630-camera-stack.sh` starts the minimum Binder, allocator, provider,
   and CameraService processes and disables the incompatible watchdog.
 - `camera/t630-binder-placeholder.c` supplies the small nullable display-event

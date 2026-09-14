@@ -45,6 +45,9 @@ class CameraFrameValidationTests(unittest.TestCase):
         self.assertNotIn("chmod 666 /dev/null", mounts)
         self.assertIn("super_device=$(cat /sys/class/block/sda26/dev)", mounts)
         self.assertIn('linear $super_device 2048', mounts)
+        self.assertIn('vendor_table="0 2214168 linear $super_device 15142912"', mounts)
+        self.assertIn('dmsetup create "$name" --readonly', mounts)
+        self.assertNotIn('stock-vendor-full.img', mounts)
         self.assertNotIn("linear 259:10", mounts)
 
     def test_camera_control_bounds_owned_group_teardown(self):

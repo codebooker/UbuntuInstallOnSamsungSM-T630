@@ -35,9 +35,9 @@ EXPECTED = {
     "t630-login-runtime_0.1.0_arm64.deb": (
         "t630-login-runtime", "0.1.0",
         "edfc0b58325acc95c1e4dd25befd53bdaec30faf795dfb8a37d06fb4de6aa23e"),
-    "t630-camera-runtime_0.1.0_arm64.deb": (
-        "t630-camera-runtime", "0.1.0",
-        "fa29aab61a1c456c365e195cc3217ef192ac551888d8a9374cb3234fe83c7569"),
+    "t630-camera-runtime_0.1.1_arm64.deb": (
+        "t630-camera-runtime", "0.1.1",
+        "657d66ffda8db9958d0e87511edd30b9641367377bcea1c64af75acac7adc137"),
     "t630-native-userspace_0.1.0_arm64.deb": (
         "t630-native-userspace", "0.1.0",
         "b6e9dffc3ce27278084a0fbc9022189e289eaf3c06fdcc5db1e9877a6dfed6ff"),
@@ -56,12 +56,12 @@ EXPECTED = {
     "t630-stock-assets_1.0.1+dze3_arm64.deb": (
         "t630-stock-assets", "1.0.1+dze3",
         "934f3c361fedc806eef90b4b92a6f93c906492b6b29339cb4e2cf85c0c7b461e"),
-    "t630-release-base_0.1.5_arm64.deb": (
-        "t630-release-base", "0.1.5",
-        "b1ce1eba75bc3ff45ed19849090951f224f7b098b778e2005e373be4ed224028"),
+    "t630-release-base_0.1.6_arm64.deb": (
+        "t630-release-base", "0.1.6",
+        "830e3184d32b30ddf00fd90db8f0b8e6f003a331a491fd48a9ad4d0d26d986bb"),
 }
 INSTALL_ORDER = tuple(name for name in EXPECTED if not name.startswith("t630-release-base_"))
-META_PACKAGE = "t630-release-base_0.1.5_arm64.deb"
+META_PACKAGE = "t630-release-base_0.1.6_arm64.deb"
 
 
 def digest(path: Path) -> str:

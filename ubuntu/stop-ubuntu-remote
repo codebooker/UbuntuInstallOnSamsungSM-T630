@@ -55,10 +55,11 @@ for target in /run/ubuntu/system/bin/cameraserver /run/ubuntu/mnt/stock-vendor-f
         sleep 1
     done
 done
-if [ -r /sys/class/block/dm-0/dm/name ] &&
-   [ "$(cat /sys/class/block/dm-0/dm/name)" = t630-stock-system ]; then
-    chroot /run/ubuntu /usr/sbin/dmsetup remove t630-stock-system
-fi
+for mapping in t630-stock-vendor t630-stock-system; do
+    if chroot /run/ubuntu /usr/sbin/dmsetup info "$mapping" >/dev/null 2>&1; then
+        chroot /run/ubuntu /usr/sbin/dmsetup remove "$mapping"
+    fi
+done
 for target in "/run/ubuntu/run/user/$owner_uid/doc" "/run/ubuntu/run/user/$owner_uid/gvfs" \
               /run/ubuntu/run/user/105/doc /run/ubuntu/run/user/105/gvfs \
               "/run/ubuntu/run/user/$owner_uid" /run/ubuntu/run/user/105 \

@@ -355,7 +355,7 @@ SOURCE_DATE_EPOCH=1700000000 python3 tools/build_camera_runtime_deb.py \
   build/camera
 ```
 
-This creates `output/t630-camera-runtime_0.1.0_arm64.deb`. It contains the
+This creates `output/t630-camera-runtime_0.1.1_arm64.deb`. It contains the
 launchers, GNOME integration, safety controls, templates, and independently
 built helpers. It contains no stock Android libraries, firmware image,
 calibration, mutable camera state, or photograph. Those non-redistributable
@@ -369,7 +369,7 @@ release-set metapackage:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_release_meta_deb.py
 ```
 
-This creates `output/t630-release-base_0.1.5_arm64.deb`. It contains no device
+This creates `output/t630-release-base_0.1.6_arm64.deb`. It contains no device
 payload; its exact-version dependencies prevent a fresh root from mixing
 incompatible first-boot, desktop, hardware, login, native, sensor, pd-mapper,
 camera, or DZE3 stock-asset revisions. The camera package's redistributable

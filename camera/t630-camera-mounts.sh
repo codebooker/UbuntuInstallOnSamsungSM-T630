@@ -12,14 +12,28 @@ eval "$(/usr/bin/python3 /usr/local/share/t630/t630_account.py env)"
 
 system_table="0 12036096 linear $super_device 2048
 12036096 16248 linear $super_device 17401856"
-if ! dmsetup info t630-stock-system >/dev/null 2>&1; then
-    printf '%s\n' "$system_table" | dmsetup create t630-stock-system --readonly
-fi
-test "$(dmsetup table t630-stock-system)" = "$system_table"
-if [[ ! -b /dev/dm-0 ]]; then
-    mknod /dev/dm-0 b 253 0
-fi
-test "$(cat /sys/class/block/dm-0/dm/name)" = t630-stock-system
+vendor_table="0 2214168 linear $super_device 15142912"
+
+create_mapping() {
+    local name=$1 table=$2 number major minor node
+    if ! dmsetup info "$name" >/dev/null 2>&1; then
+        printf '%s\n' "$table" | dmsetup create "$name" --readonly
+    fi
+    test "$(dmsetup table "$name")" = "$table"
+    number=$(dmsetup info -c --noheadings --separator : -o major,minor "$name" |
+        tr -d ' ')
+    [[ "$number" =~ ^[0-9]+:[0-9]+$ ]]
+    major=${number%:*}
+    minor=${number#*:}
+    node=/dev/dm-$minor
+    if [[ ! -b "$node" ]]; then
+        mknod "$node" b "$major" "$minor"
+    fi
+    printf '%s\n' "$node"
+}
+
+system_device=$(create_mapping t630-stock-system "$system_table")
+vendor_device=$(create_mapping t630-stock-vendor "$vendor_table")
 
 mount_image() {
     local image=$1 target=$2
@@ -40,10 +54,12 @@ mount_bind_ro() {
 
 mkdir -p /system /mnt/t630-stock-system /mnt/stock-vendor-full
 if ! mountpoint -q /mnt/t630-stock-system; then
-    mount -t f2fs -o ro /dev/dm-0 /mnt/t630-stock-system
+    mount -t f2fs -o ro "$system_device" /mnt/t630-stock-system
+fi
+if ! mountpoint -q /mnt/stock-vendor-full; then
+    mount -t f2fs -o ro "$vendor_device" /mnt/stock-vendor-full
 fi
 mount_bind_ro /mnt/t630-stock-system/system /system
-mount_image "$T630_OWNER_HOME/stock-vendor-full.img" /mnt/stock-vendor-full
 mount_image "$T630_OWNER_HOME/t630-vndk30-apex/apex_payload.img" /mnt/t630-vndk30
 mount_image "$T630_OWNER_HOME/t630-apex/runtime/apex_payload.img" /mnt/t630-runtime
 mount_image "$T630_OWNER_HOME/t630-apex/i18n/apex_payload.img" /mnt/t630-i18n

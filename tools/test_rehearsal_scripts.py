@@ -50,6 +50,8 @@ class RehearsalScriptTests(unittest.TestCase):
         self.assertIn("native_firefox: valid", text)
         self.assertIn("gnome-software", text)
         self.assertIn("libreoffice-writer", text)
+        self.assertIn("t630-camera-runtime", text)
+        self.assertIn("camera_runtime: redistributable-only", text)
         self.assertIn("usr/bin/maliit-keyboard", text)
         self.assertIn("dpkg --root=", text)
         self.assertIn("native_linkage: valid", text)

@@ -156,6 +156,8 @@ are deliberately left in place; live module removal is not attempted.
   delivery work. Rear flash/torch control is not yet implemented.
 - The stack still depends on proprietary binaries extracted from the owner's
   exact `T630XXSBDZE3` stock firmware. They cannot be distributed here.
+- The redistributable side is packaged as `t630-camera-runtime`; automatic
+  reconstruction of the larger private side remains installer work.
 
 ## Source components
 
@@ -198,8 +200,11 @@ Install Android NDK r27 or newer, set `ANDROID_NDK_ROOT`, then run:
 tools/build_camera_sensor_bridge.sh
 ```
 
-This creates the AArch64 property/permission shim, HIDL adapter launcher, and
-NDK capture client under `build/camera/`. The capture client resolves the two
+This creates the AArch64 property/permission shim, HIDL adapter launcher, NDK
+capture client, and Binder placeholder under `build/camera/`. The installed
+camera package keeps those redistributable helpers under `/usr/local/libexec`
+rather than mixing them into the owner's private Android-data tree. The capture
+client resolves the two
 Binder thread-pool entry points dynamically because the Android runtime exports
 them but the public NDK link stub does not. The compatibility code is
 intentionally tied to the tested `T630XXSBDZE3` image. Do not reuse it with

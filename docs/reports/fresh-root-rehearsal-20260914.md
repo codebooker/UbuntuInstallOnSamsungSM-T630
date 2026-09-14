@@ -34,11 +34,14 @@ The corrected run passed the release audit.
 The initial guarded assembler pass verified and installed the ten-file DZE3
 release set. A second preserved clean root subsequently accepted the expanded
 twelve-file set, adding the packaged Weston/Maliit host and PolicyKit runtimes.
-A third pass accepted the thirteen-file set and added the isolated GDM/elogind
-login runtime.
+A later pass accepted the fourteen-file set and added the isolated GDM/elogind
+login runtime plus the redistributable camera runtime. The camera package's
+five helpers were checked as ARM64 ELF files, while a negative scan confirmed
+that no private Android image, camera calibration, or mutable state entered the
+clean root.
 Acceptance recorded:
 
-- all thirteen exact package versions in `installed` state;
+- all fourteen exact package versions in `installed` state;
 - empty `dpkg --audit` output;
 - exact `/etc/t630-install-id` value;
 - no unresolved libraries for `t630-capture`, the Weston rotation module,

@@ -113,6 +113,9 @@ class CameraFrameValidationTests(unittest.TestCase):
         self.assertIn('camera/t630-camera-capture.c', build)
         self.assertIn('-lcamera2ndk -lmediandk', build)
         self.assertIn('-o "$output_dir/t630-camera-capture"', build)
+        self.assertIn('camera/t630-binder-placeholder.c', build)
+        self.assertIn('-lbinder_ndk', build)
+        self.assertIn('-o "$output_dir/t630-binder-placeholder"', build)
 
     def test_rear_bridge_has_scoped_tone_lift(self):
         bridge = (ROOT / "ubuntu/t630-camera-bridge").read_text()

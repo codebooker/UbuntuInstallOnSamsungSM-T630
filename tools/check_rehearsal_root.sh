@@ -28,7 +28,7 @@ chroot "$root" dpkg-query -W \
     -f='${Package} ${Version} ${db:Status-Status}\n' \
     t630-release-base t630-first-boot t630-desktop-runtime \
     t630-hardware-runtime t630-boot-runtime t630-polkit-runtime \
-    t630-login-runtime \
+    t630-login-runtime t630-camera-runtime \
     t630-native-userspace t630-pd-mapper \
     libssc hexagonrpcd iio-sensor-proxy t630-stock-assets
 
@@ -53,6 +53,23 @@ grep -qx 'URIs: https://packages.mozilla.org/apt' \
     "$root/etc/apt/sources.list.d/mozilla.sources"
 grep -qx 'Pin-Priority: -1' "$root/etc/apt/preferences.d/mozilla-firefox"
 echo "native_firefox: valid"
+
+for binary in \
+    usr/local/lib/t630-android-property-seed.so \
+    usr/local/libexec/t630-binder-placeholder \
+    usr/local/libexec/t630-camera-capture \
+    usr/local/sbin/t630-sensorservice-hidl \
+    usr/local/sbin/t630-yuv-tune; do
+    chroot "$root" file "/$binary" | grep -q 'ARM aarch64'
+done
+if find "$root/home" "$root/data" -type f \( \
+        -name 'stock-vendor-full.img' -o \
+        -name 'camera_config_dump.bin' -o \
+        -name 'PrecisionFlashData*.bin' \) -print -quit 2>/dev/null | grep -q .; then
+    echo "private camera asset leaked into clean root" >&2
+    exit 1
+fi
+echo "camera_runtime: redistributable-only"
 
 if [ "$(cat "$root/etc/t630-install-id")" != \
      "SM-T630-T630XXSBDZE3-Ubuntu-v1" ]; then

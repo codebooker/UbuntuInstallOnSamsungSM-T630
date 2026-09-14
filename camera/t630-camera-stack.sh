@@ -69,7 +69,7 @@ until timeout 2 env LD_PRELOAD="$preload" /system/bin/lshal 2>/dev/null |
 done
 
 env LD_LIBRARY_PATH=/system/lib64:/system/lib64/bootstrap:/apex/com.android.i18n/lib64 \
-    LD_PRELOAD="$preload" /data/vendor/camera/t630-binder-placeholder \
+    LD_PRELOAD="$preload" /usr/local/libexec/t630-binder-placeholder \
     SurfaceFlingerAIDL android.gui.ISurfaceComposer \
     >/run/t630-surfaceflinger-placeholder.out 2>&1 &
 pids="$! $pids"

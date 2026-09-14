@@ -29,5 +29,9 @@ mkdir -p "$output_dir"
     "$repo_dir/camera/t630-camera-capture.c" \
     -lcamera2ndk -lmediandk -landroid -llog -ldl \
     -o "$output_dir/t630-camera-capture"
+"$cc" -std=c11 -Wall -Wextra -Werror -O2 \
+    "$repo_dir/camera/t630-binder-placeholder.c" \
+    -lbinder_ndk -landroid -llog \
+    -o "$output_dir/t630-binder-placeholder"
 
 echo "Built camera compatibility components in $output_dir"

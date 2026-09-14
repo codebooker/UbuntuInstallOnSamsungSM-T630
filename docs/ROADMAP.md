@@ -11,8 +11,9 @@
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
    stack, ARM64 compatibility packages, isolated GDM/elogind password-login
    runtime, and local-only stock-assets package are reproducible, including the
-   audio protection-domain mapper. Factory-archive preparation, camera
-   packaging, boot-image assembly, and the destructive rehearsal remain. The
+   audio protection-domain mapper and redistributable camera runtime.
+   Factory-archive preparation for the private camera inputs, boot-image
+   assembly, and the destructive rehearsal remain. The
    account-neutral Weston/Maliit host runtime is now packaged with reversible distro-file
    diversions. An exact-version base metapackage prevents incompatible
    component combinations, and the guarded offline assembler installed the
@@ -20,7 +21,7 @@
    rehearsal root on the tablet. That clean root now also includes the verified
    native Firefox repository, GNOME Software/PackageKit, LibreOffice, and the
    normal desktop application set without Snap.
-3. Camera capture, front-camera tuning, and photo-flash integration.
+3. Broader camera lighting/application tests and photo-flash integration.
 4. Bluetooth headset playback, microphone, and reconnect testing.
 5. Four-edge and post-resume sensor/rotation validation.
 6. GPU stability and browser-video isolation.

@@ -59,7 +59,8 @@ chroot "$root" /usr/bin/env \
     apt-get update
 chroot "$root" /usr/bin/env \
     DEBIAN_FRONTEND=noninteractive LC_ALL=C \
-    apt-get install -y --no-install-recommends ca-certificates curl gpg
+    apt-get install -y --no-install-recommends \
+    ca-certificates curl gpg sudo dmsetup
 
 # Ubuntu's firefox package transitions to Snap, whose namespace assumptions do
 # not work on the stock Samsung kernel. Use Mozilla's signed native ARM64 DEB
@@ -98,7 +99,7 @@ chroot "$root" /usr/bin/env \
     libqmi-glib5 libqrtr-glib0 libwayland-client0 libweston-13-0 \
     libxcb1 locales maliit-framework maliit-keyboard network-manager passwd \
     pipewire pipewire-pulse python3 python3-gi qtwayland5 seatd util-linux \
-    weston wireplumber x11-utils xauth xdotool xwayland \
+    weston wireplumber x11-utils xauth xdotool xwayland sudo dmsetup \
     desktop-file-utils eog evince evolution-data-server file-roller firefox \
     fonts-crosextra-caladea fonts-crosextra-carlito fonts-noto-color-emoji \
     gnome-calculator gnome-calendar gnome-characters gnome-clocks \

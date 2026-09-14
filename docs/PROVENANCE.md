@@ -5,6 +5,14 @@ Samsung factory images, firmware, calibration data, proprietary Android camera
 or media binaries, generated Ubuntu root filesystems, compiled kernels, and
 boot images.
 
+`tools/build_stock_assets_deb.py` creates a private package only from an
+owner-supplied, prepared exact-DZE3 source tree. It checks a fixed set of
+critical firmware, module, audio, sensor, touch, and Wi-Fi hashes and records a
+SHA256 manifest for every selected file inside the local package. The generated
+package is ignored by Git and is not redistributable. Per-device Wi-Fi and
+Bluetooth identities, EFS calibration, mutable sensor state, accounts, and
+network credentials are outside that package boundary.
+
 Pinned development references:
 
 | Dependency | Revision |

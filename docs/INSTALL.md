@@ -251,6 +251,22 @@ reference patch revisions are fixed in the builder and verified before any
 patch is applied. The packages do not contain Samsung firmware or sensor
 registry data; those belong to the local stock-assets boundary.
 
+Once the matching DZE3 stock files have been prepared in their documented
+layout, build the private stock-assets package locally:
+
+```sh
+SOURCE_DATE_EPOCH=1700000000 python3 tools/build_stock_assets_deb.py SOURCE_ROOT
+```
+
+On the development tablet, `SOURCE_ROOT` is `/` because its static stock copies
+have already been validated and staged. The output is
+`output/private/t630-stock-assets_1.0.0+dze3_arm64.deb`. It contains proprietary
+Samsung/Qualcomm files and must never be shared, uploaded, or committed. The
+builder verifies critical DZE3 inputs, records every selected file's size and
+SHA256 in an internal manifest, and rejects mutable/device-identity sources.
+Factory-ZIP-to-source-tree preparation is still being automated; this command
+alone is not yet the complete end-user flow.
+
 The desktop and hardware packages intentionally exclude native compiled
 compatibility libraries, patched login components, compiled hardware daemons,
 and stock-derived firmware. The sensor packages and native-userspace package

@@ -42,8 +42,8 @@ boot contained no tracked fault markers.
 ## Remaining package boundary
 
 Version 0.1.1 depends on desktop runtime 0.1.1 and recommends the reproducible
-`libssc`, `hexagonrpcd`, and `iio-sensor-proxy` t6303 builds plus the
-not-yet-built `t630-stock-assets` package. It deliberately excludes
+`libssc`, `hexagonrpcd`, and `iio-sensor-proxy` t6303 builds plus the local-only
+`t630-stock-assets` package. It deliberately excludes
 `pd-mapper`, patched GDM/elogind components, camera and video adapters,
 Bluetooth firmware, speaker calibration, Qualcomm firmware, Android libraries,
 SSH identity, and Wi-Fi credentials. Those components need other

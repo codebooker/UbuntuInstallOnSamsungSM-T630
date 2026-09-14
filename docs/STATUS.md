@@ -35,7 +35,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Flashlight | Working | Rear LED current and PMIC switch mapped; GNOME Quick Settings provides a brightness slider and a leased toggle that fails off after 15 seconds if its controller disappears |
 | Optional I/O | Characterized | Kernel support exists for microSD, USB host/role switch, Samsung NFC, GNSS framework, and USB-C DisplayPort. The exact NFC I2C path and the proprietary NFC/GNSS service boundaries are documented; physical accessory and bounded-service tests remain |
 | User setup | In progress | Desktop/session integration resolves the installer-selected owner rather than assuming `tablet`/UID 1000; deterministic first-boot and desktop-runtime packages pass native arm64 extraction, and the non-writing first-boot preview fills the physical display; fresh-root execution remains |
-| Release packaging | In progress | Deterministic first-boot, desktop runtime, hardware orchestration, three-package sensor stack, and six-binary ARM64 native-userspace set pass native extraction and runtime probes; remaining compiled components, locally generated stock assets, root assembly, and recovery rehearsal remain |
+| Release packaging | In progress | First-boot, desktop, hardware, sensor, native-userspace, and private DZE3 stock-assets packages build reproducibly and pass native extraction; factory-archive preparation, remaining compiled components, root assembly, and recovery rehearsal remain |
 | Security | Lab configuration | GNOME password lock works, but the retained recovery compositor and USB root console mean this is not a hardened full-device login boundary |
 
 ## Known limitations
@@ -73,3 +73,5 @@ The redistributable hardware-service boundary is recorded in the
 [hardware runtime package report](reports/hardware-runtime-package-20260914.md).
 The pinned, reproducible Qualcomm sensor build is recorded in the
 [sensor stack package report](reports/sensor-stack-package-20260914.md).
+The local-only proprietary asset boundary is recorded in the
+[stock assets package report](reports/stock-assets-package-20260914.md).

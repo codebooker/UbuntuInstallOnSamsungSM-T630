@@ -79,17 +79,20 @@ class CameraRuntimePackageTests(unittest.TestCase):
             control_path.write_bytes(members["control.tar.xz"])
             with tarfile.open(control_path, "r:xz") as archive:
                 control = archive.extractfile("./control").read().decode()
-            self.assertIn("Version: 0.1.1", control)
+            self.assertIn("Version: 0.1.2", control)
             self.assertIn("t630-stock-assets (= 1.0.1+dze3)", control)
             self.assertIn("must be reconstructed locally", control)
 
     def test_runtime_uses_packaged_helper_paths(self):
+        mounts = (builder.ROOT / "camera/t630-camera-mounts.sh").read_text()
         stack = (builder.ROOT / "camera/t630-camera-stack.sh").read_text()
         bridge = (builder.ROOT / "ubuntu/t630-camera-bridge").read_text()
         self.assertIn("/usr/local/libexec/t630-binder-placeholder", stack)
         self.assertIn("/usr/local/libexec/t630-camera-capture", bridge)
         self.assertNotIn("/data/vendor/camera/t630-binder-placeholder", stack)
         self.assertNotIn("/data/vendor/camera/t630-camera-capture", bridge)
+        self.assertIn("/var/lib/t630-camera/android-data", mounts)
+        self.assertNotIn('"$T630_OWNER_HOME/t630-android-data"', mounts)
 
 
 if __name__ == "__main__":

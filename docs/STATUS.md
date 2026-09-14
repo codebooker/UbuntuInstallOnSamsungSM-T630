@@ -32,7 +32,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | System suspend | Working | Guarded shallow suspend, automatic idle entry, Power wake, RTC recovery, and post-wake sensor restoration work while unplugged; the sensor bridge is quiesced around freeze to prevent an ADSP wake interrupt |
 | GPU | Experimental | Turnip/Zink can render GNOME, but a KGSL fault was reproduced; software fallback is retained |
 | Video | Mostly working | FFmpeg and GStreamer H.264/VP9 use the stock decoder. A real WebKit process selected it, but no accelerated browser launcher is shipped because this kernel cannot provide WebKit's normal user-namespace sandbox |
-| Camera | Partial | Both GNOME previews run at 720×480. Rear ID 0 uses 30 ms / ISO 800, gamma 2.5, working continuous autofocus, and a live color slider. The HAL supports HD, but Snapshot crashes above the current preview size |
+| Camera | Partial | Both GNOME previews run at 720×480. Rear ID 0 uses 30 ms / ISO 800, gamma 2.5, working continuous autofocus, and a live color slider. HAL state regenerates into account-neutral `/var/lib/t630-camera`; the HAL supports HD, but Snapshot crashes above the current preview size |
 | Flashlight | Working | Rear LED current and PMIC switch mapped; GNOME Quick Settings provides a brightness slider and a leased toggle that fails off after 15 seconds if its controller disappears |
 | Optional I/O | Characterized | Kernel support exists for microSD, USB host/role switch, Samsung NFC, GNSS framework, and USB-C DisplayPort. The exact NFC I2C path and the proprietary NFC/GNSS service boundaries are documented; physical accessory and bounded-service tests remain |
 | User setup | In progress | Desktop/session integration resolves the installer-selected owner rather than assuming `tablet`/UID 1000; the non-writing UI preview fills the physical display, and the real backend created and validated a sample UID 1000 owner in a fresh root; physical clean-boot UI acceptance remains |
@@ -90,6 +90,8 @@ The redistributable camera boundary and physical package-path test are recorded
 in the [camera runtime report](reports/camera-runtime-package-20260914.md).
 The hash-gated local reconstruction of the private static camera layer is in the
 [camera static reconstruction report](reports/camera-static-reconstruction-20260914.md).
+The empty-state regeneration and account-neutral writable camera path are in the
+[camera state isolation report](reports/camera-state-isolation-20260914.md).
 The fail-closed offline installation boundary is recorded in the
 [release-root assembly report](reports/release-root-assembly-gate-20260914.md).
 The successful package apply and first-boot backend exercise are recorded in the

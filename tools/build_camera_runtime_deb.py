@@ -14,7 +14,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-camera-runtime"
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 SOURCE_FILES = {
     "etc/sudoers.d/t630-camera": ("ubuntu/t630-camera-sudoers", 0o440),
     "usr/local/bin/t630-camera-app": ("ubuntu/t630-camera-app", 0o755),

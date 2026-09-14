@@ -10,7 +10,7 @@ owner-only. The complete cache on the physical tablet passed this check.
 
 Hardware runtime 0.1.2 now owns `/etc/t630-install-id` with the exact value
 `SM-T630-T630XXSBDZE3-Ubuntu-v1`. The private stock package advanced to
-1.0.1+dze3 and depends on that runtime; release-base 0.1.6 also locks the
+1.0.1+dze3 and depends on that runtime; release-base 0.1.7 also locks the
 account-neutral boot, PolicyKit, and login runtimes at 0.1.0.
 Native extraction confirmed the marker and both dependency contracts.
 

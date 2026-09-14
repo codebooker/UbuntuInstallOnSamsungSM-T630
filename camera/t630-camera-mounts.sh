@@ -67,9 +67,17 @@ mount_image "$T630_OWNER_HOME/t630-camera-apex/apex_payload.img" /mnt/t630-camer
 
 mount_bind_ro "$T630_OWNER_HOME/t630-vendor-view" /vendor
 mount_bind_ro "$T630_OWNER_HOME/t630-linkerconfig" /linkerconfig
+# Camera HAL cache and warm-start state are machine data, not user data.  An
+# empty directory is intentional: the exact DZE3 HAL recreates every required
+# file on first camera use from the read-only stock image and hardware.
+install -d -o root -g root -m 0771 \
+    /var/lib/t630-camera /var/lib/t630-camera/android-data \
+    /var/lib/t630-camera/android-data/vendor
+install -d -o root -g root -m 0770 \
+    /var/lib/t630-camera/android-data/vendor/camera
 mkdir -p /data
 if ! mountpoint -q /data; then
-    mount --bind "$T630_OWNER_HOME/t630-android-data" /data
+    mount --bind /var/lib/t630-camera/android-data /data
 fi
 mount_bind_ro /mnt/t630-runtime /apex/com.android.runtime
 mount_bind_ro /mnt/t630-i18n /apex/com.android.i18n

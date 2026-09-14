@@ -26,6 +26,7 @@ full-screen GNOME desktop from internal storage.
 | Bluetooth | Working with the included kernel patches |
 | Power, Home, Back, Recents, red Active key | Working |
 | Password lock and on-screen keyboard | Working |
+| App store, native Firefox, LibreOffice, and everyday apps | Included in the clean release-root recipe |
 | Charging and manual shallow suspend/wake | Working |
 | Accelerometer, light, proximity, magnetometer | Working |
 | GPU rendering | Experimental; software fallback retained |

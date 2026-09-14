@@ -32,6 +32,28 @@ chroot "$root" dpkg-query -W \
     t630-native-userspace t630-pd-mapper \
     libssc hexagonrpcd iio-sensor-proxy t630-stock-assets
 
+echo "everyday_apps:"
+chroot "$root" dpkg-query -W \
+    -f='${Package} ${Version} ${db:Status-Status}\n' \
+    firefox gnome-software packagekit nautilus gnome-text-editor \
+    gnome-terminal libreoffice-writer libreoffice-calc libreoffice-impress \
+    evince eog file-roller gnome-calculator gnome-calendar gnome-contacts \
+    gnome-clocks gnome-snapshot gnome-system-monitor totem
+firefox_version=$(chroot "$root" dpkg-query -W -f='${Version}' firefox)
+case "$firefox_version" in
+    1:1snap*) echo "Ubuntu Firefox Snap transition package installed" >&2; exit 1 ;;
+esac
+if [ "$(chroot "$root" dpkg-query -W -f='${db:Status-Status}' snapd 2>/dev/null || true)" = installed ]; then
+    echo "snapd must not be present on the stock-kernel image" >&2
+    exit 1
+fi
+echo "3ecc63922b7795eb23fdc449ff9396f9114cb3cf186d6f5b53ad4cc3ebfbb11f  $root/etc/apt/keyrings/packages.mozilla.org.asc" |
+    sha256sum -c - >/dev/null
+grep -qx 'URIs: https://packages.mozilla.org/apt' \
+    "$root/etc/apt/sources.list.d/mozilla.sources"
+grep -qx 'Pin-Priority: -1' "$root/etc/apt/preferences.d/mozilla-firefox"
+echo "native_firefox: valid"
+
 if [ "$(cat "$root/etc/t630-install-id")" != \
      "SM-T630-T630XXSBDZE3-Ubuntu-v1" ]; then
     echo "installed device marker mismatch" >&2

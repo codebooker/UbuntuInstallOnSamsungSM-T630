@@ -17,7 +17,9 @@
    diversions. An exact-version base metapackage prevents incompatible
    component combinations, and the guarded offline assembler installed the
    full package directory into a fresh, identity-clean Ubuntu 24.04.5 ARM64
-   rehearsal root on the tablet.
+   rehearsal root on the tablet. That clean root now also includes the verified
+   native Firefox repository, GNOME Software/PackageKit, LibreOffice, and the
+   normal desktop application set without Snap.
 3. Camera capture, front-camera tuning, and photo-flash integration.
 4. Bluetooth headset playback, microphone, and reconnect testing.
 5. Four-edge and post-resume sensor/rotation validation.

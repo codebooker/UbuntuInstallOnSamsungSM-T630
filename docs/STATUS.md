@@ -20,6 +20,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Touch | Working | Finger coordinates and click/drag corrected |
 | S Pen | Working | Position and clicking corrected; GNOME keyboard accepts pen input |
 | Keyboard | Working | Maliit/GNOME on-screen keyboard with Shift, Enter, Backspace, and Hide |
+| Everyday apps | Working | Clean-root provisioning installs GNOME Software/PackageKit, native Mozilla Firefox, Files, Terminal, Text Editor, LibreOffice, Contacts, media codecs, and the standard GNOME utilities; Snap remains absent because the stock kernel lacks its namespace requirements |
 | Physical keys | Working | Volume, Power, Home, Back, Recents, and red Active button mapped |
 | Wi-Fi / remote access | Working | Reconnect survives interface renaming; SSH and the single-instance loopback screen service work over the LAN |
 | Bluetooth | Working | WCN6850 startup retry, firmware handoff, idle wake, BlueZ discovery, synchronized teardown, and supervised recovery physically tested; WirePlumber Bluetooth audio policy is enabled, pending a paired-headset playback test |
@@ -35,7 +36,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Flashlight | Working | Rear LED current and PMIC switch mapped; GNOME Quick Settings provides a brightness slider and a leased toggle that fails off after 15 seconds if its controller disappears |
 | Optional I/O | Characterized | Kernel support exists for microSD, USB host/role switch, Samsung NFC, GNSS framework, and USB-C DisplayPort. The exact NFC I2C path and the proprietary NFC/GNSS service boundaries are documented; physical accessory and bounded-service tests remain |
 | User setup | In progress | Desktop/session integration resolves the installer-selected owner rather than assuming `tablet`/UID 1000; the non-writing UI preview fills the physical display, and the real backend created and validated a sample UID 1000 owner in a fresh root; physical clean-boot UI acceptance remains |
-| Release packaging | In progress | Twelve exact-version component packages and a release metapackage build reproducibly; the thirteen-file closure now includes Weston/Maliit, lock guards, the owner-neutral PolicyKit agent, and the isolated GDM/elogind password-login stack, and installed cleanly into an identity-safe Ubuntu 24.04.5 ARM64 rehearsal root with package, native-linkage, removal/restoration, and mount-leak checks passing; factory-image preparation, camera packaging, destructive boot, and recovery rehearsal remain |
+| Release packaging | In progress | Twelve exact-version component packages and a release metapackage build reproducibly; the thirteen-file closure now includes Weston/Maliit, lock guards, the owner-neutral PolicyKit agent, and the isolated GDM/elogind password-login stack, while clean-root provisioning also supplies the normal Ubuntu application set; the identity-safe Ubuntu 24.04.5 ARM64 rehearsal root passes package, native-linkage, removal/restoration, app, and mount-leak checks; factory-image preparation, camera packaging, destructive boot, and recovery rehearsal remain |
 | Security | Lab configuration | GNOME password lock works, but the retained recovery compositor and USB root console mean this is not a hardened full-device login boundary |
 
 ## Known limitations

@@ -130,6 +130,19 @@ This is GNOME Software for native Ubuntu packages, not Canonical's Snap-based
 App Center. Snap/Flatpak were not enabled: this kernel lacks PID/user namespaces.
 No sandbox bypass was added to force unsupported packaging to run.
 
+## Clean release-root acceptance (2026-09-14)
+
+The same native application set is now part of
+`tools/provision_rehearsal_root.sh`, rather than an untracked step performed only
+on the development tablet. It installed 360 public packages into the preserved,
+identity-clean Ubuntu Base rehearsal root. The explicit applications, Firefox
+APT policy, repository-key SHA256/fingerprint, empty package audit, absent
+`snapd`, and clean release identity audit were all checked afterward.
+
+Downloaded package archives and the temporary GnuPG inspection home were
+removed, leaving a 3.1 GB root. APT indexes and AppStream metadata were retained
+so GNOME Software has a catalog after the end user completes first boot.
+
 ## Useful maintenance entry points
 
 `/usr/local/bin/t630-gnome-run COMMAND` launches an app in the current GNOME

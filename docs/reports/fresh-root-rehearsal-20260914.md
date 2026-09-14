@@ -19,7 +19,9 @@ offline marker, and passed the identity audit.
 sysfs, and resolver views required for package configuration. Its
 `policy-rc.d` denied service startup inside the chroot. It installed the public
 Ubuntu dependencies for GNOME, NetworkManager, PipeWire, BlueZ, sensors,
-Weston, Xwayland, GTK, and the native helpers.
+Weston, Xwayland, GTK, and the native helpers. The expanded run also installed
+GNOME Software/PackageKit, Firefox, LibreOffice, Files, Terminal, Text Editor,
+Contacts, media codecs, and the normal GNOME utilities.
 
 The first run found a real release-image problem: systemd/DBus package setup
 generated `/etc/machine-id` and `/var/lib/dbus/machine-id`. The provisioner now
@@ -43,9 +45,17 @@ Acceptance recorded:
   Weston, Maliit, the PolicyKit agent, elogind, GDM, or its session worker;
 - no temporary host mounts left below the rehearsal root;
 - clean post-install identity audit;
-- 2.4 GB expanded root size after public dependencies and device packages;
+- 3.1 GB expanded root size after public dependencies, applications, and device packages;
 - unchanged healthy live GNOME, Wi-Fi, Bluetooth, audio, battery, and sensor
   services, with zero kernel-fault markers.
+
+Firefox came from Mozilla's native ARM64 APT repository at version
+`155.0.1~build1`. The provisioner verified the repository key's pinned SHA256
+and fingerprint before enabling it. APT policy gave that package priority 1000,
+assigned Ubuntu's `1:1snap1` transition package priority -1, and did not install
+`snapd`. Package archives and temporary GnuPG state were removed after the
+install while repository indexes and AppStream metadata were retained for the
+first GNOME Software launch.
 
 ## First-boot backend
 

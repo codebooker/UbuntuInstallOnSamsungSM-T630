@@ -32,11 +32,24 @@ class RehearsalScriptTests(unittest.TestCase):
         self.assertIn('rm -f -- "$root/var/lib/dbus/machine-id"', text)
         self.assertIn('rm -f -- "$root/usr/sbin/policy-rc.d"', text)
 
+    def test_provisioner_uses_verified_native_firefox_and_everyday_apps(self):
+        text = (TOOLS / "provision_rehearsal_root.sh").read_text()
+        self.assertIn("packages.mozilla.org/apt/repo-signing-key.gpg", text)
+        self.assertIn("35BAA0B33E9EB396F59CA838C0BA5CE6DC6315A3", text)
+        self.assertIn("3ecc63922b7795eb23fdc449ff9396f9", text)
+        self.assertIn("ubuntu/mozilla.sources", text)
+        self.assertIn("gnome-software", text)
+        self.assertIn("libreoffice-writer", text)
+        self.assertIn("firefox", text)
+
     def test_checker_covers_release_and_mount_state(self):
         text = (TOOLS / "check_rehearsal_root.sh").read_text()
         self.assertIn("t630-release-base", text)
         self.assertIn("t630-boot-runtime", text)
         self.assertIn("t630-polkit-runtime", text)
+        self.assertIn("native_firefox: valid", text)
+        self.assertIn("gnome-software", text)
+        self.assertIn("libreoffice-writer", text)
         self.assertIn("usr/bin/maliit-keyboard", text)
         self.assertIn("dpkg --root=", text)
         self.assertIn("native_linkage: valid", text)

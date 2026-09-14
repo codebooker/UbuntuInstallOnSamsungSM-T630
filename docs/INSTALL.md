@@ -378,14 +378,19 @@ The preparer checks the pinned archive name and SHA256, rejects an existing or
 symlinked destination, extracts only archive paths that cannot traverse out of
 the root, adds the offline marker, and requires a clean identity audit. The
 provisioner blocks service startup, installs the package set's public Ubuntu
-dependencies, removes build-time machine identity, unmounts every temporary
-host filesystem, and requires the audit to pass again. The checker verifies
+dependencies and normal desktop applications, verifies Mozilla's native ARM64
+Firefox signing key by both SHA256 and fingerprint, and rejects Ubuntu's Snap
+transition package. It removes downloaded package archives, transient GnuPG
+state, build-time machine identity, and every temporary host mount before
+requiring the audit to pass again. The checker verifies
 package state, exact release-package versions, the device marker, native ELF
 linkage, and absence of leaked mounts. The current physical-tablet rehearsal
-completed with a clean 2.4 GB root and no broken packages. The expanded pass
+completed with a clean 3.1 GB root and no broken packages. The expanded pass
 also verified Weston, Maliit, elogind, GDM, and PolicyKit linkage, generated
 launcher and GNOME guard assets, repeat installation, and byte-exact
-restoration of diverted files.
+restoration of diverted files. GNOME Software/PackageKit, native Firefox,
+LibreOffice, Files, Terminal, Text Editor, Contacts, document/media tools, and
+the standard GNOME utilities are present before first boot; Snap is not.
 
 Do not overwrite a mapped live library merely to test the package. Extract it
 to a temporary directory and run the dependency/symbol probes described in the

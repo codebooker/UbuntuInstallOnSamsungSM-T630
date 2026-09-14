@@ -5,8 +5,8 @@
 `tools/build_release_meta_deb.py` now emits a deterministic dependency-only
 package for the native Ubuntu base:
 
-- name: `t630-release-base_0.1.8_arm64.deb`
-- SHA256: `8f88105853441981198dec3c5c1acf215a73d715c89d41f1e131db6e4214cc0e`
+- name: `t630-release-base_0.1.9_arm64.deb`
+- SHA256: `a85f93f1b5063e1004c412f7e9c55c7600a3e5d623f6e28af48091143f5689af`
 
 The package locks these thirteen components to the tested package revisions:
 
@@ -16,7 +16,7 @@ The package locks these thirteen components to the tested package revisions:
 - boot runtime 0.1.0
 - PolicyKit runtime 0.1.0
 - login runtime 0.1.0
-- camera runtime 0.1.3
+- camera runtime 0.1.4
 - native userspace 0.1.0
 - pd-mapper 0.1.0
 - libssc 0.4.4-t6303

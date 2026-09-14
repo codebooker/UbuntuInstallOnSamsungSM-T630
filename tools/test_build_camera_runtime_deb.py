@@ -59,6 +59,9 @@ class CameraRuntimePackageTests(unittest.TestCase):
             self.assertIn("usr/local/libexec/t630-camera-capture", names)
             self.assertIn("usr/local/libexec/t630-binder-placeholder", names)
             self.assertIn("usr/local/sbin/t630-camera-control", names)
+            self.assertIn("usr/local/sbin/t630-camera-static-prepare", names)
+            self.assertIn("usr/local/share/t630/extract-dynamic-partition.py", names)
+            self.assertIn("usr/local/share/t630/prepare-camera-static-assets.py", names)
             self.assertIn("usr/share/applications/t630-camera.desktop", names)
             self.assertFalse(any(name.startswith(("home/", "data/", "vendor/"))
                                  for name in names))
@@ -79,7 +82,7 @@ class CameraRuntimePackageTests(unittest.TestCase):
             control_path.write_bytes(members["control.tar.xz"])
             with tarfile.open(control_path, "r:xz") as archive:
                 control = archive.extractfile("./control").read().decode()
-            self.assertIn("Version: 0.1.3", control)
+            self.assertIn("Version: 0.1.4", control)
             self.assertIn("t630-stock-assets (= 1.0.1+dze3)", control)
             self.assertIn("must be reconstructed locally", control)
 
@@ -95,6 +98,15 @@ class CameraRuntimePackageTests(unittest.TestCase):
         self.assertNotIn('"$T630_OWNER_HOME/t630-android-data"', mounts)
         self.assertIn("/var/lib/t630-camera/static", mounts)
         self.assertNotIn("T630_OWNER_HOME", mounts)
+
+    def test_static_preparer_is_read_only_and_fail_closed(self):
+        preparer = (builder.ROOT / "camera/t630-camera-static-prepare.sh").read_text()
+        self.assertIn("mount -t f2fs -o ro", preparer)
+        self.assertIn("extract-dynamic-partition.py", preparer)
+        self.assertIn("prepare-camera-static-assets.py", preparer)
+        self.assertIn('test ! -e "$output"', preparer)
+        self.assertNotIn("mkfs", preparer)
+        self.assertNotIn("mount -o rw", preparer)
 
 
 if __name__ == "__main__":

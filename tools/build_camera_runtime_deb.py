@@ -14,7 +14,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-camera-runtime"
-VERSION = "0.1.3"
+VERSION = "0.1.4"
 SOURCE_FILES = {
     "etc/sudoers.d/t630-camera": ("ubuntu/t630-camera-sudoers", 0o440),
     "usr/local/bin/t630-camera-app": ("ubuntu/t630-camera-app", 0o755),
@@ -23,12 +23,18 @@ SOURCE_FILES = {
     "usr/local/sbin/t630-camera-control": ("ubuntu/t630-camera-control", 0o755),
     "usr/local/sbin/t630-camera-mounts": ("camera/t630-camera-mounts.sh", 0o755),
     "usr/local/sbin/t630-camera-stack": ("camera/t630-camera-stack.sh", 0o755),
+    "usr/local/sbin/t630-camera-static-prepare": (
+        "camera/t630-camera-static-prepare.sh", 0o755),
     "usr/local/sbin/t630-android-log-capture": (
         "ubuntu/t630-android-log-capture.py", 0o755),
     "usr/local/share/t630/t630-camera-nodes.py": (
         "ubuntu/t630-camera-nodes.py", 0o755),
     "usr/local/share/t630/test-t630-camera-frame.py": (
         "ubuntu/test-t630-camera-frame.py", 0o755),
+    "usr/local/share/t630/extract-dynamic-partition.py": (
+        "tools/extract_dynamic_partition.py", 0o755),
+    "usr/local/share/t630/prepare-camera-static-assets.py": (
+        "tools/prepare_camera_static_assets.py", 0o755),
     "usr/local/share/t630/camera-templates/ld.config.txt": (
         "ubuntu/t630-android-ld.config.txt", 0o644),
     "usr/local/share/t630/camera-templates/vendor-manifest.xml": (

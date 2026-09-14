@@ -3,12 +3,12 @@
 ## Result
 
 `tools/build_camera_runtime_deb.py` produced
-`t630-camera-runtime_0.1.3_arm64.deb` from tracked scripts plus five ARM64
+`t630-camera-runtime_0.1.4_arm64.deb` from tracked scripts plus five ARM64
 helpers built from repository source. Two packages built with the same epoch
 were byte-identical.
 
-- size: 54,132 bytes
-- SHA256: `7afd2321d075b56a605847606ed83790ea80169b179566200a38d782d908d619`
+- size: 58,368 bytes
+- SHA256: `71d8544ec48575919a0f079a67da89b1b3ca92abdbd1db0fc967f60089bc5bcb`
 - architecture: ARM64
 
 The package moves the NDK capture client and Binder placeholder out of the
@@ -32,6 +32,12 @@ Version 0.1.3 moves all six reconstructed private files to
 `/var/lib/t630-camera/static`, validates every complete SHA256 before mounting,
 and creates the vendor view and linker configuration under `/run`. The camera
 mount helper no longer resolves or references a human account.
+
+Version 0.1.4 packages the guarded target-side preparer plus the verified LP
+parser and static reconstructor. It reads the tablet's untouched `super`
+partition, creates temporary read-only system/vendor mappings, reconstructs the
+private runtime locally, and removes both mappings on exit. A factory AP archive
+or expanded `super.img` is no longer needed for camera installation.
 
 ## Private boundary
 
@@ -61,8 +67,8 @@ device-mapper devices before camera start.
 
 Removal from the disposable root deleted the camera files while leaving the
 desktop, hardware, and stock packages installed. Reapplying the exact closure
-restored camera-runtime 0.1.3 and release-base 0.1.8 with both audits clean.
+restored camera-runtime 0.1.4 and release-base 0.1.9 with both audits clean.
 
-The exact release closure is now thirteen components plus release-base 0.1.8,
+The exact release closure is now thirteen components plus release-base 0.1.9,
 fourteen files total. Broader lighting/application tests and automatic factory
 archive reconstruction remain.

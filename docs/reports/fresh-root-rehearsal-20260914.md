@@ -38,8 +38,8 @@ A later pass accepted the fourteen-file set and added the isolated GDM/elogind
 login runtime plus the redistributable camera runtime. The camera package's
 five helpers were checked as ARM64 ELF files, while a negative scan confirmed
 that no private Android image, camera calibration, or mutable state entered the
-clean root. The preserved root then accepted camera-runtime 0.1.3 and
-release-base 0.1.8; its full package, application, identity, linkage, and mount
+clean root. The preserved root then accepted camera-runtime 0.1.4 and
+release-base 0.1.9; its full package, application, identity, linkage, and mount
 audit remained clean.
 Acceptance recorded:
 

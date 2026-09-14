@@ -70,6 +70,13 @@ if find "$root/home" "$root/data" -type f \( \
     exit 1
 fi
 echo "camera_runtime: redistributable-only"
+for path in \
+    usr/local/sbin/t630-camera-static-prepare \
+    usr/local/share/t630/extract-dynamic-partition.py \
+    usr/local/share/t630/prepare-camera-static-assets.py; do
+    test -f "$root/$path"
+done
+echo "camera_preparer: installed"
 
 if [ "$(cat "$root/etc/t630-install-id")" != \
      "SM-T630-T630XXSBDZE3-Ubuntu-v1" ]; then

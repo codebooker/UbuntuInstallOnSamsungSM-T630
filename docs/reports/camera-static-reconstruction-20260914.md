@@ -28,7 +28,7 @@ files used by the working camera stack.
 
 No proprietary payload was copied to the Mac or repository. The accepted
 output now lives at `/var/lib/t630-camera/static`. After a clean boot,
-camera-runtime 0.1.3 mounted all four payloads and both patches from that path,
+camera-runtime 0.1.4 mounted all four payloads and both patches from that path,
 built its vendor/linker views under `/run`, and delivered eight contrasting
 front-camera frames (mean luma 113.21, standard deviation 97.33). No camera
 mount referenced the selected owner's home.
@@ -37,3 +37,10 @@ The writable boundary was also resolved independently: an empty
 `/var/lib/t630-camera/android-data/vendor/camera` regenerated all required
 cache, custom-info, warm-start, configuration-dump, and flash-state files on
 first use. No stock-derived writable seed is required.
+
+The packaged `t630-camera-static-prepare` wrapper was then exercised after a
+clean boot. It parsed and checksum-verified LP metadata directly from physical
+`/dev/sda26`, created temporary read-only system and vendor mappings, generated
+a separate six-file rehearsal output, and removed both mappings and mounts.
+All six files plus the manifest were byte-identical to the accepted static
+runtime. The duplicate 172 MB rehearsal output was removed after comparison.

@@ -12,8 +12,7 @@
    stack, ARM64 compatibility packages, isolated GDM/elogind password-login
    runtime, and local-only stock-assets package are reproducible, including the
    audio protection-domain mapper and redistributable camera runtime.
-   Factory-archive preparation for the private camera inputs, boot-image
-   assembly, and the destructive rehearsal remain. The
+   Boot-image assembly and the destructive rehearsal remain. The
    account-neutral Weston/Maliit host runtime is now packaged with reversible distro-file
    diversions. An exact-version base metapackage prevents incompatible
    component combinations, and the guarded offline assembler installed the
@@ -26,8 +25,9 @@
    `super`; the camera runtime physically passed with those mappings and its
    guarded shutdown removed them, eliminating the second per-user vendor copy.
    The four required APEX payloads and two narrowly patched binaries are now
-   reconstructed locally with complete input/output hashes and matched the
-   working runtime byte-for-byte. Writable camera-data seeding remains.
+   reconstructed locally with complete input/output hashes directly from the
+   tablet's read-only stock `super`; they matched the working runtime
+   byte-for-byte. Writable camera state regenerates without a seed.
 3. Broader camera lighting/application tests and photo-flash integration.
 4. Bluetooth headset playback, microphone, and reconnect testing.
 5. Four-edge and post-resume sensor/rotation validation.

@@ -292,7 +292,18 @@ python3 tools/prepare_camera_static_assets.py \
 The command verifies complete DZE3 source and output hashes, extracts four APEX
 payloads, and applies only the audited seven-byte and five-byte compatibility
 patches. The output is private and must not be committed or redistributed.
-Writable camera-data seeding is not yet part of this command.
+
+On an installed SM-T630, the packaged guarded wrapper performs those read-only
+mapping, verification, reconstruction, and cleanup steps directly from the
+untouched stock `super` partition without unpacking `super.img` on another
+computer:
+
+```sh
+sudo t630-camera-static-prepare
+```
+
+It refuses an existing output or active camera mapping. No writable camera seed
+is required; the HAL creates its cache and warm-start files on first use.
 
 The desktop and hardware packages intentionally exclude native compiled
 compatibility libraries, patched login components, compiled hardware daemons,
@@ -369,7 +380,7 @@ SOURCE_DATE_EPOCH=1700000000 python3 tools/build_camera_runtime_deb.py \
   build/camera
 ```
 
-This creates `output/t630-camera-runtime_0.1.3_arm64.deb`. It contains the
+This creates `output/t630-camera-runtime_0.1.4_arm64.deb`. It contains the
 launchers, GNOME integration, safety controls, templates, and independently
 built helpers. It contains no stock Android libraries, firmware image,
 calibration, mutable camera state, or photograph. Those non-redistributable
@@ -383,7 +394,7 @@ release-set metapackage:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_release_meta_deb.py
 ```
 
-This creates `output/t630-release-base_0.1.8_arm64.deb`. It contains no device
+This creates `output/t630-release-base_0.1.9_arm64.deb`. It contains no device
 payload; its exact-version dependencies prevent a fresh root from mixing
 incompatible first-boot, desktop, hardware, login, native, sensor, pd-mapper,
 camera, or DZE3 stock-asset revisions. The camera package's redistributable

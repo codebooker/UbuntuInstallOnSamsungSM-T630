@@ -9,11 +9,11 @@
    Fresh-image execution remains.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
-   stack, ARM64 compatibility packages, and local-only stock-assets package are
-   reproducible, including the audio protection-domain mapper. Factory-archive
-   preparation, remaining compiled GDM/elogind and camera components, boot-image
-   assembly, and the destructive rehearsal remain. The account-neutral
-   Weston/Maliit host runtime is now packaged with reversible distro-file
+   stack, ARM64 compatibility packages, isolated GDM/elogind password-login
+   runtime, and local-only stock-assets package are reproducible, including the
+   audio protection-domain mapper. Factory-archive preparation, camera
+   packaging, boot-image assembly, and the destructive rehearsal remain. The
+   account-neutral Weston/Maliit host runtime is now packaged with reversible distro-file
    diversions. An exact-version base metapackage prevents incompatible
    component combinations, and the guarded offline assembler installed the
    full package directory into a fresh, identity-clean Ubuntu 24.04.5 ARM64

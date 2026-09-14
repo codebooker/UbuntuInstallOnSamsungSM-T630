@@ -32,6 +32,9 @@ EXPECTED = {
     "t630-polkit-runtime_0.1.0_arm64.deb": (
         "t630-polkit-runtime", "0.1.0",
         "baa7fbcd300895bd6754eac6dec95061f9f99a8a56c8f5a4d5ac059193f886da"),
+    "t630-login-runtime_0.1.0_arm64.deb": (
+        "t630-login-runtime", "0.1.0",
+        "edfc0b58325acc95c1e4dd25befd53bdaec30faf795dfb8a37d06fb4de6aa23e"),
     "t630-native-userspace_0.1.0_arm64.deb": (
         "t630-native-userspace", "0.1.0",
         "b6e9dffc3ce27278084a0fbc9022189e289eaf3c06fdcc5db1e9877a6dfed6ff"),
@@ -50,12 +53,12 @@ EXPECTED = {
     "t630-stock-assets_1.0.1+dze3_arm64.deb": (
         "t630-stock-assets", "1.0.1+dze3",
         "934f3c361fedc806eef90b4b92a6f93c906492b6b29339cb4e2cf85c0c7b461e"),
-    "t630-release-base_0.1.3_arm64.deb": (
-        "t630-release-base", "0.1.3",
-        "0fc7f51e94a5cef6befe9d0e5028011ef4a7fa507dbb1631d65f055c1677546e"),
+    "t630-release-base_0.1.4_arm64.deb": (
+        "t630-release-base", "0.1.4",
+        "381b326c74f79e671716f8632773cddf8988a242b927baa097e569ef7a883b73"),
 }
 INSTALL_ORDER = tuple(name for name in EXPECTED if not name.startswith("t630-release-base_"))
-META_PACKAGE = "t630-release-base_0.1.3_arm64.deb"
+META_PACKAGE = "t630-release-base_0.1.4_arm64.deb"
 
 
 def digest(path: Path) -> str:

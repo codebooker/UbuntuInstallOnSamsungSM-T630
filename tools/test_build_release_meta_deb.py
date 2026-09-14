@@ -54,6 +54,7 @@ class ReleaseMetaPackageTests(unittest.TestCase):
                             for item in builder.DEPENDENCIES))
         self.assertIn("t630-boot-runtime (= 0.1.0)", builder.DEPENDENCIES)
         self.assertIn("t630-polkit-runtime (= 0.1.0)", builder.DEPENDENCIES)
+        self.assertIn("t630-login-runtime (= 0.1.0)", builder.DEPENDENCIES)
 
 
 if __name__ == "__main__":

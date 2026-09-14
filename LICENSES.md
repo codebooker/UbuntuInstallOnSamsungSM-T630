@@ -6,6 +6,9 @@
   code and remain subject to GPL-2.0-only and any file-specific upstream notices.
 - `patches/polkit-gnome-t630-process-agent.patch` modifies Ubuntu's
   `policykit-1-gnome` source and remains subject to its LGPL-2.0-or-later terms.
+- `ubuntu/gdm-auth-only-greeter.patch` modifies Ubuntu's GDM source and remains
+  subject to GDM's GPL-2.0-or-later terms. The login-runtime package also builds
+  elogind under its GPL-2.0-or-later and LGPL-2.1-or-later components.
 - `tools/fetch_sources.sh` downloads third-party projects into ignored working
   directories. Those projects are not relicensed and retain their own licenses.
 - Samsung firmware, factory images, calibration, and proprietary Android

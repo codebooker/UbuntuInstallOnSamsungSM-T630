@@ -22,6 +22,8 @@ Pinned development references:
 | Heimdall | `8f3044db985fd9710038f04886b51240ddbb2834` |
 | linux-msm `pd-mapper` | `5ecd2fe926aca7abfe40724177f63b942cff3947` |
 | Ubuntu `policykit-1-gnome` source | `0.105-7ubuntu5`; orig SHA256 `1784494963b8bf9a00eedc6cd3a2868fb123b8a5e516e66c5eda48df17ab9369`, Debian patch SHA256 `957ebefe04c896fc621ef8c578f6e77f04e72cd2092c6500b47e578ae91d1cf1` |
+| elogind source | `v255.27`; archive SHA256 `1ef0dffaad77e8d8ded047895fc5e60b7ab5cf7137d356cebd821cc5a0d566c9` |
+| Ubuntu GDM source | `46.2-1ubuntu1~24.04.9`; orig SHA256 `4ee345422a16537150cd842450cda52b2ca86984bc51ee20cdc025dcf4bd268b`, Debian patch SHA256 `0a4bfa56afc053f257f56a7918c679fe3edce1048817811de359f80ef0fff653` |
 | S9 Ultra inspiration/reference | `bb55ceb87b61db7629c0820101ce7884ff8d987b` |
 | Waydroid source reviewed for container/session integration | `5a51271131bfca8b7ee75ed067d09b26460f3a7b` |
 

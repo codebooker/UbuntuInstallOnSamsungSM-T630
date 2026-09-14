@@ -28,6 +28,7 @@ chroot "$root" dpkg-query -W \
     -f='${Package} ${Version} ${db:Status-Status}\n' \
     t630-release-base t630-first-boot t630-desktop-runtime \
     t630-hardware-runtime t630-boot-runtime t630-polkit-runtime \
+    t630-login-runtime \
     t630-native-userspace t630-pd-mapper \
     libssc hexagonrpcd iio-sensor-proxy t630-stock-assets
 
@@ -58,6 +59,22 @@ fi
 if chroot "$root" ldd /usr/local/libexec/t630-polkit-agent |
         grep -q 'not found'; then
     echo "t630-polkit-agent has unresolved libraries" >&2
+    exit 1
+fi
+for binary in \
+    /opt/t630/elogind-255.27/libexec/elogind \
+    /opt/t630/elogind-255.27/lib/security/pam_elogind.so \
+    /opt/t630/gdm-46.2-auth/sbin/gdm \
+    /opt/t630/gdm-46.2-auth/libexec/gdm-session-worker; do
+    if chroot "$root" ldd "$binary" | grep -q 'not found'; then
+        echo "login runtime has unresolved libraries: $binary" >&2
+        exit 1
+    fi
+done
+if [ ! -f "$root/etc/t630/login.enabled" ] ||
+   [ ! -f "$root/etc/t630/lock-on-start" ] ||
+   [ ! -f "$root/etc/pam.d/common-session.t630-stock" ]; then
+    echo "login runtime marker or PAM diversion is missing" >&2
     exit 1
 fi
 for path in \

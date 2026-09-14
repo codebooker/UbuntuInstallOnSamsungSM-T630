@@ -4,14 +4,14 @@
 
 `tools/assemble_release_root.py` now provides the fail-closed boundary between
 the tested packages and a future generic Ubuntu root. In validation-only mode
-it checks all twelve exact package filenames, SHA256 values, Debian package names,
+it checks all thirteen exact package filenames, SHA256 values, Debian package names,
 and versions. It also requires the proprietary stock package to remain
 owner-only. The complete cache on the physical tablet passed this check.
 
 Hardware runtime 0.1.2 now owns `/etc/t630-install-id` with the exact value
 `SM-T630-T630XXSBDZE3-Ubuntu-v1`. The private stock package advanced to
-1.0.1+dze3 and depends on that runtime; release-base 0.1.3 also locks the
-account-neutral boot and PolicyKit runtimes at 0.1.0.
+1.0.1+dze3 and depends on that runtime; release-base 0.1.4 also locks the
+account-neutral boot, PolicyKit, and login runtimes at 0.1.0.
 Native extraction confirmed the marker and both dependency contracts.
 
 ## Offline-root safety
@@ -41,6 +41,9 @@ files. The same root accepted the source-built PolicyKit agent, rejected a root
 caller, accepted a same-owner non-root process subject, restored its diverted
 D-Bus service exactly on removal, and passed final reinstall. See the
 [fresh-root rehearsal](fresh-root-rehearsal-20260914.md).
+The same root then accepted the reproducible GDM/elogind package, resolved all
+four login-runtime ELF probes, restored the original PAM session file exactly
+on removal, and passed repeat installation through the complete release set.
 
 Boot-image assembly, a physical clean-boot walkthrough of the first-boot UI,
 and a full recovery rehearsal remain before any destructive installer can be

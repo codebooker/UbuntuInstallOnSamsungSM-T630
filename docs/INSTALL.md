@@ -192,9 +192,8 @@ SOURCE_DATE_EPOCH=1700000000 python3 tools/build_first_boot_deb.py
 This creates `output/t630-first-boot_0.1.1_all.deb`. It contains only tracked
 setup code and the non-secret example profile; it does not contain an owner
 marker, user account, password, machine identity, SSH key, or network profile.
-Building the package is not yet equivalent to building the complete release
-root—the remaining device runtime, compiled helpers, and matching stock-derived
-firmware still need their own reproducible packages.
+Building the package is not by itself equivalent to building the complete
+release root; use the exact package set and guarded assembler below.
 
 On an already provisioned development tablet, the UI can be rendered without
 changing any account or system setting:
@@ -271,10 +270,8 @@ alone is not yet the complete end-user flow.
 
 The desktop and hardware packages intentionally exclude native compiled
 compatibility libraries, patched login components, compiled hardware daemons,
-and stock-derived firmware. The sensor packages and native-userspace package
-cover part of that architecture-specific boundary; the remaining components
-and locally generated assets must be packaged before a complete release root
-can be assembled.
+and stock-derived firmware. Those boundaries are supplied by the separate
+native, sensor, login, pd-mapper, and private stock-assets packages below.
 
 Build the small redistributable native layer on an Ubuntu ARM64 target with the
 required development headers installed:
@@ -324,18 +321,31 @@ source archives and the tracked T630 patch. It preserves PolicyKit/PAM policy,
 supports the installer-selected non-root account, and reversibly diverts the
 PolicyKit D-Bus activation file needed on this non-systemd host.
 
-After all eleven component packages are available together, build the exact
+Build the isolated password-login runtime natively on Ubuntu ARM64:
+
+```sh
+SOURCE_DATE_EPOCH=1700000000 tools/build_t630_login_runtime.sh
+```
+
+This creates `output/t630-login-runtime_0.1.0_arm64.deb` from pinned elogind
+255.27 and Ubuntu GDM 46.2 sources. It installs both under private `/opt/t630`
+prefixes, disables GDM's local greeter and all remote login paths, enables the
+standard GNOME password lock after first boot, and reversibly diverts the one
+PAM session file needed to keep root recovery SSH out of the physical desktop
+session. It does not create a human account or embed a password.
+
+After all twelve component packages are available together, build the exact
 release-set metapackage:
 
 ```sh
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_release_meta_deb.py
 ```
 
-This creates `output/t630-release-base_0.1.3_arm64.deb`. It contains no device
+This creates `output/t630-release-base_0.1.4_arm64.deb`. It contains no device
 payload; its exact-version dependencies prevent a fresh root from mixing
-incompatible first-boot, desktop, hardware, native, sensor, pd-mapper, or DZE3
-stock-asset revisions. Camera's Android compatibility runtime is deliberately
-outside this base set while its release boundary remains unfinished.
+incompatible first-boot, desktop, hardware, login, native, sensor, pd-mapper,
+or DZE3 stock-asset revisions. Camera's Android compatibility runtime is
+deliberately outside this base set while its release boundary remains unfinished.
 
 Validate a complete package directory without changing a root filesystem:
 
@@ -343,7 +353,7 @@ Validate a complete package directory without changing a root filesystem:
 python3 tools/assemble_release_root.py PACKAGE_DIRECTORY
 ```
 
-The validator checks all twelve exact filenames, Debian package names and
+The validator checks all thirteen exact filenames, Debian package names and
 versions, SHA256 values, and the owner-only mode of the private stock package.
 Offline installation additionally requires an Ubuntu 24.04 root containing a
 regular `.t630-offline-root` file whose exact content is
@@ -371,10 +381,11 @@ provisioner blocks service startup, installs the package set's public Ubuntu
 dependencies, removes build-time machine identity, unmounts every temporary
 host filesystem, and requires the audit to pass again. The checker verifies
 package state, exact release-package versions, the device marker, native ELF
-linkage, and absence of leaked mounts. The first physical-tablet rehearsal
-completed with a clean 2.3 GB root and no broken packages. The expanded pass
-also verified Weston and Maliit linkage, generated launcher and GNOME guard
-assets, repeat installation, and byte-exact restoration of diverted files.
+linkage, and absence of leaked mounts. The current physical-tablet rehearsal
+completed with a clean 2.4 GB root and no broken packages. The expanded pass
+also verified Weston, Maliit, elogind, GDM, and PolicyKit linkage, generated
+launcher and GNOME guard assets, repeat installation, and byte-exact
+restoration of diverted files.
 
 Do not overwrite a mapped live library merely to test the package. Extract it
 to a temporary directory and run the dependency/symbol probes described in the

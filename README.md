@@ -32,7 +32,7 @@ full-screen GNOME desktop from internal storage.
 | Stock hardware video decoding | Working for tested FFmpeg and GStreamer H.264/VP9 playback |
 | Browser video acceleration | WebKit hardware selection verified; safe launcher blocked by the stock kernel's missing user-namespace support |
 | Cameras | Front and rear GNOME previews work at 720×480; rear exposure, autofocus, tone, and live color adjustment work; HD Snapshot and flash remain |
-| First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow implemented; generic release image still pending |
+| First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow and packaged GDM password login implemented; generic release image still pending |
 | Android applications | Deferred until all native Ubuntu and installer work is complete; current kernel-only approach is ABI-incompatible with Samsung modules |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).

@@ -2,20 +2,24 @@
 
 ## Current priority order
 
-1. Complete automatic shallow-suspend acceptance while unplugged.
-2. Remove the development account from device integration and implement the
+1. Remove the development account from device integration and implement the
    normal first-boot account flow. The account-neutral flow and reproducible
    `t630-first-boot` package are implemented; fresh-image visual acceptance
    remains.
-3. Build and exercise a reproducible installer and complete stock-recovery path.
-4. Camera capture, front-camera tuning, and photo-flash integration.
-5. Bluetooth headset playback, microphone, and reconnect testing.
-6. Four-edge and post-resume sensor/rotation validation.
-7. GPU stability and browser-video isolation.
-8. microSD, USB host, GPS, NFC, and external-display coverage.
-9. Android application support through a coherent kernel and matching module
+2. Build and exercise a reproducible installer and complete stock-recovery path.
+3. Camera capture, front-camera tuning, and photo-flash integration.
+4. Bluetooth headset playback, microphone, and reconnect testing.
+5. Four-edge and post-resume sensor/rotation validation.
+6. GPU stability and browser-video isolation.
+7. microSD, USB host, GPS, NFC, and external-display coverage.
+8. Android application support through a coherent kernel and matching module
    payload. This is deliberately last because changing the required namespace
    options invalidates every audited stock Samsung module.
+
+Completed: automatic shallow suspend now passes unplugged idle entry, physical
+Power wake, same-boot recovery, and sensor/Wi-Fi/audio restoration. The guarded
+helper temporarily quiesces the SSC sensor bridge so its ADSP GLINK channel does
+not immediately wake the tablet.
 
 ## End-user installer requirement
 

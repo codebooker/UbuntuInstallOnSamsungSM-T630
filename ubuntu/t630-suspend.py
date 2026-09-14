@@ -10,6 +10,11 @@ import time
 
 PATTERN = '06:01:000000000000:3f'
 RUN = '/usr/local/bin/t630-gnome-run'
+SENSOR_PROCESSES = (
+    r'^/usr/libexec/iio-sensor-proxy$',
+    r'^/usr/bin/hexagonrpcd -f /dev/adsprpc-smd-secure -d adsp -s -R '
+    r'/usr/local/share/t630/sensor-hexagonfs$',
+)
 
 
 def command(args, timeout=8):
@@ -39,6 +44,46 @@ def wifi_interface(net_class=None):
     if len(candidates) != 1:
         raise RuntimeError('expected one connected vendor Wi-Fi interface')
     return candidates[0]
+
+
+def process_ids(pattern):
+    result = subprocess.run(['pgrep', '-f', pattern], text=True,
+                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                            timeout=5)
+    if result.returncode == 1:
+        return []
+    if result.returncode != 0:
+        raise RuntimeError('unable to inspect sensor bridge')
+    return [int(value) for value in result.stdout.split()]
+
+
+def sensor_bridge_active():
+    return any(process_ids(pattern) for pattern in SENSOR_PROCESSES)
+
+
+def stop_sensor_bridge():
+    # The SSC sensor domain shares ADSP. Its open FastRPC channel produces a
+    # GLINK interrupt immediately after suspend entry on this firmware.
+    for pattern in SENSOR_PROCESSES:
+        for pid in process_ids(pattern):
+            os.kill(pid, 15)
+    for _ in range(20):
+        if not any(process_ids(pattern) for pattern in SENSOR_PROCESSES):
+            Path('/run/t630-sensors-ready').unlink(missing_ok=True)
+            return
+        time.sleep(.25)
+    raise RuntimeError('sensor bridge did not stop')
+
+
+def start_sensor_bridge():
+    log = open('/var/log/t630-sensors-start.log', 'a')
+    try:
+        subprocess.Popen(['/usr/local/sbin/t630-sensors-start'],
+                         stdin=subprocess.DEVNULL, stdout=log,
+                         stderr=subprocess.STDOUT, start_new_session=True,
+                         close_fds=True)
+    finally:
+        log.close()
 
 
 def main():
@@ -80,7 +125,12 @@ def main():
     with open('/run/t630-wake-pattern-test.lock', 'w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         installed = False
+        restart_sensors = sensor_bridge_active()
         try:
+            if restart_sensors:
+                stop_sensor_bridge()
+                # Drain the final SSC/ADSP messages before entering freeze.
+                time.sleep(5)
             (iface / 'wowl_add_ptrn').write_text(PATTERN)
             installed = True
             time.sleep(.35)  # Let the initiating button-release event settle.
@@ -105,6 +155,8 @@ def main():
             finally:
                 if installed:
                     (iface / 'wowl_del_ptrn').write_text(PATTERN)
+                if restart_sensors:
+                    start_sensor_bridge()
 
 
 if __name__ == '__main__':

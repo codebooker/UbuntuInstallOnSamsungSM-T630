@@ -28,7 +28,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Sensors | Working | Accelerometer, light, proximity, magnetometer, compass, automatic brightness, and debounced panel/GNOME rotation tested in adjacent positions; four-edge and suspend/resume rotation passes remain |
 | Charging | Working | Charger detection and charge state are exposed through UPower to GNOME; 100% fully charged was verified after a cold boot |
 | Display sleep | Working | Power-key blank/lock/wake works |
-| System suspend | Experimental | Guarded shallow suspend, Power wake, RTC recovery, and automatic idle policy are implemented and enabled; one unattended unplugged idle-cycle acceptance remains |
+| System suspend | Working | Guarded shallow suspend, automatic idle entry, Power wake, RTC recovery, and post-wake sensor restoration work while unplugged; the sensor bridge is quiesced around freeze to prevent an ADSP wake interrupt |
 | GPU | Experimental | Turnip/Zink can render GNOME, but a KGSL fault was reproduced; software fallback is retained |
 | Video | Mostly working | FFmpeg and GStreamer H.264/VP9 use the stock decoder. A real WebKit process selected it, but no accelerated browser launcher is shipped because this kernel cannot provide WebKit's normal user-namespace sandbox |
 | Camera | Partial | Both GNOME previews run at 720×480. Rear ID 0 uses 30 ms / ISO 800, gamma 2.5, working continuous autofocus, and a live color slider. The HAL supports HD, but Snapshot crashes above the current preview size |
@@ -49,8 +49,9 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
   default browser; the verified WebKit hardware-video path is not exposed as a
   launcher because it currently requires disabling WebKit's normal sandbox.
 - Automatic idle system suspend is enabled with power, USB, audio, lock, panel,
-  Wi-Fi and RTC guards. Its final release gate is an unattended five-minute
-  cycle while physically unplugged.
+  Wi-Fi and RTC guards. The SSC sensor bridge is stopped only after those guards
+  pass and is relaunched after every return from freeze; this prevents its open
+  FastRPC channel from immediately waking the system through ADSP GLINK.
 - Camera support still depends on proprietary files extracted from the owner's
   matching stock firmware; those files cannot be redistributed here. Both
   cameras are integrated with GNOME. Rear exposure and color are physically
@@ -63,3 +64,5 @@ the [GStreamer and WebKit video report](reports/gstreamer-video-20260913.md) and
 the [NFC/GNSS prerequisite audit](reports/nfc-gnss-prerequisites-20260914.md).
 Installer work is tracked in the
 [first-boot package report](reports/first-boot-package-20260914.md).
+Automatic suspend acceptance and the ADSP wake fix are recorded in the
+[suspend acceptance report](reports/automatic-suspend-acceptance-20260914.md).

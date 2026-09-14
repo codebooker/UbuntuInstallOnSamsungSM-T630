@@ -110,6 +110,9 @@ class HelperCleanup(unittest.TestCase):
         self.patch('time.CLOCK_BOOTTIME', 7, create=True)
         self.patch('time.clock_gettime', side_effect=[100, 116])
         self.patch('time.monotonic', side_effect=[50, 51])
+        self.sensors_active = self.patch('sensor_bridge_active', return_value=False)
+        self.stop_sensors = self.patch('stop_sensor_bridge')
+        self.start_sensors = self.patch('start_sensor_bridge')
         self.run = self.patch('subprocess.run', return_value=types.SimpleNamespace(returncode=0))
 
     def path(self, name):
@@ -132,6 +135,13 @@ class HelperCleanup(unittest.TestCase):
     def test_physical_power_reason_is_identified(self):
         self.path('/sys/kernel/wakeup_reasons/last_resume_reason').write_text('212 pon_kpdpwr_status')
         self.assertTrue(module.main()['power_wake'])
+        self.cleaned()
+
+    def test_active_sensor_bridge_is_stopped_and_restarted(self):
+        self.sensors_active.return_value = True
+        self.assertTrue(module.main()['slept'])
+        self.stop_sensors.assert_called_once_with()
+        self.start_sensors.assert_called_once_with()
         self.cleaned()
 
     def test_failed_suspend_still_cleans_up(self):

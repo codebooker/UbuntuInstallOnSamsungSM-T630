@@ -195,8 +195,10 @@ def main():
                             elif result.get('slept') is True:
                                 last_auto_suspend_reason = None
                                 # The lab RTC safety alarm woke a still-idle,
-                                # locked tablet. Return to sleep after settling.
-                                auto_suspend_at = time.monotonic() + 15
+                                # locked tablet. Sensor services restart after
+                                # every freeze return; give that bounded startup
+                                # time to settle before quiescing it again.
+                                auto_suspend_at = time.monotonic() + 60
                             else:
                                 # Charging, USB, audio, or another temporary
                                 # readiness guard: report only a changed reason,

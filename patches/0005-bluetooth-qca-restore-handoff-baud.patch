@@ -1,6 +1,6 @@
 --- a/drivers/bluetooth/hci_qca.c
 +++ b/drivers/bluetooth/hci_qca.c
-@@ -1250,6 +1250,9 @@ static int qca_setup(struct hci_uart *hu)
+@@ -1250,5 +1250,8 @@ static int qca_setup(struct hci_uart *hu)
  	if (!hu->serdev && hu->tty &&
  	    !strcmp(hu->tty->name, "ttyHS0")) {
 +		/* hci_uart_setup selected QCA's generic 115200 baud first. */

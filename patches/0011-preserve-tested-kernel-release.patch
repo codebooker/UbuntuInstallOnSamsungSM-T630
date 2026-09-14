@@ -1,0 +1,10 @@
+--- a/arch/arm64/configs/vendor/gtact4prowifi_eur_open_defconfig
++++ b/arch/arm64/configs/vendor/gtact4prowifi_eur_open_defconfig
+@@ -20,6 +20,6 @@
+ CONFIG_INIT_ENV_ARG_LIMIT=32
+ # CONFIG_COMPILE_TEST is not set
+ # CONFIG_UAPI_HEADER_TEST is not set
+-CONFIG_LOCALVERSION="-qgki"
++CONFIG_LOCALVERSION="-qgki-31225846-abT630XXSBDZE3"
+ CONFIG_LOCALVERSION_AUTO=y
+ CONFIG_BUILD_SALT=""

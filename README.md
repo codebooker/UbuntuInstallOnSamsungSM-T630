@@ -58,6 +58,8 @@ be treated as a porting task, not as a reason to remove those checks.
 4. Read the current [camera bring-up notes](docs/CAMERA.md) for that experimental stack.
 5. Use the chronological [bring-up reports](docs/reports/) for measurements,
    regressions, and recovery details.
+6. See the [completion roadmap](docs/ROADMAP.md) for Android-app support and the
+   required end-user installer experience.
 
 At present the repository can reproduce the conservative diagnostic boot image
 from matching stock firmware. Packaging the tested persistent Ubuntu filesystem

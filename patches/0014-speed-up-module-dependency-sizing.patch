@@ -1,0 +1,18 @@
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -346,11 +346,10 @@
+ # Bzip2 and LZMA do not include size in file... so we have to fake that;
+ # append the size as a 32-bit littleendian number as gzip does.
+ size_append = printf $(shell						\
+-dec_size=0;								\
+-for F in $(real-prereqs); do					\
+-	fsize=$$($(CONFIG_SHELL) $(srctree)/scripts/file-size.sh $$F);	\
+-	dec_size=$$(expr $$dec_size + $$fsize);				\
+-done;									\
++if test -n "$(real-prereqs)"; then					\
++	dec_size=$$(stat -c '%s' $(real-prereqs) |			\
++		awk '{ total += $$1 } END { print total + 0 }');		\
++else dec_size=0; fi;							\
+ printf "%08x\n" $$dec_size |						\
+ 	sed 's/\(..\)/\1 /g' | {					\
+ 		read ch0 ch1 ch2 ch3;					\

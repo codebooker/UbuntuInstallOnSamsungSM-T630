@@ -1,0 +1,16 @@
+--- a/techpack/audio/asoc/lahaina.c
++++ b/techpack/audio/asoc/lahaina.c
+@@ -48,9 +48,11 @@
+ #if IS_ENABLED(CONFIG_SND_SOC_CIRRUS_AMP)
+ #include <sound/cirrus/big_data.h>
+ #include <sound/samsung/bigdata_cirrus_sysfs_cb.h>
+-#elif IS_ENABLED(CONFIG_SND_SOC_TAS256x)
++#endif
++#if IS_ENABLED(CONFIG_SND_SOC_TAS256x)
+ #include "codecs/tas256x/bigdata_tas_sysfs_cb.h"
+-#elif IS_ENABLED(CONFIG_SND_SOC_TFA9878)
++#endif
++#if IS_ENABLED(CONFIG_SND_SOC_TFA9878)
+ #include "codecs/tfa9878/bigdata_tfa_sysfs_cb.h"
+ #endif
+ 

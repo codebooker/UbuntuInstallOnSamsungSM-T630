@@ -1,0 +1,54 @@
+--- a/techpack/audio/asoc/codecs/wcd938x/wcd938x.c
++++ b/techpack/audio/asoc/codecs/wcd938x/wcd938x.c
+@@ -1359,4 +1359,5 @@
+ 	case 2:
+ 		dmic2_left_en = WCD938X_DIGITAL_CDC_DMIC2_CTL;
++		/* fall through */
+ 	case 3:
+ 		dmic_clk_cnt = &(wcd938x->dmic_2_3_clk_cnt);
+@@ -2890,5 +2891,5 @@
+ 
+ 	dev_dbg(component->dev, "%s: slave_ch_idx: %d", __func__, slave_ch_idx);
+-	dev_dbg(component->dev, "%s: ucontrol->value.enumerated.item[0] = %ld\n",
++	dev_dbg(component->dev, "%s: ucontrol->value.enumerated.item[0] = %u\n",
+ 			__func__, ucontrol->value.enumerated.item[0]);
+ 
+--- a/techpack/audio/asoc/codecs/bolero/bolero-clk-rsc.c
++++ b/techpack/audio/asoc/codecs/bolero/bolero-clk-rsc.c
+@@ -107,5 +107,5 @@ int bolero_rsc_clk_reset(struct device *dev, int clk_id)
+ 
+ 	if (!dev) {
+-		pr_err("%s: dev is null %d\n", __func__);
++		pr_err("%s: dev is null\n", __func__);
+ 		return -EINVAL;
+ 	}
+@@ -153,5 +153,5 @@ void bolero_clk_rsc_enable_all_clocks(struct device *dev, bool enable)
+ 
+ 	if (!dev) {
+-		pr_err("%s: dev is null %d\n", __func__);
++		pr_err("%s: dev is null\n", __func__);
+ 		return;
+ 	}
+@@ -451,5 +451,5 @@ void bolero_clk_rsc_fs_gen_request(struct device *dev, bool enable)
+ 
+ 	if (!dev) {
+-		pr_err("%s: dev is null %d\n", __func__);
++		pr_err("%s: dev is null\n", __func__);
+ 		return;
+ 	}
+@@ -527,5 +527,5 @@ int bolero_clk_rsc_request_clock(struct device *dev,
+ 
+ 	if (!dev) {
+-		pr_err("%s: dev is null %d\n", __func__);
++		pr_err("%s: dev is null\n", __func__);
+ 		return -EINVAL;
+ 	}
+--- a/techpack/camera/drivers/cam_sensor_module/cam_sensor_utils/cam_sysfs_init.c
++++ b/techpack/camera/drivers/cam_sensor_module/cam_sensor_utils/cam_sysfs_init.c
+@@ -4811,5 +4811,5 @@ static void svc_cam_release(struct device *dev)
+ 	kfree(dev);
+ }
+ 
+-int svc_cheating_prevent_device_file_create()
++int svc_cheating_prevent_device_file_create(void)
+ {

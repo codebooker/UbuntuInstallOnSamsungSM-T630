@@ -46,12 +46,13 @@ class ReleaseMetaPackageTests(unittest.TestCase):
             self.assertIn("Architecture: arm64", control)
 
     def test_every_device_package_is_version_locked(self):
-        self.assertGreaterEqual(len(builder.DEPENDENCIES), 9)
+        self.assertGreaterEqual(len(builder.DEPENDENCIES), 10)
         self.assertTrue(all(" (= " in item for item in builder.DEPENDENCIES))
         self.assertTrue(any(item.startswith("t630-stock-assets")
                             for item in builder.DEPENDENCIES))
         self.assertTrue(any(item.startswith("t630-pd-mapper")
                             for item in builder.DEPENDENCIES))
+        self.assertIn("t630-boot-runtime (= 0.1.0)", builder.DEPENDENCIES)
 
 
 if __name__ == "__main__":

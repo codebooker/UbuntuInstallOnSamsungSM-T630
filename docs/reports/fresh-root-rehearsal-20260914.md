@@ -29,16 +29,19 @@ The corrected run passed the release audit.
 
 ## Exact package apply and acceptance
 
-The guarded assembler verified and installed the ten-file DZE3 release set.
+The initial guarded assembler pass verified and installed the ten-file DZE3
+release set. A second preserved clean root subsequently accepted the expanded
+eleven-file set, adding the packaged Weston/Maliit host runtime.
 Acceptance recorded:
 
-- all ten exact package versions in `installed` state;
+- all eleven exact package versions in `installed` state;
 - empty `dpkg --audit` output;
 - exact `/etc/t630-install-id` value;
-- no unresolved libraries for `t630-capture` or the Weston rotation module;
+- no unresolved libraries for `t630-capture`, the Weston rotation module,
+  Weston, or Maliit;
 - no temporary host mounts left below the rehearsal root;
 - clean post-install identity audit;
-- 1.9 GB root size after public dependencies and device packages;
+- 2.3 GB expanded root size after public dependencies and device packages;
 - unchanged healthy live GNOME, Wi-Fi, Bluetooth, audio, battery, and sensor
   services, with zero kernel-fault markers.
 
@@ -57,7 +60,7 @@ That is expected: only an unpersonalized root may become a distributable image.
 
 ## Remaining boundary
 
-This proves clean-root assembly and account-backend execution, not bootability.
-Next are boot-artifact assembly, a physical clean-boot UI walkthrough, and a
+This proves clean-root assembly, reversible host-runtime installation, and
+account-backend execution, not bootability. Next are boot-artifact assembly, a physical clean-boot UI walkthrough, and a
 destructive boot/recovery rehearsal. The proprietary DZE3 package remains
 owner-only on the tablet and is not part of the repository.

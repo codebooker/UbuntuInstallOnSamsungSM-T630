@@ -27,7 +27,7 @@ echo "release_packages:"
 chroot "$root" dpkg-query -W \
     -f='${Package} ${Version} ${db:Status-Status}\n' \
     t630-release-base t630-first-boot t630-desktop-runtime \
-    t630-hardware-runtime t630-native-userspace t630-pd-mapper \
+    t630-hardware-runtime t630-boot-runtime t630-native-userspace t630-pd-mapper \
     libssc hexagonrpcd iio-sensor-proxy t630-stock-assets
 
 if [ "$(cat "$root/etc/t630-install-id")" != \
@@ -46,6 +46,30 @@ if chroot "$root" ldd /usr/lib/aarch64-linux-gnu/weston/t630-rotation.so |
     echo "t630-rotation.so has unresolved libraries" >&2
     exit 1
 fi
+if chroot "$root" ldd /usr/bin/weston | grep -q 'not found'; then
+    echo "weston has unresolved libraries" >&2
+    exit 1
+fi
+if chroot "$root" ldd /usr/bin/maliit-keyboard | grep -q 'not found'; then
+    echo "maliit-keyboard has unresolved libraries" >&2
+    exit 1
+fi
+for path in \
+    usr/libexec/weston-keyboard \
+    usr/libexec/weston-keyboard.t630-stock \
+    usr/lib/aarch64-linux-gnu/maliit/keyboard2/qml/Keyboard.qml \
+    usr/lib/aarch64-linux-gnu/maliit/keyboard2/qml/Keyboard.qml.t630-stock \
+    usr/local/share/t630/gnome-resource-overlay/keyboard.js \
+    usr/local/share/t630/gnome-resource-overlay/unlockDialog.js \
+    usr/local/share/t630/icons/controls.png \
+    usr/local/share/t630/icons/files.png \
+    usr/local/share/t630/icons/editor.png \
+    usr/local/share/t630/weston.ini; do
+    if [ ! -f "$root/$path" ]; then
+        echo "boot runtime asset missing: /$path" >&2
+        exit 1
+    fi
+done
 echo "native_linkage: valid"
 
 if findmnt -rn -o TARGET | grep -q "^$root\(/\|$\)"; then

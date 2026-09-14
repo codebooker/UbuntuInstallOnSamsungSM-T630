@@ -12,10 +12,12 @@
    stack, ARM64 compatibility packages, and local-only stock-assets package are
    reproducible, including the audio protection-domain mapper. Factory-archive
    preparation, remaining compiled login/camera components, boot-image
-   assembly, and the destructive rehearsal remain. An exact-version base
-   metapackage now prevents incompatible component combinations, and the
-   guarded offline assembler installed the full package directory into a fresh,
-   identity-clean Ubuntu 24.04.5 ARM64 rehearsal root on the tablet.
+   assembly, and the destructive rehearsal remain. The account-neutral
+   Weston/Maliit host runtime is now packaged with reversible distro-file
+   diversions. An exact-version base metapackage prevents incompatible
+   component combinations, and the guarded offline assembler installed the
+   full package directory into a fresh, identity-clean Ubuntu 24.04.5 ARM64
+   rehearsal root on the tablet.
 3. Camera capture, front-camera tuning, and photo-flash integration.
 4. Bluetooth headset playback, microphone, and reconnect testing.
 5. Four-edge and post-resume sensor/rotation validation.

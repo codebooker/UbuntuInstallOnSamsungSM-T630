@@ -302,14 +302,25 @@ This produces `output/t630-pd-mapper_0.1.0_arm64.deb`. It installs only the
 source-built QRTR/LZMA daemon and its upstream license; it does not install or
 start anything on the build machine.
 
-After all nine component packages are available together, build the exact
+Build the account-neutral host compositor runtime:
+
+```sh
+SOURCE_DATE_EPOCH=1700000000 python3 tools/build_boot_runtime_deb.py
+```
+
+This creates `output/t630-boot-runtime_0.1.0_all.deb`. It owns the tested
+Weston configuration, Maliit touch keyboard customization, launcher icons,
+GNOME lock-screen guards, and chrony policy. It uses managed diversions for the
+two modified distro files and restores their originals when removed.
+
+After all ten component packages are available together, build the exact
 release-set metapackage:
 
 ```sh
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_release_meta_deb.py
 ```
 
-This creates `output/t630-release-base_0.1.1_arm64.deb`. It contains no device
+This creates `output/t630-release-base_0.1.2_arm64.deb`. It contains no device
 payload; its exact-version dependencies prevent a fresh root from mixing
 incompatible first-boot, desktop, hardware, native, sensor, pd-mapper, or DZE3
 stock-asset revisions. Camera's Android compatibility runtime is deliberately
@@ -321,7 +332,7 @@ Validate a complete package directory without changing a root filesystem:
 python3 tools/assemble_release_root.py PACKAGE_DIRECTORY
 ```
 
-The validator checks all ten exact filenames, Debian package names and
+The validator checks all eleven exact filenames, Debian package names and
 versions, SHA256 values, and the owner-only mode of the private stock package.
 Offline installation additionally requires an Ubuntu 24.04 root containing a
 regular `.t630-offline-root` file whose exact content is
@@ -350,7 +361,9 @@ dependencies, removes build-time machine identity, unmounts every temporary
 host filesystem, and requires the audit to pass again. The checker verifies
 package state, exact release-package versions, the device marker, native ELF
 linkage, and absence of leaked mounts. The first physical-tablet rehearsal
-completed with a clean 1.9 GB root and no broken packages.
+completed with a clean 2.3 GB root and no broken packages. The expanded pass
+also verified Weston and Maliit linkage, generated launcher and GNOME guard
+assets, repeat installation, and byte-exact restoration of diverted files.
 
 Do not overwrite a mapped live library merely to test the package. Extract it
 to a temporary directory and run the dependency/symbol probes described in the

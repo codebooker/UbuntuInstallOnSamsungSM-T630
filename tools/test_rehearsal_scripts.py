@@ -35,6 +35,8 @@ class RehearsalScriptTests(unittest.TestCase):
     def test_checker_covers_release_and_mount_state(self):
         text = (TOOLS / "check_rehearsal_root.sh").read_text()
         self.assertIn("t630-release-base", text)
+        self.assertIn("t630-boot-runtime", text)
+        self.assertIn("usr/bin/maliit-keyboard", text)
         self.assertIn("dpkg --root=", text)
         self.assertIn("native_linkage: valid", text)
         self.assertIn("mount_leaks: none", text)

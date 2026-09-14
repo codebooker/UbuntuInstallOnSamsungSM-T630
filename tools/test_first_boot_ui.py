@@ -61,6 +61,40 @@ class FirstBootUiTests(unittest.TestCase):
         self.assertIn('self.next.set_label("Close preview"', source)
         self.assertIn('and not preview', source)
 
+    def test_wizard_selects_weston_text_input_bridge_before_gtk(self):
+        source = (ROOT / "ubuntu/t630-first-boot-ui.py").read_text()
+        module = source.index('os.environ.setdefault("GTK_IM_MODULE", "t630-wayland")')
+        gtk = source.index("import gi")
+        self.assertLess(module, gtk)
+        self.assertIn('T630_FIRST_BOOT_GNOME") != "1"', source)
+        self.assertIn("/usr/local/share/t630/gtk-immodules.cache", source)
+        self.assertIn("GLib.idle_add(self.focus_account_entry)", source)
+
+    def test_fresh_owner_setup_always_uses_tablet_keyboard(self):
+        launcher = (ROOT / "ubuntu/t630-keyboard").read_text()
+        self.assertIn("[ -e /etc/t630/owner ]", launcher)
+        self.assertIn("weston-keyboard.t630-stock", launcher)
+
+    def test_first_boot_uses_ram_only_unprivileged_gnome_host(self):
+        session = (ROOT / "ubuntu/t630-first-boot-session").read_text()
+        autostart = (ROOT / "ubuntu/t630-desktop-autostart").read_text()
+        self.assertIn("base=/run/t630-first-boot-session", session)
+        self.assertIn("installer_uid=$(id -u nobody)", session)
+        self.assertIn('--reuid="$installer_uid"', session)
+        self.assertIn("--bounding-set=-all", session)
+        self.assertIn("--clear-groups --nnp", session)
+        self.assertIn("T630_FIRST_BOOT_GNOME=1", session)
+        self.assertIn("screen-keyboard-enabled true", session)
+        self.assertIn("/usr/local/libexec/t630-first-boot-session", autostart)
+        self.assertIn("t630-first-boot-resize", session)
+        self.assertIn("t630-first-boot-rotation", session)
+        resize = (ROOT / "ubuntu/t630-first-boot-resize.py").read_text()
+        rotation = (ROOT / "ubuntu/t630-first-boot-rotation.py").read_text()
+        self.assertIn("TRANSFORM_MODES", resize)
+        self.assertIn("ApplyMonitorsConfig", resize)
+        self.assertIn("ClaimAccelerometer", rotation)
+        self.assertIn("/run/t630-weston-rotation", rotation)
+
 
 if __name__ == "__main__":
     unittest.main()

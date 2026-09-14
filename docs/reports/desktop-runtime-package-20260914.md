@@ -6,9 +6,9 @@ The architecture-independent Ubuntu integration is now built by
 `tools/build_desktop_runtime_deb.py` as a deterministic Debian package:
 
 - name: `t630-desktop-runtime_0.1.1_all.deb`
-- size: 41,716 bytes
-- SHA256: `ebf85f4fad2602670f400f80eb5b323c4b44fbaadb4b22c0fd8dfd5a697adc52`
-- regular files: 31
+- size: 43,976 bytes
+- SHA256: `0fc15a7e93d795644c6e755af8b1eb612b5b484ab19a33af7a442ca9f75dd770`
+- regular files: 34
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
 arm64 `dpkg-deb` parsed and extracted the result on the tablet. Executable modes
@@ -16,11 +16,20 @@ for desktop startup, owner-asset setup, and guarded suspend were present. The
 tree contained no `/home`, owner marker, first-boot profile, credential, network
 profile, machine identity, compiled helper, or proprietary firmware.
 
-The package depends on exactly `t630-first-boot (= 0.1.1)` and standard Ubuntu
+The package depends on exactly `t630-first-boot (= 0.1.1)`, the source-built
+native compatibility package, and standard Ubuntu
 desktop utilities. It contains tracked desktop startup and session launchers,
 login glue, physical-input mapping, display controls, rotation, Power handling,
 automatic shallow suspend, the extension source, and the narrow udev/polkit
 rules used by those components.
+
+The first-run launcher now hosts the setup frontend inside a disposable GNOME
+Shell running as the locked `nobody` account with all state below `/run`. This
+gives account creation the same GNOME on-screen keyboard as the finished
+desktop without granting the temporary shell root access or writing an
+installer account into the image. A paired root sensor relay and unprivileged
+GNOME resize helper keep the setup window synchronized with landscape and
+portrait panel modes. Maliit remains the direct-Weston recovery fallback.
 
 ## Installer-selected owner migration
 

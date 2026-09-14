@@ -43,6 +43,7 @@ class DesktopRuntimePackageTests(unittest.TestCase):
                 control = control_archive.extractfile("./control").read().decode()
             self.assertIn("Package: t630-desktop-runtime\n", control)
             self.assertIn("t630-first-boot (= 0.1.1)", control)
+            self.assertIn("t630-native-userspace (= 0.1.0)", control)
             data_path = Path(directory) / "data.tar.xz"
             data_path.write_bytes(archive["data.tar.xz"])
             with tarfile.open(data_path, "r:xz") as payload:
@@ -50,6 +51,9 @@ class DesktopRuntimePackageTests(unittest.TestCase):
             self.assertIn("usr/local/libexec/t630-install-owner-assets", names)
             self.assertIn("usr/local/share/t630/gnome-tablet-tools/extension.js", names)
             self.assertIn("usr/local/sbin/t630-suspend", names)
+            self.assertIn("usr/local/libexec/t630-first-boot-session", names)
+            self.assertIn("usr/local/libexec/t630-first-boot-resize", names)
+            self.assertIn("usr/local/libexec/t630-first-boot-rotation", names)
             self.assertFalse(any(name.startswith("home/") for name in names))
             self.assertFalse(any("first-boot-profile.json" in name for name in names))
 

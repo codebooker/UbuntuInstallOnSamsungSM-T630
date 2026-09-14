@@ -51,6 +51,8 @@ class HardwareRuntimePackageTests(unittest.TestCase):
             self.assertFalse(any(name.startswith("home/") for name in names))
             self.assertFalse(any(name.startswith("opt/t630/") for name in names))
             self.assertFalse(any(name.endswith((".so", ".bin", ".tlv", ".mdt")) for name in names))
+            sensors = (builder.ROOT / "ubuntu/t630-sensors-start").read_text()
+            self.assertIn('T630_FIRST_BOOT:-0', sensors)
 
     def test_control_declares_unfinished_local_asset_boundary(self):
         with tempfile.TemporaryDirectory() as directory:

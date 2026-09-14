@@ -207,6 +207,14 @@ labels itself visibly, clears its password fields on exit, and closes without
 writing an owner marker. The normal no-argument path remains the real one-time
 setup flow and still refuses to run after an owner exists.
 
+The desktop autostart path hosts this frontend inside a disposable,
+unprivileged GNOME session whose home and runtime both live below `/run`. This
+provides GNOME's normal on-screen keyboard before the owner exists. Its paired
+resize helpers follow the panel between landscape and portrait, while the
+root-only account backend remains outside the temporary shell. Direct execution
+of the preview on the recovery compositor intentionally uses Maliit as a
+fallback instead.
+
 The tracked, architecture-independent desktop integration is packaged
 separately:
 

@@ -106,8 +106,8 @@ S9 Ultra install/update/partition scripts on this SM-T630.
 
 Installed SHA256:
 
-- keyboard launcher: b1acedc37323bca40212fe0556201d53f47a99facdf4e43bbefcd0cd60b14692
-- Keyboard.qml: eae05cd9eb073ce99ea9647140f7de0a76a2ccf0ac0fed0a8344c28a5537b591
+- keyboard launcher: f223069292676afb9308553962e9ae494d40aa70566622454b492b67ff343806
+- Keyboard.qml: 752d2b7a5eaceb8edd4a70f6354ba95ea9d955b8611f9c9d15ddebf8e1d8cd89
 - GTK IM module: 902a03b3fdde8c8aa430d7f5eb623c2c4873cb3ea0810f85de85725eb0667b0a
 - stop helper: 127af095d89a66fccf63e6f439b8cc73ae22ad940a8c47bf19a4bebc03eaf6ca
 

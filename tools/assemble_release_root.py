@@ -19,16 +19,16 @@ INSTALL_ID = "SM-T630-T630XXSBDZE3-Ubuntu-v1"
 EXPECTED = {
     "t630-first-boot_0.1.1_all.deb": (
         "t630-first-boot", "0.1.1",
-        "a18e0a100b006b8f9afd82c3ff28501a27c37ee1e0680c80efca1699f9e5d9b2"),
+        "2325f6224262ea1c23576fcaa638f839f5dacf492396b82469dc05dc45afe39d"),
     "t630-desktop-runtime_0.1.1_all.deb": (
         "t630-desktop-runtime", "0.1.1",
-        "ebf85f4fad2602670f400f80eb5b323c4b44fbaadb4b22c0fd8dfd5a697adc52"),
+        "0fc15a7e93d795644c6e755af8b1eb612b5b484ab19a33af7a442ca9f75dd770"),
     "t630-hardware-runtime_0.1.2_all.deb": (
         "t630-hardware-runtime", "0.1.2",
-        "821f7dec058a73149e2704f3ea8179058e009a425df562a09aafa16b03a6b632"),
+        "c7fce086ba2ac5786dd01387f814618fb8fa63c50c70f1273430fcca06a5f741"),
     "t630-boot-runtime_0.1.0_all.deb": (
         "t630-boot-runtime", "0.1.0",
-        "7ec7c61eab7f12460bcf25d8bb3cfd528107a43742fd4dfca4abc1ed06a9dc1d"),
+        "70c75d8b0e68c48fbc8366bbe0432df0e4a1acde99cde096ae05902f51bdde9e"),
     "t630-polkit-runtime_0.1.0_arm64.deb": (
         "t630-polkit-runtime", "0.1.0",
         "baa7fbcd300895bd6754eac6dec95061f9f99a8a56c8f5a4d5ac059193f886da"),

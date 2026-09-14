@@ -6,6 +6,8 @@
    normal first-boot account flow. The account-neutral flow and reproducible
    `t630-first-boot` package are implemented; the account-neutral GNOME asset
    migration and reproducible source-only desktop runtime package now work.
+   The physical preview uses a RAM-only, unprivileged GNOME installer host, so
+   the normal GNOME keyboard and both landscape/portrait layouts have passed.
    Fresh-image execution remains.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor

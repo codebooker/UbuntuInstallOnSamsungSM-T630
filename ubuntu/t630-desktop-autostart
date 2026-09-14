@@ -8,9 +8,10 @@ if [ -e /etc/t630/desktop-autostart.disabled ]; then
 fi
 if [ ! -e /etc/t630/owner ]; then
     test -x /usr/local/libexec/t630-first-boot
+    test -x /usr/local/libexec/t630-first-boot-session
     test -x /usr/local/share/t630/t630_first_boot.py
     test -x /usr/local/share/t630/t630_account.py
-    /usr/local/libexec/t630-first-boot
+    /usr/local/libexec/t630-first-boot-session
     test -e /etc/t630/owner
     exec "$0" "$@"
 fi

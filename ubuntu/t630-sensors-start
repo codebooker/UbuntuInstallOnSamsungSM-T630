@@ -20,12 +20,14 @@ test -d "$tree/sensors/registry"
 
 # Audio shares the ADSP. Let its known-good route finish before attaching the
 # sensor protection domain, avoiding a boot-time race between the two clients.
-attempt=0
-while [ ! -e /run/t630-audio-ready ] && [ ! -e /etc/t630/audio.disabled ]; do
-    attempt=$((attempt + 1))
-    test "$attempt" -lt 60
-    sleep 1
-done
+if [ "${T630_FIRST_BOOT:-0}" != 1 ]; then
+    attempt=0
+    while [ ! -e /run/t630-audio-ready ] && [ ! -e /etc/t630/audio.disabled ]; do
+        attempt=$((attempt + 1))
+        test "$attempt" -lt 60
+        sleep 1
+    done
+fi
 
 # Refresh the small set of board facts consumed by sns_reg_config.
 for name in hw_platform platform_subtype platform_subtype_id platform_version soc_id; do

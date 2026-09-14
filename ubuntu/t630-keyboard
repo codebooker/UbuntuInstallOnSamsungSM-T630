@@ -2,7 +2,11 @@
 # Dpkg-diverted replacement for the stock Weston keyboard launcher.
 # Preserve WAYLAND_SOCKET: Weston authorizes this exact inherited connection.
 set -u
-if ! /usr/bin/grep -qx maliit /etc/t630/keyboard-mode; then
+# A fresh installation has no hardware keyboard during owner creation.  Never
+# let a stale/recovered mode file strand that mandatory setup screen without
+# the touch- and pen-capable keyboard.  Once an owner exists, honor the user's
+# explicit recovery-mode choice as before.
+if [ -e /etc/t630/owner ] && ! /usr/bin/grep -qx maliit /etc/t630/keyboard-mode; then
     exec /usr/libexec/weston-keyboard.t630-stock
 fi
 export HOME=/root XDG_RUNTIME_DIR=/run/user/0

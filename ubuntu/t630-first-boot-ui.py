@@ -11,6 +11,15 @@ import sys
 import tempfile
 import threading
 
+# Direct recovery-compositor previews need the local text-input-v1 bridge.
+# The normal setup host is GNOME and deliberately keeps GTK's native input
+# method so GNOME Shell can provide the same keyboard as the finished desktop.
+if os.environ.get("T630_FIRST_BOOT_GNOME") != "1":
+    os.environ.setdefault("GTK_IM_MODULE", "t630-wayland")
+    os.environ.setdefault(
+        "GTK_IM_MODULE_FILE", "/usr/local/share/t630/gtk-immodules.cache"
+    )
+
 import gi
 
 gi.require_version("Gtk", "3.0")
@@ -182,6 +191,8 @@ class FirstBoot(Gtk.Window):
             self.next.set_label("Next")
         self.next.set_sensitive(not self.busy)
         self.status.set_text("")
+        if index == 4:
+            GLib.idle_add(self.focus_account_entry)
         if index == len(self.pages) - 1:
             try:
                 profile = self.selected_profile()
@@ -195,6 +206,10 @@ class FirstBoot(Gtk.Window):
                     f"Language: {profile.locale}\nKeyboard: {profile.keyboard_layout}")
             except SetupError as exc:
                 self.review.set_text(f"Go Back and correct: {exc}")
+
+    def focus_account_entry(self):
+        self.full_name.grab_focus()
+        return False
 
     def go_back(self, _button):
         if not self.busy and self.index > 0:

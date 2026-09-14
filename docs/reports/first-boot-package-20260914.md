@@ -7,8 +7,8 @@ package by `tools/build_first_boot_deb.py`. With
 The current tested artifact is:
 
 - name: `t630-first-boot_0.1.1_all.deb`
-- size: 20,904 bytes
-- SHA256: `a18e0a100b006b8f9afd82c3ff28501a27c37ee1e0680c80efca1699f9e5d9b2`
+- size: 21,108 bytes
+- SHA256: `2325f6224262ea1c23576fcaa638f839f5dacf492396b82469dc05dc45afe39d`
 
 The package was copied to the physical arm64 tablet and parsed and extracted
 with Ubuntu's native `dpkg-deb`. Its executable modes, license, account helper,
@@ -44,3 +44,19 @@ audit then reported exactly the expected owner/profile/home/account state.
 
 This closes package and backend execution for the first-boot component. A
 physical clean-boot walkthrough through all touch UI pages still remains.
+
+The physical preview later exposed a first-run keyboard failure: GTK 3 chose
+Weston's unsupported text-input-v3 path, and the development device retained a
+stock-keyboard recovery setting. The wizard now selects the packaged
+`t630-wayland` text-input-v1 bridge before GTK initializes and focuses the first
+account field when that page opens. The host keyboard launcher independently
+forces Maliit whenever no owner exists, so a stale recovery preference cannot
+strand the mandatory account screen. The repaired preview launched with the
+Maliit process active, and the owner physically confirmed that the keyboard
+appeared and accepted touch input. The final flow no longer exposes that
+bootstrap keyboard: desktop runtime starts an unprivileged, RAM-only GNOME
+installer host and connects only the root-owned setup frontend to it. The owner
+physically confirmed that the resulting wizard uses the same GNOME keyboard as
+the finished desktop. The host follows the physical Weston transform and
+resizes both its Xwayland window and nested GNOME monitor between 1920x1200 and
+1200x1920; the portrait layout and keyboard were accepted on the panel.

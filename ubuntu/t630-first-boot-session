@@ -1,0 +1,200 @@
+#!/bin/sh
+# Host first boot in an unprivileged, RAM-only GNOME shell so account creation
+# uses the same on-screen keyboard as the finished desktop.
+set -eu
+
+base=/run/t630-first-boot-session
+runtime=$base/runtime
+home=$base/home
+display_number=${T630_INSTALLER_DISPLAY:-}
+wayland_name=t630-installer-0
+
+# Invoked by trap rather than a direct call.
+# shellcheck disable=SC2329
+cleanup_group() {
+    trap - EXIT INT TERM
+    if [ -n "${wizard_pid:-}" ]; then
+        kill -TERM "$wizard_pid" 2>/dev/null || true
+        wait "$wizard_pid" 2>/dev/null || true
+    fi
+    if [ -n "${session_pid:-}" ]; then
+        kill -TERM "-$session_pid" 2>/dev/null || true
+        wait "$session_pid" 2>/dev/null || true
+    fi
+    if [ -n "${rotation_pid:-}" ]; then
+        kill -TERM "$rotation_pid" 2>/dev/null || true
+        wait "$rotation_pid" 2>/dev/null || true
+    fi
+    if [ -n "${outer_socket_gid:-}" ] && [ -S /run/user/0/wayland-0 ]; then
+        chgrp "$outer_socket_gid" /run/user/0/wayland-0
+        chmod "$outer_socket_mode" /run/user/0/wayland-0
+    fi
+    if [ -n "${outer_dir_gid:-}" ] && [ -d /run/user/0 ]; then
+        chgrp "$outer_dir_gid" /run/user/0
+        chmod "$outer_dir_mode" /run/user/0
+    fi
+    # Both paths are fixed children of tmpfs; no installer state survives into
+    # the newly created owner's session.
+    test "$runtime" = /run/t630-first-boot-session/runtime
+    test "$home" = /run/t630-first-boot-session/home
+    rm -rf -- "$runtime" "$home"
+    rm -f -- "$base/parent.lock"
+    rmdir "$base"
+}
+
+# Invoked by trap rather than a direct call.
+# shellcheck disable=SC2329
+inner_cleanup() {
+    trap - EXIT INT TERM
+    if [ -n "${shell_pid:-}" ]; then kill -TERM "$shell_pid" 2>/dev/null || true; fi
+    if [ -n "${resize_pid:-}" ]; then kill -TERM "$resize_pid" 2>/dev/null || true; fi
+    if [ -n "${xwayland_pid:-}" ]; then kill -TERM "$xwayland_pid" 2>/dev/null || true; fi
+    if [ -n "${shell_pid:-}" ]; then wait "$shell_pid" 2>/dev/null || true; fi
+    if [ -n "${resize_pid:-}" ]; then wait "$resize_pid" 2>/dev/null || true; fi
+    if [ -n "${xwayland_pid:-}" ]; then wait "$xwayland_pid" 2>/dev/null || true; fi
+    rm -f "$runtime/xauth"
+}
+
+if [ "${1:-}" = --inner ]; then
+    shift
+    test "$#" -eq 0
+    test "$(id -u)" != 0
+    trap inner_cleanup EXIT INT TERM
+    shell_pid=
+    xwayland_pid=
+    resize_pid=
+
+    mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME"
+    gsettings set org.gnome.desktop.interface enable-animations false
+    gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+    gsettings set org.gnome.desktop.interface scaling-factor 1
+    gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true
+    gsettings set org.gnome.desktop.background picture-options none
+    gsettings set org.gnome.desktop.background primary-color '#241331'
+    gsettings set org.gnome.desktop.session idle-delay 0
+    gsettings set org.gnome.desktop.screensaver lock-enabled false
+
+    DISPLAY=":$display_number"
+    export DISPLAY
+    export XAUTHORITY=$runtime/xauth
+    cookie=$(mcookie)
+    printf 'add :%s . %s\n' "$display_number" "$cookie" | xauth -f "$XAUTHORITY" source -
+    unset cookie
+    export XWAYLAND_NO_GLAMOR=1
+    case "$(cat /run/t630-weston-rotation.state 2>/dev/null || echo 1)" in
+        0|2) geometry=1200x1920 ;;
+        *) geometry=1920x1200 ;;
+    esac
+    Xwayland ":$display_number" -auth "$XAUTHORITY" -nolisten tcp -noreset \
+        -geometry "$geometry" -shm -extension MIT-SHM &
+    xwayland_pid=$!
+    attempt=0
+    until xdpyinfo >/dev/null 2>&1; do
+        kill -0 "$xwayland_pid"
+        attempt=$((attempt + 1))
+        test "$attempt" -lt 15
+        sleep 1
+    done
+
+    export LD_PRELOAD=/usr/local/lib/t630-cogl-sync.so
+    if [ -d /usr/local/share/t630/gnome-resource-overlay ]; then
+        export G_RESOURCE_OVERLAYS=/org/gnome/shell/ui=/usr/local/share/t630/gnome-resource-overlay
+    fi
+    /usr/bin/gnome-shell --nested --wayland --wayland-display="$wayland_name" &
+    shell_pid=$!
+    attempt=0
+    until [ -S "$runtime/$wayland_name" ]; do
+        kill -0 "$shell_pid"
+        attempt=$((attempt + 1))
+        test "$attempt" -lt 20
+        sleep 1
+    done
+    /usr/bin/python3 /usr/local/libexec/t630-first-boot-resize \
+        >"$runtime/resize.log" 2>&1 &
+    resize_pid=$!
+    wait "$shell_pid"
+    exit $?
+fi
+
+test "$(id -u)" = 0
+case "${1:-}" in
+    '') wizard_args= ;;
+    --preview) wizard_args=--preview ;;
+    *) exit 2 ;;
+esac
+test -S /run/user/0/wayland-0
+for candidate in 20 21 22 23 24 25 26 27 28 29; do
+    if [ ! -e "/tmp/.X11-unix/X$candidate" ] && [ ! -e "/tmp/.X$candidate-lock" ]; then
+        display_number=$candidate
+        break
+    fi
+done
+test -n "$display_number"
+
+installer_uid=$(id -u nobody)
+installer_gid=$(id -g nobody)
+outer_dir_gid=$(stat -c %g /run/user/0)
+outer_dir_mode=$(stat -c %a /run/user/0)
+outer_socket_gid=$(stat -c %g /run/user/0/wayland-0)
+outer_socket_mode=$(stat -c %a /run/user/0/wayland-0)
+install -d -m 0755 -o root -g root "$base"
+exec 9>"$base/parent.lock"
+flock -n 9
+install -d -m 0700 -o "$installer_uid" -g "$installer_gid" "$runtime" "$home"
+install -d -m 1777 -o root -g root /tmp/.X11-unix
+session_pid=
+wizard_pid=
+rotation_pid=
+trap cleanup_group EXIT INT TERM
+# A previous forced preview close can leave Mutter's socket pathname behind.
+# The exclusive parent lock proves no live installer owns these exact files.
+rm -f "$runtime/$wayland_name" "$runtime/$wayland_name.lock" "$runtime/resize.log"
+# Grant only the disposable account access to the outer compositor, and put
+# the exact prior ownership/modes back before owner GNOME starts.
+chgrp "$installer_gid" /run/user/0 /run/user/0/wayland-0
+chmod 0710 /run/user/0
+chmod 0660 /run/user/0/wayland-0
+
+if [ ! -e /run/t630-sensors-ready ] && [ -x /usr/local/sbin/t630-sensors-start ]; then
+    T630_FIRST_BOOT=1 /usr/local/sbin/t630-sensors-start \
+        >>/var/log/t630-first-boot-sensors.log 2>&1 || true
+fi
+if [ -e /run/t630-sensors-ready ]; then
+    /usr/bin/python3 /usr/local/libexec/t630-first-boot-rotation \
+        >/run/t630-first-boot-rotation.log 2>&1 &
+    rotation_pid=$!
+fi
+/usr/bin/setsid /usr/bin/setpriv --reuid="$installer_uid" --regid="$installer_gid" \
+    --clear-groups --nnp --bounding-set=-all --inh-caps=-all --ambient-caps=-all \
+    --pdeathsig TERM /usr/bin/env -i \
+    PATH=/usr/local/bin:/usr/bin:/bin HOME="$home" USER=nobody LOGNAME=nobody \
+    XDG_RUNTIME_DIR="$runtime" XDG_CONFIG_HOME="$home/config" \
+    XDG_DATA_HOME="$home/data" XDG_CACHE_HOME="$home/cache" \
+    WAYLAND_DISPLAY=/run/user/0/wayland-0 XDG_SESSION_TYPE=wayland \
+    XDG_CURRENT_DESKTOP=GNOME LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe \
+    MESA_LOADER_DRIVER_OVERRIDE=swrast GSK_RENDERER=cairo \
+    T630_INSTALLER_DISPLAY="$display_number" \
+    MUTTER_DEBUG_DUMMY_MODE_SPECS=1920x1200:1200x1920 \
+    /usr/bin/dbus-run-session -- "$0" --inner &
+session_pid=$!
+
+attempt=0
+until [ -S "$runtime/$wayland_name" ]; do
+    kill -0 "$session_pid"
+    attempt=$((attempt + 1))
+    test "$attempt" -lt 25
+    sleep 1
+done
+
+# Root owns the one-time backend, but the GTK frontend is an ordinary client
+# of the disposable GNOME compositor. Mutter supplies its normal text-input-v3
+# protocol and GNOME Shell supplies the keyboard.
+/usr/bin/env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/root LANG="${LANG:-C.UTF-8}" \
+    XDG_RUNTIME_DIR="$runtime" WAYLAND_DISPLAY="$wayland_name" GDK_BACKEND=wayland \
+    T630_FIRST_BOOT_GNOME=1 /usr/bin/python3 /usr/local/libexec/t630-first-boot \
+    ${wizard_args:+"$wizard_args"} &
+wizard_pid=$!
+wait "$wizard_pid"
+wizard_status=$?
+wizard_pid=
+exit "$wizard_status"

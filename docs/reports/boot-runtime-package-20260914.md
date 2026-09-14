@@ -6,8 +6,8 @@
 layer as a deterministic Debian package:
 
 - name: `t630-boot-runtime_0.1.0_all.deb`
-- size: 20,784 bytes
-- SHA256: `7ec7c61eab7f12460bcf25d8bb3cfd528107a43742fd4dfca4abc1ed06a9dc1d`
+- size: 20,908 bytes
+- SHA256: `70c75d8b0e68c48fbc8366bbe0432df0e4a1acde99cde096ae05902f51bdde9e`
 
 Two builds with the same source epoch were byte-identical. The package depends
 on the tested hardware runtime, Weston 13, Maliit, GNOME Shell 46, seatd,
@@ -25,6 +25,11 @@ The customized Weston keyboard and Maliit `qml/Keyboard.qml` use package-owned
 `dpkg-divert` records. No distro package is overwritten anonymously. The
 post-removal script restores both originals and removes only the exact generated
 T630 assets.
+
+The launcher always selects Maliit while the owner marker is absent. After
+first boot it again honors `/etc/t630/keyboard-mode`, preserving the deliberate
+stock-keyboard recovery option without allowing that option to block account
+creation.
 
 ## Clean-root acceptance
 

@@ -26,6 +26,9 @@ FILES = {
     "usr/local/bin/t630-gpu-env": ("ubuntu/t630-gpu-env", 0o755),
     "usr/local/lib/t630/t630_display.py": ("ubuntu/t630_display.py", 0o644),
     "usr/local/libexec/t630-auth-watch": ("ubuntu/t630-auth-watch.py", 0o755),
+    "usr/local/libexec/t630-first-boot-resize": ("ubuntu/t630-first-boot-resize.py", 0o755),
+    "usr/local/libexec/t630-first-boot-rotation": ("ubuntu/t630-first-boot-rotation.py", 0o755),
+    "usr/local/libexec/t630-first-boot-session": ("ubuntu/t630-first-boot-session", 0o755),
     "usr/local/libexec/t630-controls": ("ubuntu/t630_controls.py", 0o755),
     "usr/local/libexec/t630-elogind-run": ("ubuntu/t630-elogind-run", 0o755),
     "usr/local/libexec/t630-gnome-session": ("ubuntu/t630-gnome-session", 0o755),
@@ -72,7 +75,7 @@ def build(output: Path, epoch: int) -> str:
 Version: {VERSION}
 Architecture: all
 Maintainer: SM-T630 Ubuntu Port contributors
-Depends: t630-first-boot (= 0.1.1), python3, python3-gi, gnome-shell, xwayland, xauth, x11-utils, xdotool, libglib2.0-bin, util-linux
+Depends: t630-first-boot (= 0.1.1), t630-native-userspace (= 0.1.0), python3, python3-gi, gnome-shell, xwayland, xauth, x11-utils, xdotool, libglib2.0-bin, util-linux
 Section: admin
 Priority: optional
 Description: account-neutral Ubuntu desktop integration for Samsung SM-T630

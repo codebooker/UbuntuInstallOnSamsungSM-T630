@@ -96,12 +96,17 @@ def audio_playing():
     return any(stream.get('corked') is False for stream in streams)
 
 
-def manual_suspend():
+def suspend_result():
     helper = Path('/usr/local/sbin/t630-suspend')
     if not helper.exists() or not Path('/etc/t630/suspend.enabled').exists():
-        return False
+        return {'slept': False, 'reason': 'policy disabled'}
     result = json.loads(subprocess.check_output([str(helper)], text=True, timeout=350))
-    print('Manual suspend: ' + json.dumps(result), flush=True)
+    print('Suspend: ' + json.dumps(result), flush=True)
+    return result
+
+
+def manual_suspend():
+    result = suspend_result()
     return result.get('slept') is True and result.get('power_wake') is True
 
 
@@ -145,6 +150,7 @@ def main():
             last_action = -1.0
             next_idle_check = time.monotonic() + 60
             previous_idle = None
+            auto_suspend_at = None
             print('Power-key monitor ready; long presses and repeats ignored.', flush=True)
             try:
                 while True:
@@ -154,6 +160,44 @@ def main():
                     settings.tick()
                     settings.flush()
                     now = time.monotonic()
+                    if not settings.auto_suspend or not STATE.exists():
+                        auto_suspend_at = None
+                    elif auto_suspend_at is None:
+                        # Let the lock animation, initiating input, and any last
+                        # application work settle before entering system sleep.
+                        auto_suspend_at = now + 15
+                    elif now >= auto_suspend_at:
+                        try:
+                            result = suspend_result()
+                            if result.get('slept') is True and result.get('power_wake') is True:
+                                restore()
+                                command([RUN, 'env', 'DISPLAY=:3', 'xdotool',
+                                         'key', 'Shift_L'])
+                                # Power events queue while rtcwake owns this
+                                # thread. Consume the handled press and release.
+                                for _ in range(32):
+                                    try:
+                                        if not os.read(fd, EVENT.size * 32):
+                                            break
+                                    except BlockingIOError:
+                                        break
+                                pressed_at = None
+                                last_action = time.monotonic()
+                                previous_idle = None
+                                next_idle_check = last_action + 3
+                                auto_suspend_at = None
+                            elif result.get('slept') is True:
+                                # The lab RTC safety alarm woke a still-idle,
+                                # locked tablet. Return to sleep after settling.
+                                auto_suspend_at = time.monotonic() + 15
+                            else:
+                                # Charging, USB, audio, or another temporary
+                                # readiness guard: retry quietly after a minute.
+                                auto_suspend_at = time.monotonic() + 60
+                        except Exception as exc:
+                            print(f'Automatic suspend not completed: {type(exc).__name__}',
+                                  flush=True)
+                            auto_suspend_at = time.monotonic() + 60
                     if now >= next_idle_check:
                         next_idle_check = now + (2 if STATE.exists() else 5)
                         try:
@@ -161,10 +205,13 @@ def main():
                             if STATE.exists():
                                 if previous_idle is not None and current_idle + 500 < previous_idle:
                                     restore()  # Activity wakes the light, never unlocks.
+                                    auto_suspend_at = None
                             elif (settings.idle_seconds and
                                   current_idle >= settings.idle_seconds * 1000 and
                                   now >= settings.inhibit_until and not audio_playing()):
                                 lock_and_blank()
+                                if settings.auto_suspend:
+                                    auto_suspend_at = time.monotonic() + 15
                                 current_idle = None  # Lock animation is not a user wake event.
                             previous_idle = current_idle
                         except Exception:
@@ -195,6 +242,7 @@ def main():
                                     # A modifier-only event also wakes any GNOME
                                     # idle shade, without submitting/typing text.
                                     restore()
+                                    auto_suspend_at = None
                                     command([RUN, 'env', 'DISPLAY=:3', 'xdotool',
                                              'key', 'Shift_L'])
                                 else:
@@ -216,6 +264,9 @@ def main():
                                         last_action = time.monotonic()
                                         previous_idle = None
                                         next_idle_check = last_action + 3
+                                        auto_suspend_at = None
+                                    elif settings.auto_suspend and STATE.exists():
+                                        auto_suspend_at = time.monotonic() + 15
                             except Exception as exc:
                                 restore()
                                 print(f'Power action not completed: {type(exc).__name__}', flush=True)

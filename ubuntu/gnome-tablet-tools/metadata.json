@@ -4,5 +4,5 @@
   "description": "Tablet keyboard, display, power and flashlight controls.",
   "settings-schema": "org.gnome.shell.extensions.t630-tablet-tools",
   "shell-version": ["46"],
-  "version": 4
+  "version": 5
 }

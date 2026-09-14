@@ -82,37 +82,43 @@ class DisplaySettings:
         if self.maximum != 306:
             raise ValueError('Unexpected backlight')
         self.idle_seconds = 300
+        self.auto_suspend = False
         self.inhibit_until = 0
         self.dirty_at = None
         if self.preferences.exists():
             try:
                 data = json.loads(self.preferences.read_text())
                 percent, idle = data['brightness'], data['idle_seconds']
-                self.validate(percent, idle)
+                auto_suspend = data.get('auto_suspend', False)
+                self.validate(percent, idle, auto_suspend)
             except (ValueError, OSError, KeyError, TypeError):
                 print('Invalid display preferences ignored; current brightness retained.', flush=True)
             else:
                 self.idle_seconds = idle
+                self.auto_suspend = auto_suspend
                 self.set_brightness(percent, persist=False)
 
     @staticmethod
-    def validate(percent, idle):
+    def validate(percent, idle, auto_suspend=False):
         if type(percent) is not int or not 5 <= percent <= 100:
             raise ValueError('Brightness must be 5..100')
         if type(idle) is not int or idle not in IDLE_CHOICES:
             raise ValueError('Unsupported idle timeout')
+        if type(auto_suspend) is not bool:
+            raise ValueError('Automatic suspend must be boolean')
 
     def status(self):
         source = self.off_state if self.off_state.exists() else self.light / 'brightness'
         raw = int(source.read_text())
         result = dict(brightness=max(5, min(100, round(raw * 100 / self.maximum))),
-                      idle_seconds=self.idle_seconds, blanked=self.off_state.exists())
+                      idle_seconds=self.idle_seconds, auto_suspend=self.auto_suspend,
+                      blanked=self.off_state.exists())
         result['flashlight'] = (self.flashlight.status() if self.flashlight else
                                 dict(available=False, enabled=False, brightness=20))
         return result
 
     def set_brightness(self, percent, persist=True):
-        self.validate(percent, self.idle_seconds)
+        self.validate(percent, self.idle_seconds, self.auto_suspend)
         raw = round(self.maximum * percent / 100)
         # While blanked, change the restore value without lighting the panel.
         target = self.off_state if self.off_state.exists() else self.light / 'brightness'
@@ -128,8 +134,11 @@ class DisplaySettings:
             self.set_brightness(int(parts[1]))
         elif len(parts) == 2 and parts[0] == 'IDLE':
             idle = int(parts[1])
-            self.validate(self.status()['brightness'], idle)
+            self.validate(self.status()['brightness'], idle, self.auto_suspend)
             self.idle_seconds = idle
+            self.dirty_at = time.monotonic()
+        elif len(parts) == 2 and parts[0] == 'AUTO_SUSPEND' and parts[1] in ('ON', 'OFF'):
+            self.auto_suspend = parts[1] == 'ON'
             self.dirty_at = time.monotonic()
         elif parts == ['INHIBIT']:
             # Short lease for an active full-screen app; never survives a crash.
@@ -158,8 +167,9 @@ class DisplaySettings:
     def flush(self, force=False):
         if self.dirty_at is None or (not force and time.monotonic() - self.dirty_at < 2):
             return
-        data = self.status()
-        data.pop('blanked')
+        status = self.status()
+        data = dict(brightness=status['brightness'], idle_seconds=self.idle_seconds,
+                    auto_suspend=self.auto_suspend)
         temporary = self.preferences.with_suffix('.new')
         fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
         with os.fdopen(fd, 'w') as stream:

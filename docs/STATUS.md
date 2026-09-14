@@ -27,7 +27,7 @@ explicit, previously validated sysfs paths instead.
 | Sensors | Working | Accelerometer, light, proximity, magnetometer, compass, automatic brightness, and debounced panel/GNOME rotation tested in adjacent positions; four-edge and suspend/resume rotation passes remain |
 | Charging | Working | Charger detection and charge state are exposed through UPower to GNOME; 100% fully charged was verified after a cold boot |
 | Display sleep | Working | Power-key blank/lock/wake works |
-| System suspend | Experimental | Guarded manual shallow suspend and wake passed; automatic idle suspend remains disabled |
+| System suspend | Experimental | Guarded shallow suspend, Power wake, RTC recovery, and automatic idle policy are implemented; automatic mode is enabled only after a live unplugged acceptance test |
 | GPU | Experimental | Turnip/Zink can render GNOME, but a KGSL fault was reproduced; software fallback is retained |
 | Video | Mostly working | FFmpeg and GStreamer H.264/VP9 use the stock decoder. A real WebKit process selected it, but no accelerated browser launcher is shipped because this kernel cannot provide WebKit's normal user-namespace sandbox |
 | Camera | Partial | Both GNOME previews run at 720×480. Rear ID 0 uses 30 ms / ISO 800, gamma 2.5, working continuous autofocus, and a live color slider. The HAL supports HD, but Snapshot crashes above the current preview size |

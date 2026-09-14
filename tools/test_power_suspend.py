@@ -41,6 +41,12 @@ class PowerTests(unittest.TestCase):
             self.assertFalse(power.manual_suspend())
             run.assert_not_called()
 
+    def test_missing_helper_reports_policy_reason(self):
+        with mock.patch.object(power, 'Path') as paths:
+            paths.return_value.exists.return_value = False
+            self.assertEqual(power.suspend_result(),
+                             {'slept': False, 'reason': 'policy disabled'})
+
     def test_malformed_helper_result_raises_for_existing_recovery_path(self):
         with mock.patch.object(power, 'Path') as paths, \
                 mock.patch.object(power.subprocess, 'check_output', return_value='bad json'):

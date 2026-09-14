@@ -32,6 +32,8 @@ export default class TabletKeyboard extends Extension {
                 ? 'Automatic screen-off paused' : `Screen off after ${status.idle_seconds / 60} min`;
             this._brightness.visible = true;
             this._keepAwake.visible = true;
+            this._autoSuspend.checked = status.auto_suspend;
+            this._autoSuspend.visible = true;
             this._flashlight.checked = status.flashlight.enabled;
             this._flashlight.visible = status.flashlight.available;
             this._flashlightBrightness.slider.value = status.flashlight.brightness / 100;
@@ -90,6 +92,16 @@ export default class TabletKeyboard extends Extension {
             this._displayRequest(['idle', this._keepAwake.checked ? '0' : '300'],
                 () => this._refreshDisplay());
         });
+        this._autoSuspend = new QuickSettings.QuickToggle({
+            title: 'Automatic Suspend', iconName: 'weather-clear-night-symbolic',
+            toggleMode: true,
+        });
+        this._autoSuspend.subtitle = 'Sleep after the screen locks';
+        this._autoSuspend.visible = false;
+        this._autoSuspend.connect('clicked', () => {
+            this._displayRequest(['suspend', 'automatic',
+                this._autoSuspend.checked ? 'on' : 'off'], () => this._refreshDisplay());
+        });
         this._flashlight = new QuickSettings.QuickToggle({
             title: 'Flashlight', iconName: 'media-flash-symbolic', toggleMode: true,
         });
@@ -116,7 +128,8 @@ export default class TabletKeyboard extends Extension {
             });
         });
         this._powerIndicator.quickSettingsItems.push(
-            this._brightness, this._keepAwake, this._flashlight, this._flashlightBrightness);
+            this._brightness, this._keepAwake, this._autoSuspend,
+            this._flashlight, this._flashlightBrightness);
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._powerIndicator, 2);
         this._powerMenu = Main.panel.statusArea.quickSettings.menu;
         this._powerMenuId = this._powerMenu.connect('open-state-changed', (_menu, open) => {

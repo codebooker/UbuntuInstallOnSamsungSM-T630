@@ -22,7 +22,7 @@ EXPECTED = {
         "3b3adf74477f0402e30d3d443dcd49068eb2bf139afa83a2f4c4e346bb18a14e"),
     "t630-desktop-runtime_0.1.1_all.deb": (
         "t630-desktop-runtime", "0.1.1",
-        "0948ac9acc73d24c17ec13935e5702860dc7a28d3b2d40c98d55545bef75d784"),
+        "5895d74c2b8a793b62e7eabf6e8f45e55cbc09f2b1d7637a55b3810079feb7f1"),
     "t630-hardware-runtime_0.1.2_all.deb": (
         "t630-hardware-runtime", "0.1.2",
         "51d39bb832461513f95db7bc97efd7cdb3905975a2edd6b06a7c80ff08379694"),

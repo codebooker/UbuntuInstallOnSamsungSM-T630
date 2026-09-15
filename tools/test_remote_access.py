@@ -20,7 +20,8 @@ class RemoteAccessTests(unittest.TestCase):
     def test_clean_reboot_does_not_resolve_ubuntu_systemd_wrapper(self):
         helper = (ROOT / "ubuntu/stop-ubuntu-remote").read_text()
         launcher = (ROOT / "ubuntu/t630-remote-start").read_text()
-        self.assertIn("/bin/busybox reboot -f", helper)
+        self.assertIn('/bin/busybox "$action" -f', helper)
+        self.assertIn('reboot|poweroff', helper)
         self.assertIn("t630-stock-vendor", helper)
         self.assertNotIn("\nreboot -f", helper)
         self.assertIn("pre_explicit_reboot=a0ac11c", launcher)

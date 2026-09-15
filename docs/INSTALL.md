@@ -225,7 +225,9 @@ SOURCE_DATE_EPOCH=1700000000 python3 tools/build_desktop_runtime_deb.py
 This creates `output/t630-desktop-runtime_0.1.1_all.deb`. It depends on the
 matching first-boot package and contains the desktop launcher, login/session
 glue, input mappings, rotation, display controls, guarded suspend, and Tablet
-Controls extension source. On first GNOME launch, the extension is compiled and
+Controls extension source. It also depends on GNOME Settings, supplies the
+SessionManager methods used by GNOME's standard Restart and Power Off dialogs,
+and persists the SM-T630 Home/Recents shortcuts. On first GNOME launch, the extension is compiled and
 installed into the selected owner's isolated profile without assuming a user
 name, UID, GID, or home path. It also installs the packaged WirePlumber policy
 into that owner's XDG configuration and preserves unrelated extensions and

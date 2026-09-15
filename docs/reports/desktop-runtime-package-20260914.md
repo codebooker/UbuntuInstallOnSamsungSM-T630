@@ -6,8 +6,8 @@ The architecture-independent Ubuntu integration is now built by
 `tools/build_desktop_runtime_deb.py` as a deterministic Debian package:
 
 - name: `t630-desktop-runtime_0.1.1_all.deb`
-- size: 44,864 bytes
-- SHA256: `0948ac9acc73d24c17ec13935e5702860dc7a28d3b2d40c98d55545bef75d784`
+- size: 46,336 bytes
+- SHA256: `5895d74c2b8a793b62e7eabf6e8f45e55cbc09f2b1d7637a55b3810079feb7f1`
 - regular files: 34
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
@@ -55,6 +55,22 @@ Personalized startup also skips the initramfs recovery terminal and its former
 three-second mapping delay. Ownerless first boot retains it, as does an explicit
 root-owned `recovery-terminal.enabled` marker. The independent USB serial
 console remains available in both cases.
+
+The clean root now includes `gnome-control-center` as an explicit dependency.
+Settings is available from favorites and the flat app grid, and Tablet Controls
+adds a Quick Settings launcher that enters the inner tablet Wayland session
+through `t630-gnome-run`. Home and Recents bindings are asserted on every
+session start. The distro's empty `X-GNOME Utilities` folder is removed only
+after GNOME Shell owns its bus name, preventing Shell startup from restoring it.
+
+The lightweight account-neutral SessionManager now implements the methods
+GNOME Shell uses for Logout, Restart, Power Off, capability checks, and
+inhibitor checks. Restart and Power Off open Shell's native confirmation
+dialog asynchronously. A confirmed action crosses the existing owner-only
+display socket and then the exact root-owned outer shutdown helper; invalid or
+concurrent requests fail closed. Both dialogs were opened and canceled on the
+physical tablet before and after a clean desktop-session restart without an
+error or unintended system action.
 
 ## Installer-selected owner migration
 

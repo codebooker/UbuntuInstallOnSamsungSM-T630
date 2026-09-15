@@ -49,6 +49,16 @@ export default class TabletKeyboard extends Extension {
             Main.keyboard.open(Main.layoutManager.focusIndex);
     }
 
+    _openSettings() {
+        try {
+            // Shell itself is a nested compositor client. Join the desktop's
+            // inner Wayland display rather than inheriting Shell's parent.
+            Gio.Subprocess.new(['/usr/local/bin/t630-gnome-run',
+                '/usr/bin/gnome-control-center'],
+                Gio.SubprocessFlags.NONE);
+        } catch (_) { /* The package dependency normally guarantees this app. */ }
+    }
+
     enable() {
         this._settings = this.getSettings();
         Main.wm.addKeybinding(
@@ -67,6 +77,11 @@ export default class TabletKeyboard extends Extension {
         Main.panel.addToStatusArea(this.uuid, this._indicator, 0, 'right');
         this._displayActive = true;
         this._powerIndicator = new QuickSettings.SystemIndicator();
+        this._settingsLauncher = new QuickSettings.QuickToggle({
+            title: 'Settings', iconName: 'org.gnome.Settings-symbolic',
+            toggleMode: false,
+        });
+        this._settingsLauncher.connect('clicked', () => this._openSettings());
         this._brightness = new QuickSettings.QuickSlider({
             iconName: 'display-brightness-symbolic', iconLabel: 'Screen brightness',
         });
@@ -128,7 +143,7 @@ export default class TabletKeyboard extends Extension {
             });
         });
         this._powerIndicator.quickSettingsItems.push(
-            this._brightness, this._keepAwake, this._autoSuspend,
+            this._settingsLauncher, this._brightness, this._keepAwake, this._autoSuspend,
             this._flashlight, this._flashlightBrightness);
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._powerIndicator, 2);
         this._powerMenu = Main.panel.statusArea.quickSettings.menu;

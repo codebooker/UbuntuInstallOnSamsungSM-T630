@@ -20,6 +20,11 @@ loader.exec_module(power)
 
 
 class PowerTests(unittest.TestCase):
+    def test_system_action_dispatch_rejects_every_other_command(self):
+        for action in ('off', 'shutdown', '', 'reboot now'):
+            with self.subTest(action=action), self.assertRaises(ValueError):
+                power.dispatch_system_action(action)
+
     def test_only_successful_power_wake_requests_light(self):
         with mock.patch.object(power, 'Path') as paths, \
                 mock.patch.object(power.subprocess, 'check_output') as run:

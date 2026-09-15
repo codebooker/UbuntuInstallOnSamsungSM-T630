@@ -26,6 +26,7 @@ full-screen GNOME desktop from internal storage.
 | Bluetooth | Working with the included kernel patches |
 | Power, Home, Back, Recents, red Active key | Working |
 | Password lock and on-screen keyboard | Working |
+| Settings and standard Restart / Power Off menus | Working |
 | App store, native Firefox, LibreOffice, and everyday apps | Included in the clean release-root recipe |
 | Charging and manual shallow suspend/wake | Working |
 | Accelerometer, light, proximity, magnetometer | Working |
@@ -66,7 +67,9 @@ be treated as a porting task, not as a reason to remove those checks.
 
 The repository can reproduce both the conservative diagnostic image and the
 physically accepted persistent boot image from matching stock firmware. Its
-guarded BOOT-only write and two cold boots passed on the development SM-T630.
+guarded BOOT-only writes and repeated cold boots passed on the development
+SM-T630; the latest power-action-only boot revision has passed write/readback
+and protected-neighbor checks, with its cold-boot check still pending.
 Packaging and physically installing the identity-clean Ubuntu filesystem as a
 safe public installer is still in progress; do not improvise the one-time
 userdata installation from the lab scripts unless you can recover the tablet

@@ -2,8 +2,9 @@
 """SM-T630 short Power: verified GNOME lock then backlight off; wake never unlocks.
 
 Reads only qpnp_pon, never grabs input, never reads touchscreen/keyboard events.
-No network listener, password handling or shutdown operation. Opt-in suspend
-is delegated to a separate guarded helper only after a manual Power blank.
+No network listener or password handling. Confirmed desktop power actions use
+the same guarded outer-root shutdown helper as USB recovery. Opt-in suspend is
+delegated to a separate guarded helper only after a manual Power blank.
 """
 import argparse
 import ctypes
@@ -113,6 +114,26 @@ def manual_suspend():
     return result.get('slept') is True and result.get('power_wake') is True
 
 
+def dispatch_system_action(action):
+    if action not in ('poweroff', 'reboot'):
+        raise ValueError('Unsupported system action')
+    outer = Path('/proc/1/root')
+    busybox = outer / 'bin/busybox'
+    helper = outer / 'bin/stop-ubuntu'
+    for path in (busybox, helper):
+        info = path.lstat()
+        if path.is_symlink() or not path.is_file() or info.st_uid != 0 or not info.st_mode & 0o111:
+            raise RuntimeError('Unsafe outer shutdown helper')
+    log_fd = os.open(outer / 'run/t630-system-action.log',
+                     os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(log_fd, 'ab', closefd=True) as log:
+        subprocess.Popen([str(busybox), 'chroot', str(outer),
+                          '/bin/stop-ubuntu', action],
+                         stdin=subprocess.DEVNULL, stdout=log,
+                         stderr=subprocess.STDOUT, start_new_session=True,
+                         close_fds=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
@@ -162,6 +183,15 @@ def main():
                     ready = select.select([fd, control.sock], [], [], 1)[0]
                     if control.sock in ready:
                         control.handle()
+                        action = settings.take_system_action()
+                        if action is not None:
+                            try:
+                                dispatch_system_action(action)
+                                print(f'Confirmed system {action} dispatched.', flush=True)
+                                return
+                            except Exception as exc:
+                                print(f'System action not completed: {type(exc).__name__}',
+                                      flush=True)
                     settings.tick()
                     settings.flush()
                     now = time.monotonic()

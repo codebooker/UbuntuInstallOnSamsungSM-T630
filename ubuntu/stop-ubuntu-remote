@@ -1,7 +1,11 @@
 #!/bin/busybox sh
 # Stop prototype services before unmounting. Never force an unclean restart.
 set -eu
-test "${1:-}" = reboot
+action=${1:-}
+case "$action" in
+    reboot|poweroff) ;;
+    *) echo 'Expected reboot or poweroff.' >&2; exit 2 ;;
+esac
 # An SSH-side redirect may have opened /dev/null through Ubuntu's bind mount.
 # Reopen it after entering the outer root so this helper cannot pin that mount.
 cd /
@@ -10,7 +14,7 @@ touch /run/t630-stopping
 root=$(cat /run/t630-selected-root 2>/dev/null || echo /run/ubuntu)
 case "$root" in
     /run/ubuntu|/run/ubuntu/opt/t630/rehearsal/release-root) ;;
-    *) echo 'Invalid selected Ubuntu root; refusing restart.'; exit 1 ;;
+    *) echo 'Invalid selected Ubuntu root; refusing system action.'; exit 1 ;;
 esac
 test -d "$root"
 test ! -L "$root"
@@ -98,7 +102,7 @@ if [ "$root" != /run/ubuntu ]; then
 fi
 umount /run/ubuntu
 sync
-# This script finishes in the outer recovery root, but an SSH invocation can
-# retain Ubuntu's PATH. Name BusyBox explicitly so we never resolve systemd's
-# chroot-aware reboot wrapper and silently leave the tablet running unmounted.
-/bin/busybox reboot -f
+# This script finishes in the outer recovery root, but a desktop or SSH
+# invocation can retain Ubuntu's PATH. Name BusyBox and the validated action
+# explicitly so we never resolve a chroot-aware systemd wrapper.
+/bin/busybox "$action" -f

@@ -18,11 +18,14 @@ elif (len(args) == 3 and args[:2] == ['flashlight', 'brightness'] and
     request = 'FLASHLIGHT BRIGHTNESS ' + args[2]
 elif len(args) == 3 and args[:2] == ['suspend', 'automatic'] and args[2] in ('on', 'off'):
     request = 'AUTO_SUSPEND ' + args[2].upper()
+elif len(args) == 2 and args[0] == 'power' and args[1] in ('off', 'restart'):
+    request = 'SYSTEM ' + ('POWEROFF' if args[1] == 'off' else 'REBOOT')
 elif len(args) == 2 and args[0] in ('brightness', 'idle') and args[1].isdigit():
     request = args[0].upper() + ' ' + args[1]
 else:
     raise SystemExit('Usage: t630-display status|brightness PERCENT|idle SECONDS|inhibit|'
-                     'flashlight on|off|renew|brightness PERCENT|suspend automatic on|off')
+                     'flashlight on|off|renew|brightness PERCENT|suspend automatic on|off|'
+                     'power off|restart')
 path = '/run/t630-display.sock'
 info = os.lstat(path)
 if not stat.S_ISSOCK(info.st_mode) or info.st_uid != 0:

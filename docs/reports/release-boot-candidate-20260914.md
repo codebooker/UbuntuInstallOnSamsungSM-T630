@@ -98,3 +98,15 @@ and verified vendor_boot, init_boot, DTBO, and vbmeta unchanged. Its physical
 cold boot selected the personalized clean root, exposed no recovery terminal,
 started the complete managed GNOME chain, verified the password lock, and
 reconnected Wi-Fi. USB serial recovery remains active independently.
+
+Candidate v5, SHA256
+`d1f475dc2e2194f0ccfc03d83d06102e72a5c1ac4a9e76ed4e622f7121010638`,
+extends the embedded orderly shutdown helper from restart-only to the exact
+validated `reboot` and `poweroff` actions. Its ramdisk SHA256 is
+`d3a33d8c851253e439e8cd3da81dcd5630fef011eb79924160b878894d25cdaf`.
+Two independent builds were byte-identical. The guarded v5 writer accepted only
+the exact installed v4 image, wrote and read back only `boot`, and confirmed
+vendor_boot, init_boot, DTBO, and vbmeta were unchanged. The running desktop
+opened and canceled both native confirmation dialogs before and after a clean
+session restart. A v5 cold boot and a user-confirmed full power-off remain its
+final physical acceptance checks.

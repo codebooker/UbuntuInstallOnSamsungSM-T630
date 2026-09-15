@@ -85,6 +85,7 @@ class DisplaySettings:
         self.auto_suspend = False
         self.inhibit_until = 0
         self.dirty_at = None
+        self.system_action = None
         if self.preferences.exists():
             try:
                 data = json.loads(self.preferences.read_text())
@@ -152,9 +153,17 @@ class DisplaySettings:
         elif (len(parts) == 3 and parts[:2] == ['FLASHLIGHT', 'BRIGHTNESS'] and
               self.flashlight):
             self.flashlight.set_brightness(int(parts[2]))
+        elif len(parts) == 2 and parts[0] == 'SYSTEM' and parts[1] in ('POWEROFF', 'REBOOT'):
+            if self.system_action is not None:
+                raise ValueError('A system action is already pending')
+            self.system_action = parts[1].lower()
         else:
             raise ValueError('Unsupported display request')
         return self.status()
+
+    def take_system_action(self):
+        action, self.system_action = self.system_action, None
+        return action
 
     def tick(self):
         if self.flashlight:

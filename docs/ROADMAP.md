@@ -21,7 +21,10 @@
    checks. Normal owner startup no longer exposes the recovery terminal or
    waits for its three-second mapping delay. The backend creates and validates
    the device's unique machine ID only after boot, preserving a blank
-   distributable image and unique Bluetooth identity.
+   distributable image and unique Bluetooth identity. GNOME Settings is now an
+   explicit package dependency, the dead default app folder is removed after
+   Shell startup, Home/Recents mappings persist, and native Restart/Power Off
+   confirmations reach the guarded orderly shutdown path.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
    stack, ARM64 compatibility packages, isolated GDM/elogind password-login

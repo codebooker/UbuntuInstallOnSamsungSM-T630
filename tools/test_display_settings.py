@@ -74,6 +74,18 @@ class DisplayTests(unittest.TestCase):
         self.assertGreater(self.settings.inhibit_until, module.time.monotonic())
         self.assertFalse(self.off.exists())
 
+    def test_system_actions_are_exact_and_one_shot(self):
+        self.settings.request('SYSTEM REBOOT')
+        with self.assertRaises(ValueError):
+            self.settings.request('SYSTEM POWEROFF')
+        self.assertEqual(self.settings.take_system_action(), 'reboot')
+        self.assertIsNone(self.settings.take_system_action())
+        self.settings.request('SYSTEM POWEROFF')
+        self.assertEqual(self.settings.take_system_action(), 'poweroff')
+        for request in ('SYSTEM OFF', 'SYSTEM RESTART', 'SYSTEM POWEROFF NOW'):
+            with self.subTest(request=request), self.assertRaises(ValueError):
+                self.settings.request(request)
+
     def test_refuses_other_backlight(self):
         (self.root / 'max_brightness').write_text('0')
         with self.assertRaises(ValueError):

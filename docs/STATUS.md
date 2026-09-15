@@ -22,6 +22,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Keyboard | Working | Maliit/GNOME on-screen keyboard with Shift, Enter, Backspace, and Hide |
 | Everyday apps | Working | Clean-root provisioning installs GNOME Software/PackageKit, native Mozilla Firefox, Files, Terminal, Text Editor, LibreOffice, Contacts, media codecs, and the standard GNOME utilities; Snap remains absent because the stock kernel lacks its namespace requirements |
 | Physical keys | Working | Volume, Power, Home, Back, Recents, and red Active button mapped |
+| Desktop system controls | Working | Settings is packaged and available from the app grid, favorites, and Quick Settings; GNOME's standard Restart and Power Off confirmations reach the guarded orderly-shutdown path; dead default app folders are removed after Shell starts |
 | Wi-Fi / remote access | Working | Wi-Fi reconnects and SSH/single-instance screen viewing work over LAN; the bounded BusyBox-supervisor fallback launched them automatically on two accepted release-image cold boots without USB intervention; clean-root testing made `wpasupplicant` an explicit dependency and the first-run picker now scans networks |
 | Bluetooth | Working | WCN6850 startup retry, firmware handoff, idle wake, BlueZ discovery, synchronized teardown, and supervised recovery physically tested; WirePlumber Bluetooth audio policy is enabled, pending a paired-headset playback test |
 | Speakers | Working | Stock calibration and guarded amplifier sequencing; GNOME volume control works |
@@ -36,7 +37,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Flashlight | Working | Rear LED current and PMIC switch mapped; GNOME Quick Settings provides a brightness slider and a leased toggle that fails off after 15 seconds if its controller disappears |
 | Optional I/O | Characterized | Kernel support exists for microSD, USB host/role switch, Samsung NFC, GNSS framework, and USB-C DisplayPort. The exact NFC I2C path and the proprietary NFC/GNSS service boundaries are documented; physical accessory and bounded-service tests remain |
 | User setup | Working | The physical ownerless-root walkthrough completed with the normal GNOME keyboard, Wi-Fi connection, user-selected account/password, unique post-install machine identity, owner-neutral asset migration, and transition to the new owner's GNOME password lock; the installer frontend now defaults to dark mode |
-| Release packaging | In progress | Thirteen exact-version component packages and a release metapackage build reproducibly; the identity-safe Ubuntu 24.04.5 ARM64 root completed first boot and three personalized cold boots. Boot v4 starts the stable managed GNOME session without exposing the recovery terminal, verifies the password lock, and reconnects Wi-Fi while audio, sensors, Bluetooth, battery, package, and kernel-fault checks pass. Return-to-stock acceptance remains |
+| Release packaging | In progress | Thirteen exact-version component packages and a release metapackage build reproducibly; the identity-safe Ubuntu 24.04.5 ARM64 root completed first boot and three personalized cold boots. Boot v4 passed the stable managed-session cold boot. Boot v5 adds the guarded Power Off path and has passed reproducibility, exact write/readback, and protected-neighbor checks; its cold-boot acceptance remains. Return-to-stock acceptance remains |
 | Security | Lab configuration | GNOME password lock works and normal owner boots no longer expose the recovery terminal, but the retained parent compositor and USB root console mean this is not a hardened full-device login boundary |
 
 ## Known limitations
@@ -71,6 +72,8 @@ Installer work is tracked in the
 [first-boot package report](reports/first-boot-package-20260914.md).
 Automatic suspend acceptance and the ADSP wake fix are recorded in the
 [suspend acceptance report](reports/automatic-suspend-acceptance-20260914.md).
+The standard Settings, navigation-key, Restart, and Power Off integration is
+recorded in the [desktop system-controls report](reports/desktop-system-controls-20260914.md).
 The source-built compatibility binary boundary is recorded in the
 [native userspace package report](reports/native-userspace-package-20260914.md).
 The redistributable hardware-service boundary is recorded in the

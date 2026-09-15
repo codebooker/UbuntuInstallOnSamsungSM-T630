@@ -29,7 +29,7 @@ class PersistentBootTests(unittest.TestCase):
         self.assertEqual(hashes_one, hashes_two)
         self.assertIn(b"wifi:connected", cpio_one)
         self.assertIn(b"t630-stock-vendor", cpio_one)
-        self.assertIn(b"/bin/busybox reboot -f", cpio_one)
+        self.assertIn(b'/bin/busybox "$action" -f', cpio_one)
         self.assertIn(b".t630-next-root", cpio_one)
         self.assertIn(b"/run/t630-selected-root", cpio_one)
         self.assertIn(b"/usr/local/share/t630/weston.ini", cpio_one)
@@ -105,6 +105,16 @@ class PersistentBootTests(unittest.TestCase):
         text = writer.read_text()
         self.assertIn("old_hash=2d9ebe83", text)
         self.assertIn("new_hash=368279fd", text)
+        self.assertIn('dd if="$image" of=/dev/sda19', text)
+        for partition in ("/dev/sda20", "/dev/sda21", "/dev/sda22", "/dev/sde19"):
+            self.assertIn(partition, text)
+
+    def test_v5_writer_accepts_only_v4_and_pins_power_action_helper(self):
+        writer = SOURCE.with_name("write_release_boot_v5.sh")
+        subprocess.run(["sh", "-n", writer], check=True)
+        text = writer.read_text()
+        self.assertIn("old_hash=368279fd", text)
+        self.assertIn("new_hash=d1f475dc", text)
         self.assertIn('dd if="$image" of=/dev/sda19', text)
         for partition in ("/dev/sda20", "/dev/sda21", "/dev/sda22", "/dev/sde19"):
             self.assertIn(partition, text)

@@ -53,12 +53,19 @@
    reconstructed locally with complete input/output hashes directly from the
    tablet's read-only stock `super`; they matched the working runtime
    byte-for-byte. Writable camera state regenerates without a seed.
-3. Broader camera lighting/application tests and photo-flash integration.
-4. Bluetooth headset playback, microphone, and reconnect testing.
-5. Four-edge and post-resume sensor/rotation validation.
-6. GPU stability and browser-video isolation.
-7. microSD, USB host, GPS, NFC, and external-display coverage.
-8. Android application support through a coherent kernel and matching module
+3. Pen-friendly handwritten notes and drawing. Evaluate Xournal++ first for
+   notes/PDF annotation and Krita for drawing, using native ARM64 packages and
+   the stable Wayland desktop. Verify continuous S Pen strokes, pressure,
+   palm rejection, pen-button tools, portrait/landscape alignment, performance,
+   and save/reopen after restart before adding accepted apps to the clean-root
+   recipe. Current pen clicking does not prove pressure or palm rejection works
+   through the nested compositor.
+4. Broader camera lighting/application tests and photo-flash integration.
+5. Bluetooth headset playback, microphone, and reconnect testing.
+6. Four-edge and post-resume sensor/rotation validation.
+7. GPU stability and browser-video isolation.
+8. microSD, USB host, GPS, NFC, and external-display coverage.
+9. Android application support through a coherent kernel and matching module
    payload. This is deliberately last because changing the required namespace
    options invalidates every audited stock Samsung module.
 

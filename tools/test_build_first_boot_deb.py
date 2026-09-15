@@ -73,6 +73,7 @@ class FirstBootPackageTests(unittest.TestCase):
             self.assertIn("Package: t630-first-boot\n", control)
             self.assertIn("Architecture: all\n", control)
             self.assertIn("python3-gi", control)
+            self.assertIn("systemd", control)
             self.assertNotIn("Password:", control)
 
     def test_payload_never_contains_owner_state(self):

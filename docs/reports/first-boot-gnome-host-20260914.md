@@ -58,7 +58,7 @@ hash-pinned `t630-native-userspace` package. `dpkg --audit` is empty.
 Current deterministic artifacts at `SOURCE_DATE_EPOCH=1700000000` are:
 
 - `t630-first-boot_0.1.1_all.deb`:
-  `f15cee6b1e31d509e44be2b1a4a22dad7a9401756cfc201146f842fa84c4cedb`
+  `3b3adf74477f0402e30d3d443dcd49068eb2bf139afa83a2f4c4e346bb18a14e`
 - `t630-desktop-runtime_0.1.1_all.deb`:
   `d8ee083635d1149dadf87aa097fc617c7015173f7575df894240ab7b8b1e5353`
 - `t630-hardware-runtime_0.1.2_all.deb`:
@@ -66,7 +66,7 @@ Current deterministic artifacts at `SOURCE_DATE_EPOCH=1700000000` are:
 - `t630-boot-runtime_0.1.0_all.deb`:
   `70c75d8b0e68c48fbc8366bbe0432df0e4a1acde99cde096ae05902f51bdde9e`
 
-All 230 repository tests passed with four documented skips. After the GNOME
+All 231 repository tests passed with four documented skips. After the GNOME
 installer sessions and both rotations, Weston, owner GNOME, Wi-Fi, Bluetooth,
 speaker and microphone defaults, device permissions, battery reporting, and
 the accelerometer remained healthy. The targeted kernel log contained zero

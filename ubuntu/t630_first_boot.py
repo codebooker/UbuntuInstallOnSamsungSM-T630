@@ -29,6 +29,7 @@ HOSTNAME = re.compile(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\Z")
 LOCALE = re.compile(r"[a-z]{2,3}(?:_[A-Z]{2})?\.UTF-8\Z")
 KEYBOARD = re.compile(r"[a-z][a-z0-9_-]{0,15}\Z")
 TIMEZONE = re.compile(r"[A-Za-z0-9_+.-]+(?:/[A-Za-z0-9_+.-]+)+\Z")
+MACHINE_ID = re.compile(r"[0-9a-f]{32}\Z")
 
 
 class SetupError(ValueError):
@@ -149,6 +150,17 @@ def run_checked(command: list[str], *, secret_input: str | None = None) -> None:
     )
 
 
+def initialize_machine_identity(path: Path = Path("/etc/machine-id")) -> None:
+    """Create per-device identity only after the distributable image boots."""
+    run_checked(["/usr/bin/systemd-machine-id-setup"])
+    try:
+        value = path.read_text(encoding="ascii")
+    except OSError as exc:
+        raise SetupError("machine identity was not created") from exc
+    if value != value.strip() + "\n" or not MACHINE_ID.fullmatch(value.strip()):
+        raise SetupError("machine identity is invalid")
+
+
 def apply_profile(profile: SetupProfile, password: str) -> None:
     if os.geteuid() != 0:
         raise SetupError("first-boot backend must run as root")
@@ -177,6 +189,7 @@ def apply_profile(profile: SetupProfile, password: str) -> None:
     localtime.unlink(missing_ok=True)
     localtime.symlink_to(Path("/usr/share/zoneinfo") / profile.timezone)
     run_checked(["/bin/hostname", profile.hostname])
+    initialize_machine_identity()
 
     write_atomic(Path("/etc/t630/first-boot-profile.json"), json.dumps(asdict(profile), sort_keys=True) + "\n")
     # Commit last: runtime services start only after every preceding step passed.

@@ -7,8 +7,8 @@ package by `tools/build_first_boot_deb.py`. With
 The current tested artifact is:
 
 - name: `t630-first-boot_0.1.1_all.deb`
-- size: 21,616 bytes
-- SHA256: `f15cee6b1e31d509e44be2b1a4a22dad7a9401756cfc201146f842fa84c4cedb`
+- size: 21,764 bytes
+- SHA256: `3b3adf74477f0402e30d3d443dcd49068eb2bf139afa83a2f4c4e346bb18a14e`
 
 The package was copied to the physical arm64 tablet and parsed and extracted
 with Ubuntu's native `dpkg-deb`. Its executable modes, license, account helper,
@@ -41,6 +41,13 @@ groups, wrote hostname/locale/keyboard/time-zone state, and passed the packaged
 desktop autostart check. A UTS namespace kept the rehearsal hostname change from
 touching the live tablet. A second backend run was refused, and the identity
 audit then reported exactly the expected owner/profile/home/account state.
+
+The physical run also proved that a systemd-less recovery-hosted boot does not
+populate the deliberately blank release-image machine ID by itself. The backend
+now runs `systemd-machine-id-setup`, validates the canonical 32-hex result, and
+only then commits the owner marker. This gives the installed tablet and its
+generated Bluetooth address unique identity while keeping the distributable
+root blank.
 
 This closes package and backend execution for the first-boot component. The
 later physical ownerless-root walkthrough completed every touch page, connected

@@ -107,6 +107,18 @@ class FirstBootTests(unittest.TestCase):
             self.assertEqual(target.read_text(), "jack\n")
             self.assertEqual(target.stat().st_mode & 0o777, 0o600)
 
+    def test_machine_identity_must_be_canonical(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "machine-id"
+            with mock.patch.object(setup, "run_checked") as run:
+                target.write_text("0123456789abcdef0123456789abcdef\n", encoding="ascii")
+                setup.initialize_machine_identity(target)
+                run.assert_called_once_with(["/usr/bin/systemd-machine-id-setup"])
+                for invalid in ("", "0123\n", "G" * 32 + "\n", "a" * 32):
+                    target.write_text(invalid, encoding="ascii")
+                    with self.assertRaises(setup.SetupError):
+                        setup.initialize_machine_identity(target)
+
 
 if __name__ == "__main__":
     unittest.main()

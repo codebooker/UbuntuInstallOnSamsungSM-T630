@@ -93,7 +93,7 @@ def build(output: Path, epoch: int) -> str:
 Version: {VERSION}
 Architecture: all
 Maintainer: SM-T630 Ubuntu Port contributors
-Depends: python3, python3-gi, gir1.2-gtk-3.0, locales, passwd, network-manager
+Depends: python3, python3-gi, gir1.2-gtk-3.0, locales, passwd, network-manager, systemd
 Section: admin
 Priority: optional
 Description: touch-first account setup for Ubuntu on the Samsung SM-T630

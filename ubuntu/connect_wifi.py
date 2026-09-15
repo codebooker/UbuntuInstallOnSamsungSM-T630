@@ -20,15 +20,14 @@ class WifiWindow(Gtk.Window):
         self.set_default_size(1050, 740)
         self.set_border_width(28)
         self.connect('destroy', Gtk.main_quit)
-        self.shifted = False
         self.password = Gtk.Entry()
         self.password.set_visibility(False)
         self.password.set_placeholder_text('Wi-Fi password')
         self.password.set_hexpand(True)
-        self.ssid = Gtk.Entry()
-        self.ssid.set_placeholder_text('Wi-Fi network name (SSID)')
-        self.ssid.set_text(os.environ.get('T630_WIFI_SSID', ''))
-        self.status = Gtk.Label(label='Enter the network name and password. The password stays on this tablet.')
+        self.ssid = Gtk.ComboBoxText.new_with_entry()
+        self.ssid.set_hexpand(True)
+        self.ssid.get_child().set_placeholder_text('Wi-Fi network name (SSID)')
+        self.status = Gtk.Label(label='Choose a network and enter its password. The password stays on this tablet.')
         self.status.set_line_wrap(True)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
         self.add(box)
@@ -37,13 +36,13 @@ class WifiWindow(Gtk.Window):
         box.pack_start(title, False, False, 0)
         box.pack_start(self.status, False, False, 0)
         box.pack_start(self.ssid, False, False, 0)
+        refresh = Gtk.Button(label='Refresh networks')
+        refresh.connect('clicked', self.refresh_networks)
+        box.pack_start(refresh, False, False, 0)
         box.pack_start(self.password, False, False, 0)
         show = Gtk.CheckButton(label='Show password')
         show.connect('toggled', lambda b: self.password.set_visibility(b.get_active()))
         box.pack_start(show, False, False, 0)
-        self.keyboard = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        box.pack_start(self.keyboard, True, True, 0)
-        self.draw_keys()
         self.connect_button = Gtk.Button(label='Connect')
         self.connect_button.set_size_request(-1, 60)
         self.connect_button.connect('clicked', self.connect_wifi)
@@ -51,49 +50,46 @@ class WifiWindow(Gtk.Window):
         css = Gtk.CssProvider()
         css.load_from_data(b'entry, button, label { font-size: 20px; } button { padding: 10px; }')
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        self.refresh_networks()
 
-    def insert(self, text):
-        position = self.password.get_position()
-        current = self.password.get_text()
-        self.password.set_text(current[:position] + text + current[position:])
-        self.password.set_position(position + len(text))
+    def visible_networks(self):
+        try:
+            result = subprocess.run(
+                ['/usr/bin/nmcli', '-t', '-f', 'SSID,SIGNAL', 'device',
+                 'wifi', 'list', '--rescan', 'yes'], capture_output=True,
+                text=True, timeout=10, check=True)
+        except (OSError, subprocess.SubprocessError):
+            return []
+        networks = {}
+        for line in result.stdout.splitlines():
+            try:
+                name, strength = line.rsplit(':', 1)
+                name = name.replace(r'\:', ':').replace(r'\\', '\\').strip()
+                if name:
+                    networks[name] = max(networks.get(name, 0), int(strength))
+            except ValueError:
+                continue
+        return [name for name, _ in sorted(networks.items(),
+                                           key=lambda item: (-item[1], item[0].lower()))]
 
-    def draw_keys(self):
-        for child in self.keyboard.get_children():
-            self.keyboard.remove(child)
-        rows = ['1234567890-=', 'qwertyuiop[]', "asdfghjkl;'", 'zxcvbnm,./\\']
-        shifted = ['!@#$%^&*()_+', 'QWERTYUIOP{}', 'ASDFGHJKL:"', 'ZXCVBNM<>?|']
-        for letters in (shifted if self.shifted else rows):
-            row = Gtk.Box(spacing=6, homogeneous=True)
-            for character in letters:
-                button = Gtk.Button(label=character)
-                button.set_can_focus(False)
-                button.connect('clicked', lambda _, c=character: self.insert(c))
-                row.pack_start(button, True, True, 0)
-            self.keyboard.pack_start(row, True, True, 0)
-        row = Gtk.Box(spacing=8, homogeneous=True)
-        for label, action in [('Shift', self.shift), ('Space', lambda: self.insert(' ')), ('Backspace', self.backspace), ('Clear', lambda: self.password.set_text(''))]:
-            button = Gtk.Button(label=label)
-            button.set_can_focus(False)
-            button.connect('clicked', lambda _, fn=action: fn())
-            row.pack_start(button, True, True, 0)
-        self.keyboard.pack_start(row, True, True, 0)
-        self.keyboard.show_all()
-
-    def shift(self):
-        self.shifted = not self.shifted
-        self.draw_keys()
-
-    def backspace(self):
-        position = self.password.get_position()
-        current = self.password.get_text()
-        if position > 0:
-            self.password.set_text(current[:position-1] + current[position:])
-            self.password.set_position(position-1)
+    def refresh_networks(self, _button=None):
+        current = self.ssid.get_child().get_text().strip()
+        self.ssid.remove_all()
+        networks = self.visible_networks()
+        for name in networks:
+            self.ssid.append_text(name)
+        preferred = current or os.environ.get('T630_WIFI_SSID', '')
+        if preferred:
+            self.ssid.get_child().set_text(preferred)
+        elif networks:
+            self.ssid.set_active(0)
+        self.status.set_text(
+            'Choose a network and enter its password. The password stays on this tablet.'
+            if networks else 'No networks found yet. You can type a hidden network name or refresh.')
 
     def connect_wifi(self, _):
         secret = self.password.get_text()
-        ssid = self.ssid.get_text().strip()
+        ssid = self.ssid.get_child().get_text().strip()
         if not ssid or not secret:
             self.status.set_text('Enter the network name and password first.')
             return

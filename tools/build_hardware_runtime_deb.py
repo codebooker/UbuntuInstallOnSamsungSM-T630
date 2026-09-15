@@ -71,7 +71,7 @@ def build(output: Path, epoch: int) -> str:
 Version: {VERSION}
 Architecture: all
 Maintainer: SM-T630 Ubuntu Port contributors
-Depends: t630-desktop-runtime (= 0.1.1), python3, network-manager, bluez, pipewire, pipewire-pulse, wireplumber, alsa-utils, iio-sensor-proxy, util-linux
+Depends: t630-desktop-runtime (= 0.1.1), python3, network-manager, wpasupplicant, bluez, pipewire, pipewire-pulse, wireplumber, alsa-utils, iio-sensor-proxy, util-linux
 Recommends: libssc (>= 0.4.4-t6303), hexagonrpcd (>= 0.4.0-t6303), iio-sensor-proxy (>= 3.9-t6303), t630-stock-assets
 Section: admin
 Priority: optional

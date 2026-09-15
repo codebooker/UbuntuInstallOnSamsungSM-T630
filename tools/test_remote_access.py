@@ -24,6 +24,10 @@ class RemoteAccessTests(unittest.TestCase):
         self.assertIn("t630-stock-vendor", helper)
         self.assertNotIn("\nreboot -f", helper)
         self.assertIn("pre_explicit_reboot=a0ac11c", launcher)
+        self.assertIn("clean_root_boot=5577ebe", launcher)
+        self.assertIn("clean_root_ownerless=fed71eb", launcher)
+        self.assertIn("The one-shot clean root must remain recoverable", helper)
+        self.assertIn("owner_uid=65534", helper)
 
     def test_screen_server_has_its_own_single_instance_lock(self):
         source = (ROOT / "ubuntu/t630_screen.py").read_text()

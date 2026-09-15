@@ -98,6 +98,7 @@ chroot "$root" /usr/bin/env \
     libgtk-3-0t64 libgudev-1.0-0 liblzma5 libprotobuf-c1 libqt5svg5 \
     libqmi-glib5 libqrtr-glib0 libwayland-client0 libweston-13-0 \
     libxcb1 locales maliit-framework maliit-keyboard network-manager passwd \
+    wpasupplicant \
     pipewire pipewire-pulse python3 python3-gi qtwayland5 seatd util-linux \
     weston wireplumber x11-utils xauth xdotool xwayland sudo dmsetup \
     desktop-file-utils eog evince evolution-data-server file-roller firefox \

@@ -1,7 +1,10 @@
 #!/bin/busybox sh
 set -eu
 export PATH=/bin:/sbin
-root=/run/ubuntu
+hostroot=/run/ubuntu
+root=$hostroot
+selector=$hostroot/.t630-next-root
+consumed=$hostroot/.t630-next-root.consumed
 test "$(uname -r)" = '5.4.274-qgki-31225846-abT630XXSBDZE3'
 attempt=0
 while [ ! -b /dev/sda34 ] && [ "$attempt" -lt 60 ]; do
@@ -16,9 +19,29 @@ test "$(cat /sys/class/block/sda34/size)" = 226918360
 # UUID bytes; mounting below performs the actual filesystem validation.
 test "$(dd if=/dev/sda34 bs=1 skip=1080 count=2 2>/dev/null | od -An -tx1 | tr -d ' \n')" = 53ef
 test "$(dd if=/dev/sda34 bs=1 skip=1128 count=16 2>/dev/null | od -An -tx1 | tr -d ' \n')" = 64de854453ea4fdc8946d6b07e238630
-mkdir -p "$root"
-mount -t ext4 -o noatime,errors=remount-ro /dev/sda34 "$root"
-test "$(cat "$root/etc/t630-install-id")" = 'SM-T630-T630XXSBDZE3-Ubuntu-v1'
+mkdir -p "$hostroot"
+mount -t ext4 -o noatime,errors=remount-ro /dev/sda34 "$hostroot"
+test "$(cat "$hostroot/etc/t630-install-id")" = 'SM-T630-T630XXSBDZE3-Ubuntu-v1'
+# A guarded rehearsal may select the fixed, preserved clean root for one boot.
+# Consume the selector before entering the candidate so any later failure falls
+# back to the known-good filesystem root at the next hardware restart.
+if [ -e "$selector" ]; then
+    test -f "$selector"
+    test ! -L "$selector"
+    test "$(cat "$selector")" = 'opt/t630/rehearsal/release-root'
+    candidate=$hostroot/opt/t630/rehearsal/release-root
+    test -d "$candidate"
+    test ! -L "$candidate"
+    test -f "$candidate/.t630-offline-root"
+    test ! -L "$candidate/.t630-offline-root"
+    test "$(cat "$candidate/.t630-offline-root")" = 'SM-T630 OFFLINE RELEASE ROOT'
+    test "$(cat "$candidate/etc/t630-install-id")" = 'SM-T630-T630XXSBDZE3-Ubuntu-v1'
+    mv "$selector" "$consumed"
+    sync
+    root=$candidate
+    echo 'T630_PERSISTENT: consumed clean-root one-shot selector' >/dev/kmsg
+fi
+printf '%s\n' "$root" >/run/t630-selected-root
 mkdir -p "$root/dev" "$root/proc" "$root/sys" "$root/run" "$root/tmp"
 chmod 755 "$root" "$root/run"
 chmod 1777 "$root/tmp"
@@ -108,7 +131,7 @@ while [ ! -S "$root/run/seatd.sock" ] && [ "$attempt" -lt 20 ]; do
     sleep 1
     attempt=$((attempt + 1))
 done
-service weston /usr/bin/env HOME=/root TERM=xterm-256color XDG_RUNTIME_DIR=/run/user/0 LIBSEAT_BACKEND=seatd LD_PRELOAD=/usr/local/lib/t630-drm-compat.so WESTON_DISABLE_GBM_MODIFIERS=1 /usr/bin/weston --backend=drm-backend.so --renderer=pixman --config=/root/.config/weston.ini --log=/run/weston.log --socket=wayland-0
+service weston /usr/bin/env HOME=/root TERM=xterm-256color XDG_RUNTIME_DIR=/run/user/0 LIBSEAT_BACKEND=seatd LD_PRELOAD=/usr/local/lib/t630-drm-compat.so WESTON_DISABLE_GBM_MODIFIERS=1 /usr/bin/weston --backend=drm-backend.so --renderer=pixman --config=/usr/local/share/t630/weston.ini --log=/run/weston.log --socket=wayland-0
 attempt=0
 while [ ! -S "$root/run/user/0/wayland-0" ] && [ "$attempt" -lt 30 ]; do
     sleep 1

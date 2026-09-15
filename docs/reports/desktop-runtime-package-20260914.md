@@ -6,8 +6,8 @@ The architecture-independent Ubuntu integration is now built by
 `tools/build_desktop_runtime_deb.py` as a deterministic Debian package:
 
 - name: `t630-desktop-runtime_0.1.1_all.deb`
-- size: 43,976 bytes
-- SHA256: `0fc15a7e93d795644c6e755af8b1eb612b5b484ab19a33af7a442ca9f75dd770`
+- size: 44,068 bytes
+- SHA256: `b7e6f0184e88bb81991aaaf049503fc0923753ff3f8f712b8cf94f8a54029b42`
 - regular files: 34
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
@@ -22,6 +22,12 @@ desktop utilities. It contains tracked desktop startup and session launchers,
 login glue, physical-input mapping, display controls, rotation, Power handling,
 automatic shallow suspend, the extension source, and the narrow udev/polkit
 rules used by those components.
+
+Its configuration step creates the system-only `t630-owner` access group
+before Weston starts. The clean-boot rehearsal caught the earlier circular
+dependency in which the rotation module required that group before the account
+wizard, while the wizard was responsible for creating it. A system group adds
+no human account, home data, password, machine identity, or network credential.
 
 The first-run launcher now hosts the setup frontend inside a disposable GNOME
 Shell running as the locked `nobody` account with all state below `/run`. This

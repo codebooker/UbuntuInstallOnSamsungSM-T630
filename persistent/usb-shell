@@ -1,7 +1,7 @@
 #!/bin/busybox sh
 export PATH=/bin:/sbin HOME=/root TERM=xterm-256color
 echo 'SM-T630 Ubuntu physical USB recovery shell (root)'
-echo 'Ubuntu root: /run/ubuntu; startup log: /run/ubuntu-start.log'
+echo "Ubuntu root: $(cat /run/t630-selected-root 2>/dev/null || echo pending); startup log: /run/ubuntu-start.log"
 echo 'Orderly restart: /bin/stop-ubuntu reboot'
 export PS1='ubuntablet-recovery# '
 exec /bin/busybox sh -i

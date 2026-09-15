@@ -79,6 +79,13 @@ class FirstBootPackageTests(unittest.TestCase):
         forbidden = {"etc/t630/owner", "etc/machine-id", "root/.ssh/authorized_keys"}
         self.assertTrue(forbidden.isdisjoint(builder.FILES))
 
+    def test_wifi_helper_uses_network_picker_and_system_keyboard(self):
+        helper = (builder.ROOT / "ubuntu/connect_wifi.py").read_text()
+        self.assertIn("Gtk.ComboBoxText.new_with_entry()", helper)
+        self.assertIn("Refresh networks", helper)
+        self.assertIn("'SSID,SIGNAL'", helper)
+        self.assertNotIn("self.keyboard", helper)
+
 
 if __name__ == "__main__":
     unittest.main()

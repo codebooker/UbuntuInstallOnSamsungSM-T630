@@ -7,19 +7,34 @@ test "${1:-}" = reboot
 cd /
 exec </dev/null
 touch /run/t630-stopping
-owner_name=$(cat /run/ubuntu/etc/t630/owner)
-case "$owner_name" in
-    ''|*[!a-z0-9_-]*) echo 'Invalid installed owner; refusing restart.'; exit 1 ;;
+root=$(cat /run/t630-selected-root 2>/dev/null || echo /run/ubuntu)
+case "$root" in
+    /run/ubuntu|/run/ubuntu/opt/t630/rehearsal/release-root) ;;
+    *) echo 'Invalid selected Ubuntu root; refusing restart.'; exit 1 ;;
 esac
-owner_uid=$(chroot /run/ubuntu /usr/bin/id -u "$owner_name")
-test "$owner_uid" -ge 1000
+test -d "$root"
+test ! -L "$root"
+owner_uid=65534
+if [ -f "$root/etc/t630/owner" ]; then
+    owner_name=$(cat "$root/etc/t630/owner")
+    case "$owner_name" in
+        ''|*[!a-z0-9_-]*) echo 'Invalid installed owner; refusing restart.'; exit 1 ;;
+    esac
+    owner_uid=$(chroot "$root" /usr/bin/id -u "$owner_name")
+    test "$owner_uid" -ge 1000
+else
+    # The one-shot clean root must remain recoverable if account setup has not
+    # completed. Never permit this ownerless exception for the normal root.
+    test "$root" = /run/ubuntu/opt/t630/rehearsal/release-root
+    test "$(cat "$root/.t630-offline-root")" = 'SM-T630 OFFLINE RELEASE ROOT'
+fi
 for name in sshd t630-screen gdm gdm3 elogind weston-terminal weston weston-keyboard NetworkManager wpa_supplicant chronyd seatd systemd-udevd dbus-daemon; do
-    chroot /run/ubuntu /usr/bin/pkill -TERM -x "$name" || true
+    chroot "$root" /usr/bin/pkill -TERM -x "$name" || true
 done
 # Desktop apps can be launched after boot. Stop only processes rooted in this
 # exact Ubuntu mount; leave the outer recovery shell and PID 1 untouched.
 for proc in /proc/[0-9]*; do
-    if [ "$(readlink "$proc/root" 2>/dev/null || true)" = /run/ubuntu ]; then
+    if [ "$(readlink "$proc/root" 2>/dev/null || true)" = "$root" ]; then
         kill -TERM "${proc##*/}" 2>/dev/null || true
     fi
 done
@@ -27,7 +42,7 @@ attempt=0
 while :; do
     remaining=0
     for proc in /proc/[0-9]*; do
-        if [ "$(readlink "$proc/root" 2>/dev/null || true)" = /run/ubuntu ]; then
+        if [ "$(readlink "$proc/root" 2>/dev/null || true)" = "$root" ]; then
             remaining=1
         fi
     done
@@ -43,7 +58,8 @@ sync
 # Camera development adds read-only Android compatibility mounts inside the
 # Ubuntu root. Tear those down from deepest to shallowest before unmounting
 # Ubuntu itself; never use lazy or forced unmounts here.
-for target in /run/ubuntu/system/bin/cameraserver /run/ubuntu/mnt/stock-vendor-full/lib64/hw/com.qti.chi.override.so /run/ubuntu/apex/com.samsung.android.camera.unihal /run/ubuntu/apex/com.android.i18n /run/ubuntu/apex/com.android.runtime /run/ubuntu/dev/t630-vndk30 /run/ubuntu/dev/binderfs /run/ubuntu/linkerconfig /run/ubuntu/vendor /run/ubuntu/system /run/ubuntu/data /run/ubuntu/mnt/t630-camera /run/ubuntu/mnt/t630-i18n /run/ubuntu/mnt/t630-runtime /run/ubuntu/mnt/t630-vndk30 /run/ubuntu/mnt/stock-vendor-full /run/ubuntu/mnt/t630-persist /run/ubuntu/mnt/t630-efs /run/ubuntu/mnt/t630-sec_efs /run/ubuntu/mnt/t630-prism /run/ubuntu/mnt/t630-optics /run/ubuntu/mnt/t630-stock-system; do
+for suffix in /system/bin/cameraserver /mnt/stock-vendor-full/lib64/hw/com.qti.chi.override.so /apex/com.samsung.android.camera.unihal /apex/com.android.i18n /apex/com.android.runtime /dev/t630-vndk30 /dev/binderfs /linkerconfig /vendor /system /data /mnt/t630-camera /mnt/t630-i18n /mnt/t630-runtime /mnt/t630-vndk30 /mnt/stock-vendor-full /mnt/t630-persist /mnt/t630-efs /mnt/t630-sec_efs /mnt/t630-prism /mnt/t630-optics /mnt/t630-stock-system; do
+    target=$root$suffix
     attempt=0
     while grep -q " $target " /proc/mounts; do
         if umount "$target"; then break; fi
@@ -56,16 +72,16 @@ for target in /run/ubuntu/system/bin/cameraserver /run/ubuntu/mnt/stock-vendor-f
     done
 done
 for mapping in t630-stock-vendor t630-stock-system; do
-    if chroot /run/ubuntu /usr/sbin/dmsetup info "$mapping" >/dev/null 2>&1; then
-        chroot /run/ubuntu /usr/sbin/dmsetup remove "$mapping"
+    if chroot "$root" /usr/sbin/dmsetup info "$mapping" >/dev/null 2>&1; then
+        chroot "$root" /usr/sbin/dmsetup remove "$mapping"
     fi
 done
-for target in "/run/ubuntu/run/user/$owner_uid/doc" "/run/ubuntu/run/user/$owner_uid/gvfs" \
-              /run/ubuntu/run/user/105/doc /run/ubuntu/run/user/105/gvfs \
-              "/run/ubuntu/run/user/$owner_uid" /run/ubuntu/run/user/105 \
-              /run/ubuntu/sys/fs/cgroup/elogind /run/ubuntu/sys/fs/cgroup \
-              /run/ubuntu/dev/shm /run/ubuntu/dev/pts /run/ubuntu/dev \
-              /run/ubuntu/proc /run/ubuntu/sys /run/ubuntu/run /run/ubuntu; do
+for suffix in "/run/user/$owner_uid/doc" "/run/user/$owner_uid/gvfs" \
+              /run/user/105/doc /run/user/105/gvfs \
+              "/run/user/$owner_uid" /run/user/105 \
+              /sys/fs/cgroup/elogind /sys/fs/cgroup \
+              /dev/shm /dev/pts /dev /proc /sys /run; do
+    target=$root$suffix
     attempt=0
     while grep -q " $target " /proc/mounts; do
         if umount "$target"; then break; fi
@@ -77,6 +93,10 @@ for target in "/run/ubuntu/run/user/$owner_uid/doc" "/run/ubuntu/run/user/$owner
         sleep 1
     done
 done
+if [ "$root" != /run/ubuntu ]; then
+    test -z "$(grep " $root/" /proc/mounts || true)"
+fi
+umount /run/ubuntu
 sync
 # This script finishes in the outer recovery root, but an SSH invocation can
 # retain Ubuntu's PATH. Name BusyBox explicitly so we never resolve systemd's

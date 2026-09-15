@@ -7,8 +7,8 @@ package by `tools/build_first_boot_deb.py`. With
 The current tested artifact is:
 
 - name: `t630-first-boot_0.1.1_all.deb`
-- size: 21,108 bytes
-- SHA256: `2325f6224262ea1c23576fcaa638f839f5dacf492396b82469dc05dc45afe39d`
+- size: 21,040 bytes
+- SHA256: `427e15c04168e25864a8876116979b44e34906fcdd4375817211035de31302e6`
 
 The package was copied to the physical arm64 tablet and parsed and extracted
 with Ubuntu's native `dpkg-deb`. Its executable modes, license, account helper,
@@ -44,6 +44,11 @@ audit then reported exactly the expected owner/profile/home/account state.
 
 This closes package and backend execution for the first-boot component. A
 physical clean-boot walkthrough through all touch UI pages still remains.
+
+The clean walkthrough also removed the obsolete keyboard drawn inside the
+Wi-Fi helper. That window now scans and sorts visible networks, offers an
+editable network picker and refresh action, and relies on the same GNOME
+on-screen keyboard as the rest of setup.
 
 The physical preview later exposed a first-run keyboard failure: GTK 3 chose
 Weston's unsupported text-input-v3 path, and the development device retained a

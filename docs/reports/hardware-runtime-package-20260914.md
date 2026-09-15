@@ -6,8 +6,8 @@ The redistributable hardware orchestration is now built by
 `tools/build_hardware_runtime_deb.py` as a deterministic Debian package:
 
 - name: `t630-hardware-runtime_0.1.2_all.deb`
-- size: 31,516 bytes
-- SHA256: `c7fce086ba2ac5786dd01387f814618fb8fa63c50c70f1273430fcca06a5f741`
+- size: 31,524 bytes
+- SHA256: `68831e1ac25b5ca1074c99c812c47c5969225865c3bbd2c71f6c770fb8e4094a`
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
 arm64 `dpkg-deb` parsed and extracted the result on the tablet. The payload
@@ -51,7 +51,9 @@ boot contained no tracked fault markers.
 
 ## Remaining package boundary
 
-Version 0.1.2 depends on desktop runtime 0.1.1 and recommends the reproducible
+Version 0.1.2 depends on desktop runtime 0.1.1, NetworkManager, and its
+`wpasupplicant` Wi-Fi backend. The backend is an explicit dependency because
+release roots deliberately omit recommended packages. It also recommends the reproducible
 `libssc`, `hexagonrpcd`, and `iio-sensor-proxy` t6303 builds plus the local-only
 `t630-stock-assets` package. It deliberately excludes
 `pd-mapper`, patched GDM/elogind components, camera and video adapters,

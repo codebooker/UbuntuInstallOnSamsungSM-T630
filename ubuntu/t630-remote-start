@@ -17,9 +17,11 @@ pre_camera=9146f3cdd0f47460aaba1e062a28bddd1c8cb70fd5aac66e3f40c545d1975437
 pre_explicit_reboot=a0ac11cce4915e81138072712fad0385fb50eaddd27d7e91c90cda13f7f4e65c
 pre_owner_migration=f50044913572a64d10e018f99b562ea2969bd407f9ffbc9aca9c580cad64fb6a
 pre_vendor_map=8052b449c98360c03baabdad700ea7d2b973ca7ca004236c10b2ff47d7efa278
+clean_root_boot=5577ebe08fc2ed99c1e9c1b541b620b0eaaccd700af10a9c773319a37282ccea
+clean_root_ownerless=fed71eb1522dd5d7d34e649fc0600d0e851172804ac8f9d782f6c8328d69fc64
 current=$(/usr/bin/sha256sum "$host/bin/stop-ubuntu" | /usr/bin/cut -d' ' -f1)
 updated=$(/usr/bin/sha256sum /usr/local/share/t630/stop-ubuntu | /usr/bin/cut -d' ' -f1)
-test "$current" = "$old" || test "$current" = "$previous" || test "$current" = "$pre_login" || test "$current" = "$pre_camera" || test "$current" = "$pre_explicit_reboot" || test "$current" = "$pre_owner_migration" || test "$current" = "$pre_vendor_map" || test "$current" = "$updated"
+test "$current" = "$old" || test "$current" = "$previous" || test "$current" = "$pre_login" || test "$current" = "$pre_camera" || test "$current" = "$pre_explicit_reboot" || test "$current" = "$pre_owner_migration" || test "$current" = "$pre_vendor_map" || test "$current" = "$clean_root_boot" || test "$current" = "$clean_root_ownerless" || test "$current" = "$updated"
 /usr/bin/install -m 755 /usr/local/share/t630/stop-ubuntu "$host/bin/stop-ubuntu"
 /usr/sbin/sshd -t -f /etc/ssh/sshd_config_t630
 sshd_pid=$(cat /run/t630-sshd.pid 2>/dev/null || true)

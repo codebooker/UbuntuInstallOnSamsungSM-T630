@@ -41,9 +41,11 @@ class DesktopRuntimePackageTests(unittest.TestCase):
             control_path.write_bytes(archive["control.tar.xz"])
             with tarfile.open(control_path, "r:xz") as control_archive:
                 control = control_archive.extractfile("./control").read().decode()
+                postinst = control_archive.extractfile("./postinst").read().decode()
             self.assertIn("Package: t630-desktop-runtime\n", control)
             self.assertIn("t630-first-boot (= 0.1.1)", control)
             self.assertIn("t630-native-userspace (= 0.1.0)", control)
+            self.assertIn("addgroup --system t630-owner", postinst)
             data_path = Path(directory) / "data.tar.xz"
             data_path.write_bytes(archive["data.tar.xz"])
             with tarfile.open(data_path, "r:xz") as payload:

@@ -15,6 +15,13 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 PACKAGE = "t630-desktop-runtime"
 VERSION = "0.1.1"
 
+POSTINST = b"""#!/bin/sh
+set -e
+if ! getent group t630-owner >/dev/null; then
+    addgroup --system t630-owner
+fi
+"""
+
 FILES = {
     "etc/polkit-1/rules.d/49-t630-sensorproxy.rules": ("ubuntu/49-t630-sensorproxy.rules", 0o644),
     "etc/udev/rules.d/71-t630-active-key.rules": ("ubuntu/71-t630-active-key.rules", 0o644),
@@ -83,7 +90,11 @@ Description: account-neutral Ubuntu desktop integration for Samsung SM-T630
  suspend glue. Matching native helper binaries and stock-derived firmware are
  deliberately packaged separately.
 """.encode()
-    control_archive = tar_bytes({"control": (control, 0o644), "md5sums": (md5sums, 0o644)}, epoch)
+    control_archive = tar_bytes({
+        "control": (control, 0o644),
+        "md5sums": (md5sums, 0o644),
+        "postinst": (POSTINST, 0o755),
+    }, epoch)
     data_archive = tar_bytes(payload, epoch)
     package = b"!<arch>\n"
     package += ar_member("debian-binary", b"2.0\n", epoch)

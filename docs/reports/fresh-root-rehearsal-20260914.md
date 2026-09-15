@@ -18,7 +18,8 @@ offline marker, and passed the identity audit.
 `tools/provision_rehearsal_root.sh` mounted only the temporary device, proc,
 sysfs, and resolver views required for package configuration. Its
 `policy-rc.d` denied service startup inside the chroot. It installed the public
-Ubuntu dependencies for GNOME, NetworkManager, PipeWire, BlueZ, sensors,
+Ubuntu dependencies for GNOME, NetworkManager, its explicit `wpasupplicant`
+Wi-Fi backend, PipeWire, BlueZ, sensors,
 Weston, Xwayland, GTK, and the native helpers. The expanded run also installed
 GNOME Software/PackageKit, Firefox, LibreOffice, Files, Terminal, Text Editor,
 Contacts, media codecs, and the normal GNOME utilities.

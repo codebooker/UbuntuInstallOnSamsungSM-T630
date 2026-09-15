@@ -60,3 +60,31 @@ initramfs helper hashes unchanged.
 The persistent release boot image is physically accepted on the development
 SM-T630. Installing the identity-clean release root and rehearsing return to
 stock remain separate gates.
+
+## One-shot clean-root follow-up
+
+The accepted image was extended with a strictly bounded one-shot selector for
+`/opt/t630/rehearsal/release-root`. The selector validates the fixed directory,
+offline-root marker, device install marker, and absence of symlinks. It is
+renamed to `.t630-next-root.consumed` and synced before control enters the
+candidate, so any later restart returns to the normal known-good root.
+
+Candidate v2, SHA256
+`ce279665976b877bc1442d9c027963f5774a8a7e60d4935072bfea7544ec3c14`,
+passed full write/readback and neighboring-partition checks. Boot
+`4830399a-df90-49eb-84b9-6da9cccdbcbb` selected the preserved 3.1 GB clean
+root and consumed the selector. The USB console independently reported the
+selected root. Weston then exposed two clean-install defects rather than
+silently falling back to personalized state: the `t630-owner` system group had
+to exist before the account wizard, and `wpasupplicant` had to be explicit
+when installing public dependencies without recommends. Both fixes are now
+owned by the deterministic packages/provisioner.
+
+Candidate v3, SHA256
+`2d9ebe83d1bbc3d3f1495c5004fd06a8e3a250782ba00a1b5416df2542d5acc4`,
+adds an ownerless clean-root exception to the orderly shutdown helper while
+retaining the exact fixed path and offline marker checks. The exact prior v2
+artifact is preserved on tablet storage. V3 full readback passed,
+and vendor_boot, init_boot, DTBO, and vbmeta remained byte-identical. This
+changes no running process and awaits its cold-boot acceptance after the
+current first-boot walkthrough.

@@ -15,6 +15,8 @@ class BluetoothSafetyTests(unittest.TestCase):
         text = launcher.read_text()
         self.assertIn('while [ "$loader_attempt" -le 3 ]', text)
         self.assertIn("failed after 3 attempts", text)
+        self.assertNotIn('test -r "$address"', text)
+        self.assertIn('--address-file "$address"', text)
 
     def test_timer_backport_drains_before_and_after_workqueue(self):
         patch = (

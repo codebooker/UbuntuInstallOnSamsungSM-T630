@@ -13,9 +13,12 @@
    that owner's GNOME password lock. It exposed and fixed the pre-account owner
    group, Wi-Fi backend, device-permission configuration, owner-settings parser,
    and desktop recovery payload gaps. The installer is dark by default. A cold
-   boot of the personalized result remains before end-user acceptance. The
-   backend also creates and validates the device's unique machine ID only after
-   boot, preserving a blank distributable image and unique Bluetooth identity.
+   boot of the personalized result automatically launched owner GNOME and
+   reconnected Wi-Fi. That boot exposed and corrected Bluetooth-address and
+   audio-mapper packaging assumptions; one more cold boot must validate the
+   hardware services before end-user acceptance. The backend creates and
+   validates the device's unique machine ID only after boot, preserving a blank
+   distributable image and unique Bluetooth identity.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
    stack, ARM64 compatibility packages, isolated GDM/elogind password-login

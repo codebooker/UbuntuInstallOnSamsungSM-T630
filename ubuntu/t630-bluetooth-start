@@ -13,7 +13,6 @@ test "$(id -u)" = 0
 test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
 test -c /dev/ttyHS0
 test -x "$loader"
-test -r "$address"
 test -r "$firmware/hpbtfw10.tlv"
 test -r "$firmware/hpnv10.bin"
 test -r "$firmware/bt_nvm_loading.xml"

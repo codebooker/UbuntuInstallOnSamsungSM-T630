@@ -62,7 +62,7 @@ Current deterministic artifacts at `SOURCE_DATE_EPOCH=1700000000` are:
 - `t630-desktop-runtime_0.1.1_all.deb`:
   `d8ee083635d1149dadf87aa097fc617c7015173f7575df894240ab7b8b1e5353`
 - `t630-hardware-runtime_0.1.2_all.deb`:
-  `cf12578ba6256765b1d55dc47674824803ebcb76e954f3d3936aa1bb5d468549`
+  `3a9f102071bf1f0e9c656bce292213c0ff39afcdad382ec30e88b904669fd342`
 - `t630-boot-runtime_0.1.0_all.deb`:
   `70c75d8b0e68c48fbc8366bbe0432df0e4a1acde99cde096ae05902f51bdde9e`
 
@@ -83,7 +83,12 @@ extension list as `@as []`; the owner migration now parses that typed form and
 installs the normal Tablet Controls extension. The installer frontend also uses
 Adwaita dark mode for future runs.
 
-The remaining release gate is a cold boot of the now-personalized result through
-automatic owner-session startup, followed by the documented return-to-stock
-rehearsal. The running candidate already has the corrected deterministic desktop
-and hardware packages staged and installed.
+The first cold boot of the personalized result automatically started the new
+owner's GNOME session and reconnected `Wharf`. It then caught two hardware-only
+clean-root omissions: Bluetooth startup circularly required its generated
+address before invoking the generator, and the reproducible pd-mapper had both
+the wrong QRTR runtime dependency and no explicit map-directory compatibility
+patch for Samsung's non-remoteproc kernel. Those fixes are now deterministic,
+staged, and installed. A second cold boot must verify audio/sensor startup with
+the mapper present before ADSP initialization; live module unloading is
+deliberately forbidden. The return-to-stock rehearsal follows that gate.

@@ -1,0 +1,81 @@
+--- a/pd-mapper.c
++++ b/pd-mapper.c
+@@ -49,6 +49,7 @@ struct pd_map {
+ };
+ 
+ static struct pd_map *pd_maps;
++static const char *map_directory;
+ 
+ static void handle_get_domain_list(int sock, const struct qrtr_packet *pkt)
+ {
+@@ -275,6 +276,7 @@ static char *known_extensions[] = {
+ 
+ static int pd_enumerate_jsons(struct assoc *json_set)
+ {
++	struct stat directory_stat;
+ 	char firmware_value[PATH_MAX];
+ 	char *firmware_value_copy = NULL;
+ 	char *firmware_path = NULL;
+@@ -290,6 +292,43 @@ static int pd_enumerate_jsons(struct assoc *json_set)
+ 	size_t len;
+ 	size_t n;
+ 
++	if (map_directory) {
++		if (stat(map_directory, &directory_stat) < 0 ||
++		    !S_ISDIR(directory_stat.st_mode)) {
++			warn("Cannot open map directory: %s", map_directory);
++			return -1;
++		}
++		fw_dir = opendir(map_directory);
++		if (!fw_dir)
++			return -1;
++		while ((fw_de = readdir(fw_dir)) != NULL) {
++			int extens_index;
++			bool found = false;
++
++			if (!strcmp(fw_de->d_name, ".") || !strcmp(fw_de->d_name, ".."))
++				continue;
++			len = strlen(fw_de->d_name);
++			for (extens_index = 0; known_extensions[extens_index] != NULL;
++			     extens_index++) {
++				int extens_len = strlen(known_extensions[extens_index]);
++				if (len > extens_len &&
++				    !strcmp(&fw_de->d_name[len - extens_len],
++				            known_extensions[extens_index])) {
++					found = true;
++					break;
++				}
++			}
++			if (!found)
++				continue;
++			if (snprintf(json_path, sizeof(json_path), "%s/%s", map_directory,
++			             fw_de->d_name) >= (int)sizeof(json_path))
++				continue;
++			assoc_set(json_set, json_path, NULL);
++		}
++		closedir(fw_dir);
++		return 0;
++	}
++
+ 	class_fd = open("/sys/class/remoteproc", O_RDONLY | O_DIRECTORY);
+ 	if (class_fd < 0) {
+ 		warn("failed to open remoteproc class");
+@@ -397,6 +433,18 @@ int main(int argc, char **argv)
+ 	int ret;
+ 	int fd;
+ 
++	if (argc == 3 && !strcmp(argv[1], "--directory")) {
++		if (argv[2][0] != '/' || strstr(argv[2], "/../") ||
++		    !strcmp(argv[2], "..")) {
++			fprintf(stderr, "invalid map directory\n");
++			exit(2);
++		}
++		map_directory = argv[2];
++	} else if (argc != 1) {
++		fprintf(stderr, "Usage: %s [--directory STOCK_MAP_DIRECTORY]\n", argv[0]);
++		exit(2);
++	}
++
+ 	ret = pd_load_maps();
+ 	if (ret)
+ 		exit(1);

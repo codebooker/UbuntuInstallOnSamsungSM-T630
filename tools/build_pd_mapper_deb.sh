@@ -32,7 +32,7 @@ export LC_ALL=C TZ=UTC SOURCE_DATE_EPOCH=$epoch DEBIAN_FRONTEND=noninteractive
 if [ "${T630_SKIP_BUILD_DEPS:-0}" != 1 ]; then
   apt-get update -qq
   apt-get install -y -qq --no-install-recommends \
-    build-essential ca-certificates curl dpkg-dev liblzma-dev libqrtr-glib-dev \
+    build-essential ca-certificates curl dpkg-dev liblzma-dev libqrtr-dev patch \
     >/dev/null
 fi
 for command in cc curl sha256sum tar dpkg-deb; do
@@ -50,6 +50,7 @@ curl -fL --retry 3 \
 echo "$archive_sha256  $build/source.tar.gz" | sha256sum -c -
 tar -C "$build" -xf "$build/source.tar.gz"
 source="$build/pd-mapper-$revision"
+patch -d "$source" -p1 < "$repo/patches/0010-pd-mapper-directory-override.patch"
 
 cc -Wall -Wextra -O2 -fPIE -ffile-prefix-map="$build"=/usr/src/t630-pd-mapper \
   "$source/pd-mapper.c" "$source/assoc.c" "$source/json.c" \
@@ -66,7 +67,7 @@ printf '%s\n' \
   'Version: 0.1.0' \
   'Architecture: arm64' \
   'Maintainer: SM-T630 Ubuntu Port contributors' \
-  'Depends: libc6, liblzma5, libqrtr-glib0' \
+  'Depends: libc6, liblzma5, libqrtr1' \
   'Section: admin' \
   'Priority: optional' \
   'Description: Qualcomm protection-domain mapper for Samsung SM-T630' \

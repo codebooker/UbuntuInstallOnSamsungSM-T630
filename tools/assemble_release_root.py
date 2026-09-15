@@ -25,7 +25,7 @@ EXPECTED = {
         "d8ee083635d1149dadf87aa097fc617c7015173f7575df894240ab7b8b1e5353"),
     "t630-hardware-runtime_0.1.2_all.deb": (
         "t630-hardware-runtime", "0.1.2",
-        "cf12578ba6256765b1d55dc47674824803ebcb76e954f3d3936aa1bb5d468549"),
+        "3a9f102071bf1f0e9c656bce292213c0ff39afcdad382ec30e88b904669fd342"),
     "t630-boot-runtime_0.1.0_all.deb": (
         "t630-boot-runtime", "0.1.0",
         "70c75d8b0e68c48fbc8366bbe0432df0e4a1acde99cde096ae05902f51bdde9e"),
@@ -43,7 +43,7 @@ EXPECTED = {
         "b6e9dffc3ce27278084a0fbc9022189e289eaf3c06fdcc5db1e9877a6dfed6ff"),
     "t630-pd-mapper_0.1.0_arm64.deb": (
         "t630-pd-mapper", "0.1.0",
-        "f0d06b0b6be7fe94f2c1b868e3a0c4856e89216768cbb2bbe43a8e0e381a6960"),
+        "9236ef5c8a6393d957895a3b153636cf97b1fec682701f4639292560a5365d55"),
     "libssc_0.4.4-t6303_arm64.deb": (
         "libssc", "0.4.4-t6303",
         "3522d445c183452e47d789211a9339669285acd6f0d54dcfb40553cd122c8fec"),

@@ -20,7 +20,11 @@ The exact-version release closure was rebuilt twice with identical outputs:
 | t630-release-base 0.1.10 arm64 | 0333bad3c3c49a92a992edb9aa2764efa7f64c6d0e4f110cefc2391f8a21ad70 |
 
 All three installed/configured on the candidate, survived restart, and left
-`dpkg --audit` empty. Existing Xournal++ autosave was copied without overwrite
+`dpkg --audit` empty. The updated assembler's read-only package validation then
+checked all 14 staged release packages on-device for pinned hashes, package
+names/versions, and private-stock-package permissions. Its temporary read-only
+bind mount was removed afterward; no offline install or identity reset was run.
+Existing Xournal++ autosave was copied without overwrite
 to the owner's `Documents/T630-pen-test-before-restart.xopp` (46,332 bytes).
 Compressed-file validation passed before restart and the file survived it;
 app-level reopen acceptance is still pending. No handwriting is committed here.
@@ -86,7 +90,7 @@ See [pen acceptance](../PEN-APPS.md) and the
 
 ## Repository verification
 
-All 247 discovered tests passed (four environment-dependent skips). This
+The 247-test suite completed successfully (243 passes, four environment-dependent skips). This
 includes package reproducibility/closure, metadata refresh ordering, active-pen
 refusal, the diagnostic mount path boundary, and the default-read-only Wi-Fi
 probe's live-driver gate. Successful pre-wlan calibration, physical pressure,

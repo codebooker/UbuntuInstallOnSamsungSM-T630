@@ -104,6 +104,12 @@ a fresh software-rendered managed session. Its startup password lock was
 verified; authentication was not bypassed. Physical touch/pen click acceptance
 after this session restart remains pending.
 
+Follow-up: the owner confirmed login and brightness control, but reported another
+input failure when opening the app menu. A separate bounded instrumented replay
+after managed-session replacement worked; the diagnostic was then disabled.
+See the [app-drawer input report](app-drawer-input-regression-20260915.md) for
+current acceptance and the deliberately unassigned root cause.
+
 All 267 tests subsequently completed (263 passes, four skips). New manual-reset
 tests cover read-only default, ambiguity refusal, active-contact refusal,
 already-disabled refusal, exact virtual-device targeting, and attempted

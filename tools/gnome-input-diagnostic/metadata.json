@@ -1,0 +1,7 @@
+{
+  "uuid": "t630-input-diagnostic@local",
+  "name": "SM-T630 bounded input diagnostic",
+  "description": "Temporary state-only overview and input-dispatch observer; not a repair.",
+  "shell-version": ["46"],
+  "version": 1
+}

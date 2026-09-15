@@ -31,6 +31,10 @@ MyPaint Drawing is kept in the app drawer by default. GNOME 46 removes pinned
 favorites from that drawer, so the installer no longer auto-pins it. Desktop
 runtime 0.1.3 preserves the owner's favorites instead of resetting them.
 This optional evaluation recipe is not yet in the exact-version release set.
+The launcher now uses the installed upstream `org.mypaint.MyPaint` icon; the old
+`mypaint` icon name did not resolve on the clean root. After a renewed report
+that the app was absent, owner-session registration, non-favorite state, and the
+corrected icon were checked; visible app-grid placement still needs rechecking.
 
 ## Ubuntu 24.04 first-stroke crash workaround
 
@@ -109,6 +113,16 @@ replacing chosen paths. Before the restart, the existing Xournal++ autosave was
 preserved as `Documents/T630-pen-test-before-restart.xopp`; its compressed data
 verified and the file survived restart. Opening it again in Xournal++ and the
 `.ora` drawing save/reopen test still require acceptance.
+
+`tools/probe_mypaint_roundtrip.py` performs a bounded, normal-owner native file
+test without changing the live canvas. It creates a unique
+`Documents/MyPaint-file-check-*` folder with generated strokes, checks the
+OpenRaster archive, reloads it, and verifies canvas-frame/settings persistence.
+The live 256-point test passed those checks. Rendered pixels were **not**
+bit-identical: maximum byte difference 3/255, mean 0.163541/255. The probe reports
+this separately and does not accept exact fidelity, GUI save/reopen, physical
+pressure, or post-restart persistence. Internal empty tile allocation can change
+on loading and is not treated as the document's saved canvas frame.
 
 ## Acceptance still required
 

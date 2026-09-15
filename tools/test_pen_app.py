@@ -18,6 +18,12 @@ ui_spec.loader.exec_module(ui)
 
 
 class PenAppTests(unittest.TestCase):
+    def test_drawing_desktop_uses_installed_upstream_icon_and_guarded_launcher(self):
+        text = SOURCE.with_name('t630-mypaint.desktop').read_text()
+        self.assertIn('Icon=org.mypaint.MyPaint\n', text)
+        self.assertIn('Exec=/usr/local/bin/t630-gnome-run /usr/local/bin/t630-pen-app drawing %F\n', text)
+        self.assertNotIn('NoDisplay=true', text)
+
     def test_ui_adapter_refuses_root_wrong_display_and_unknown_package(self):
         with patch.object(ui.os, 'getuid', return_value=0):
             with self.assertRaises(SystemExit):

@@ -85,6 +85,15 @@ class FirstBootPackageTests(unittest.TestCase):
         self.assertIn("Refresh networks", helper)
         self.assertIn("'SSID,SIGNAL'", helper)
         self.assertNotIn("self.keyboard", helper)
+        self.assertIn("LOCK_EX | fcntl.LOCK_NB", helper)
+        self.assertIn("window.password.grab_focus()", helper)
+
+    def test_first_boot_embeds_wifi_in_the_existing_wizard_surface(self):
+        wizard = (builder.ROOT / "ubuntu/t630-first-boot-ui.py").read_text()
+        self.assertIn("self.wifi_password", wizard)
+        self.assertIn("def connect_wifi_worker", wizard)
+        self.assertIn("self.wifi_password.grab_focus()", wizard)
+        self.assertNotIn("subprocess.Popen", wizard)
 
 
 if __name__ == "__main__":

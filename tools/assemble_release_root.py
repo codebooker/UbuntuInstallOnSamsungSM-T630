@@ -19,10 +19,10 @@ INSTALL_ID = "SM-T630-T630XXSBDZE3-Ubuntu-v1"
 EXPECTED = {
     "t630-first-boot_0.1.1_all.deb": (
         "t630-first-boot", "0.1.1",
-        "427e15c04168e25864a8876116979b44e34906fcdd4375817211035de31302e6"),
+        "f15cee6b1e31d509e44be2b1a4a22dad7a9401756cfc201146f842fa84c4cedb"),
     "t630-desktop-runtime_0.1.1_all.deb": (
         "t630-desktop-runtime", "0.1.1",
-        "b7e6f0184e88bb81991aaaf049503fc0923753ff3f8f712b8cf94f8a54029b42"),
+        "aa30feb97a50ef944ca0e8810aaa27aaff1cdc38404c5c4fe5223e22f1fe554a"),
     "t630-hardware-runtime_0.1.2_all.deb": (
         "t630-hardware-runtime", "0.1.2",
         "68831e1ac25b5ca1074c99c812c47c5969225865c3bbd2c71f6c770fb8e4094a"),

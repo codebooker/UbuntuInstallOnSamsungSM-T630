@@ -46,6 +46,11 @@ class DesktopRuntimePackageTests(unittest.TestCase):
             self.assertIn("t630-first-boot (= 0.1.1)", control)
             self.assertIn("t630-native-userspace (= 0.1.0)", control)
             self.assertIn("addgroup --system t630-owner", postinst)
+            session = (builder.ROOT / "ubuntu/t630-first-boot-session").read_text()
+            ready = session.index('until [ -S "$runtime/$wayland_name" ]')
+            keyboard = session.rindex(
+                "gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true")
+            self.assertLess(ready, keyboard)
             data_path = Path(directory) / "data.tar.xz"
             data_path.write_bytes(archive["data.tar.xz"])
             with tarfile.open(data_path, "r:xz") as payload:

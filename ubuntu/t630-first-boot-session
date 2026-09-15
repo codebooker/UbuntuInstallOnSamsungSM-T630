@@ -109,6 +109,10 @@ if [ "${1:-}" = --inner ]; then
         test "$attempt" -lt 20
         sleep 1
     done
+    # Nested Mutter can recalculate this preference while initializing because
+    # it receives touch as compositor input rather than a direct evdev device.
+    # Reassert it only after the nested Wayland socket proves Shell is ready.
+    gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true
     /usr/bin/python3 /usr/local/libexec/t630-first-boot-resize \
         >"$runtime/resize.log" 2>&1 &
     resize_pid=$!
@@ -191,7 +195,8 @@ done
 # protocol and GNOME Shell supplies the keyboard.
 /usr/bin/env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/root LANG="${LANG:-C.UTF-8}" \
     XDG_RUNTIME_DIR="$runtime" WAYLAND_DISPLAY="$wayland_name" GDK_BACKEND=wayland \
-    T630_FIRST_BOOT_GNOME=1 /usr/bin/python3 /usr/local/libexec/t630-first-boot \
+    T630_FIRST_BOOT_GNOME=1 T630_WIFI_SSID="${T630_WIFI_SSID:-}" \
+    /usr/bin/python3 /usr/local/libexec/t630-first-boot \
     ${wizard_args:+"$wizard_args"} &
 wizard_pid=$!
 wait "$wizard_pid"

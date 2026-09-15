@@ -6,8 +6,8 @@ The architecture-independent Ubuntu integration is now built by
 `tools/build_desktop_runtime_deb.py` as a deterministic Debian package:
 
 - name: `t630-desktop-runtime_0.1.1_all.deb`
-- size: 44,068 bytes
-- SHA256: `b7e6f0184e88bb81991aaaf049503fc0923753ff3f8f712b8cf94f8a54029b42`
+- size: 44,156 bytes
+- SHA256: `aa30feb97a50ef944ca0e8810aaa27aaff1cdc38404c5c4fe5223e22f1fe554a`
 - regular files: 34
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
@@ -36,6 +36,10 @@ desktop without granting the temporary shell root access or writing an
 installer account into the image. A paired root sensor relay and unprivileged
 GNOME resize helper keep the setup window synchronized with landscape and
 portrait panel modes. Maliit remains the direct-Weston recovery fallback.
+Nested Mutter can recalculate keyboard availability while initializing because
+touch arrives through its parent compositor rather than a direct evdev device.
+The session now reasserts the enabled GNOME keyboard only after the nested
+Wayland socket proves Shell is ready.
 
 ## Installer-selected owner migration
 

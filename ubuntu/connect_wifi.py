@@ -7,6 +7,13 @@ import subprocess
 import threading
 from pathlib import Path
 import os
+import fcntl
+
+instance_lock = open('/run/t630-connect-wifi.lock', 'a')
+try:
+    fcntl.flock(instance_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+except BlockingIOError:
+    raise SystemExit(0)
 
 def primary_wifi():
     for device in Path('/sys/class/net').iterdir():
@@ -129,4 +136,5 @@ class WifiWindow(Gtk.Window):
 
 window = WifiWindow()
 window.show_all()
+window.password.grab_focus()
 Gtk.main()

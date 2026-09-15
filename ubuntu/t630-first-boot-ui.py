@@ -137,10 +137,23 @@ class FirstBoot(Gtk.Window):
         page = self.page("Connect to a network", "Internet access enables updates and the app store. You can also continue offline.")
         self.network = Gtk.Label(label="Checking Wi-Fi…", xalign=0)
         page.pack_start(self.network, False, False, 0)
-        connect = Gtk.Button(label="Open Wi-Fi setup")
-        connect.connect("clicked", self.open_wifi)
-        connect.set_sensitive(not self.preview)
-        page.pack_start(connect, False, False, 0)
+        self.wifi_ssid = Gtk.ComboBoxText.new_with_entry()
+        self.wifi_ssid.set_hexpand(True)
+        self.wifi_ssid.get_child().set_placeholder_text("Wi-Fi network name (SSID)")
+        page.pack_start(self.wifi_ssid, False, False, 0)
+        self.wifi_password = Gtk.Entry(placeholder_text="Wi-Fi password")
+        self.wifi_password.set_visibility(False)
+        page.pack_start(self.wifi_password, False, False, 0)
+        wifi_actions = Gtk.Box(spacing=14)
+        refresh = Gtk.Button(label="Refresh networks")
+        refresh.connect("clicked", self.refresh_wifi_networks)
+        refresh.set_sensitive(not self.preview)
+        wifi_actions.pack_start(refresh, True, True, 0)
+        self.wifi_connect = Gtk.Button(label="Connect")
+        self.wifi_connect.connect("clicked", self.connect_wifi)
+        self.wifi_connect.set_sensitive(not self.preview)
+        wifi_actions.pack_start(self.wifi_connect, True, True, 0)
+        page.pack_start(wifi_actions, False, False, 0)
         GLib.timeout_add_seconds(2, self.refresh_network)
 
         page = self.page("Create your account", "This account owns your files, applications, and device settings.")
@@ -193,6 +206,8 @@ class FirstBoot(Gtk.Window):
         self.status.set_text("")
         if index == 4:
             GLib.idle_add(self.focus_account_entry)
+        if index == 3 and not self.preview:
+            GLib.idle_add(self.refresh_wifi_networks)
         if index == len(self.pages) - 1:
             try:
                 profile = self.selected_profile()
@@ -282,11 +297,102 @@ class FirstBoot(Gtk.Window):
         self.destroy()
         return False
 
-    def open_wifi(self, _button):
+    @staticmethod
+    def primary_wifi():
+        for device in Path("/sys/class/net").iterdir():
+            if (device / "wireless").is_dir():
+                return device.name
+        raise OSError("Primary Wi-Fi radio not ready")
+
+    @staticmethod
+    def visible_networks():
         try:
-            subprocess.Popen(["/usr/local/bin/t630-connect-wifi"], stdin=subprocess.DEVNULL)
-        except OSError:
-            self.status.set_text("Wi-Fi setup is not available. You can continue offline.")
+            result = subprocess.run(
+                ["/usr/bin/nmcli", "-t", "-f", "SSID,SIGNAL", "device",
+                 "wifi", "list", "--rescan", "yes"], capture_output=True,
+                text=True, timeout=10, check=True)
+        except (OSError, subprocess.SubprocessError):
+            return []
+        networks = {}
+        for line in result.stdout.splitlines():
+            try:
+                name, strength = line.rsplit(":", 1)
+                name = name.replace(r"\:", ":").replace(r"\\", "\\").strip()
+                if name:
+                    networks[name] = max(networks.get(name, 0), int(strength))
+            except ValueError:
+                continue
+        return [name for name, _ in sorted(
+            networks.items(), key=lambda item: (-item[1], item[0].lower()))]
+
+    def refresh_wifi_networks(self, _button=None):
+        self.status.set_text("Scanning for Wi-Fi networks…")
+        threading.Thread(target=self.scan_wifi_worker, daemon=True).start()
+        return False
+
+    def scan_wifi_worker(self):
+        GLib.idle_add(self.finish_wifi_scan, self.visible_networks())
+
+    def finish_wifi_scan(self, networks):
+        current = self.wifi_ssid.get_child().get_text().strip()
+        self.wifi_ssid.remove_all()
+        for name in networks:
+            self.wifi_ssid.append_text(name)
+        if current:
+            self.wifi_ssid.get_child().set_text(current)
+        elif networks:
+            preferred = os.environ.get("T630_WIFI_SSID", "")
+            self.wifi_ssid.set_active(
+                networks.index(preferred) if preferred in networks else 0)
+        self.status.set_text(
+            "Choose a network and enter its password."
+            if networks else "No networks found yet. Type a hidden network name or refresh.")
+        self.wifi_password.grab_focus()
+        return False
+
+    def connect_wifi(self, _button):
+        ssid = self.wifi_ssid.get_child().get_text().strip()
+        secret = self.wifi_password.get_text()
+        if not ssid or not secret:
+            self.status.set_text("Choose a network and enter its password first.")
+            self.wifi_password.grab_focus()
+            return
+        self.wifi_connect.set_sensitive(False)
+        self.status.set_text(f"Connecting to {ssid}…")
+        threading.Thread(target=self.connect_wifi_worker,
+                         args=(ssid, secret), daemon=True).start()
+
+    def connect_wifi_worker(self, ssid, secret):
+        try:
+            interface = self.primary_wifi()
+            result = subprocess.run(
+                ["/usr/bin/nmcli", "--ask", "--wait", "40", "device",
+                 "wifi", "connect", ssid, "ifname", interface],
+                input=secret + "\n", text=True, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, timeout=50)
+            success = result.returncode == 0
+            if success:
+                profile = subprocess.run(
+                    ["/usr/bin/nmcli", "-g", "GENERAL.CONNECTION", "device",
+                     "show", interface], capture_output=True, text=True,
+                    timeout=5, check=True).stdout.strip()
+                subprocess.run(
+                    ["/usr/bin/nmcli", "connection", "modify", profile,
+                     "connection.interface-name", ""], capture_output=True,
+                    timeout=5, check=True)
+        except (OSError, subprocess.SubprocessError):
+            success = False
+        finally:
+            secret = ""
+        GLib.idle_add(self.finish_wifi_connection, success)
+
+    def finish_wifi_connection(self, success):
+        self.wifi_connect.set_sensitive(True)
+        self.wifi_password.set_text("")
+        self.status.set_text(
+            "Connected. You can continue setup."
+            if success else "Connection did not complete. Check the password and try again.")
+        return False
 
     def refresh_network(self):
         try:

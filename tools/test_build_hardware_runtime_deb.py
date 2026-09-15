@@ -45,6 +45,7 @@ class HardwareRuntimePackageTests(unittest.TestCase):
             self.assertIn("usr/local/libexec/t630-bluetooth/t630_qca_bt.py", names)
             self.assertIn("usr/local/sbin/t630-sensors-start", names)
             self.assertIn("usr/local/share/t630/mdev.conf", names)
+            self.assertIn("usr/local/share/t630/test-speaker-protection.py", names)
             self.assertIn(
                 "usr/local/share/t630/owner-config/wireplumber/main.lua.d/51-t630-manual-alsa.lua",
                 names,
@@ -66,6 +67,7 @@ class HardwareRuntimePackageTests(unittest.TestCase):
                 control = archive.extractfile("./control").read().decode()
             self.assertIn("t630-desktop-runtime (= 0.1.1)", control)
             self.assertIn("wpasupplicant", control)
+            self.assertIn("pulseaudio-utils", control)
             self.assertIn("libssc (>= 0.4.4-t6303)", control)
             self.assertIn("hexagonrpcd (>= 0.4.0-t6303)", control)
             self.assertIn("iio-sensor-proxy (>= 3.9-t6303)", control)

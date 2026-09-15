@@ -86,7 +86,7 @@ if [ "${1:-}" = --inner ]; then
         *) geometry=1920x1200 ;;
     esac
     Xwayland ":$display_number" -auth "$XAUTHORITY" -nolisten tcp -noreset \
-        -geometry "$geometry" -shm -extension MIT-SHM &
+        -geometry "$geometry" -shm -extension MIT-SHM -extension GLX &
     xwayland_pid=$!
     attempt=0
     until xdpyinfo >/dev/null 2>&1; do

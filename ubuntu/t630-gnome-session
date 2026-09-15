@@ -60,7 +60,8 @@ if [ "${T630_GNOME_FULLSCREEN:-0}" = 1 ]; then
 else
     set -- -geometry 1600x1000 -decorate
 fi
-Xwayland :3 -auth "$XAUTHORITY" -nolisten tcp -noreset "$@" -shm -extension MIT-SHM &
+Xwayland :3 -auth "$XAUTHORITY" -nolisten tcp -noreset "$@" -shm \
+    -extension MIT-SHM -extension GLX &
 xwayland_pid=$!
 shell_pid=
 auth_watch_pid=

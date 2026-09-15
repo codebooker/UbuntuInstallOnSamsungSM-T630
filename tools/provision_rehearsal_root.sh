@@ -99,7 +99,7 @@ chroot "$root" /usr/bin/env \
     libqmi-glib5 libqrtr-glib0 libqrtr1 libwayland-client0 libweston-13-0 \
     libxcb1 locales maliit-framework maliit-keyboard network-manager passwd \
     wpasupplicant \
-    pipewire pipewire-pulse python3 python3-gi qtwayland5 seatd util-linux \
+    pipewire pipewire-pulse pulseaudio-utils python3 python3-gi qtwayland5 seatd util-linux \
     weston wireplumber x11-utils xauth xdotool xwayland sudo dmsetup \
     desktop-file-utils eog evince evolution-data-server file-roller firefox \
     fonts-crosextra-caladea fonts-crosextra-carlito fonts-noto-color-emoji \

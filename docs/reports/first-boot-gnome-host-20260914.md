@@ -60,9 +60,9 @@ Current deterministic artifacts at `SOURCE_DATE_EPOCH=1700000000` are:
 - `t630-first-boot_0.1.1_all.deb`:
   `3b3adf74477f0402e30d3d443dcd49068eb2bf139afa83a2f4c4e346bb18a14e`
 - `t630-desktop-runtime_0.1.1_all.deb`:
-  `d8ee083635d1149dadf87aa097fc617c7015173f7575df894240ab7b8b1e5353`
+  `fee31508d6e40640599515bec20e75d0a6f2025131d3b701b51e9301f8eb9c70`
 - `t630-hardware-runtime_0.1.2_all.deb`:
-  `3a9f102071bf1f0e9c656bce292213c0ff39afcdad382ec30e88b904669fd342`
+  `51d39bb832461513f95db7bc97efd7cdb3905975a2edd6b06a7c80ff08379694`
 - `t630-boot-runtime_0.1.0_all.deb`:
   `70c75d8b0e68c48fbc8366bbe0432df0e4a1acde99cde096ae05902f51bdde9e`
 
@@ -88,7 +88,15 @@ owner's GNOME session and reconnected `Wharf`. It then caught two hardware-only
 clean-root omissions: Bluetooth startup circularly required its generated
 address before invoking the generator, and the reproducible pd-mapper had both
 the wrong QRTR runtime dependency and no explicit map-directory compatibility
-patch for Samsung's non-remoteproc kernel. Those fixes are now deterministic,
-staged, and installed. A second cold boot must verify audio/sensor startup with
-the mapper present before ADSP initialization; live module unloading is
-deliberately forbidden. The return-to-stock rehearsal follows that gate.
+patch for Samsung's non-remoteproc kernel.
+
+The second cold boot generated the Bluetooth address, powered BlueZ, kept the
+patched mapper running, and registered the real Qualcomm sound card. It exposed
+three final minimal-root assumptions: the speaker-protection verifier and
+`pactl` were absent, and Xwayland could still crash in Mesa's explicit DRM path
+despite `XWAYLAND_NO_GLAMOR=1`. The corrected packages now include the verifier,
+depend on `pulseaudio-utils`, and disable Xwayland GLX. The live repaired session
+then held its complete managed process chain and user runtime; GNOME dark mode,
+keyboard, Wi-Fi, the speaker and microphone defaults, accelerometer, Bluetooth,
+battery, package audit, and a zero-count targeted kernel-fault scan all passed.
+A final no-intervention cold boot remains before the return-to-stock rehearsal.

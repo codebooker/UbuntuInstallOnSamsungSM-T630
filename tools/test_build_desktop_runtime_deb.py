@@ -52,6 +52,9 @@ class DesktopRuntimePackageTests(unittest.TestCase):
                 "gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true")
             self.assertLess(ready, keyboard)
             self.assertIn("GTK_THEME=Adwaita:dark", session)
+            self.assertIn("-extension GLX", session)
+            owner_session = (builder.ROOT / "ubuntu/t630-gnome-session").read_text()
+            self.assertIn("-extension MIT-SHM -extension GLX", owner_session)
             data_path = Path(directory) / "data.tar.xz"
             data_path.write_bytes(archive["data.tar.xz"])
             with tarfile.open(data_path, "r:xz") as payload:

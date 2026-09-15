@@ -6,8 +6,8 @@ The architecture-independent Ubuntu integration is now built by
 `tools/build_desktop_runtime_deb.py` as a deterministic Debian package:
 
 - name: `t630-desktop-runtime_0.1.1_all.deb`
-- size: 44,624 bytes
-- SHA256: `d8ee083635d1149dadf87aa097fc617c7015173f7575df894240ab7b8b1e5353`
+- size: 44,640 bytes
+- SHA256: `fee31508d6e40640599515bec20e75d0a6f2025131d3b701b51e9301f8eb9c70`
 - regular files: 34
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
@@ -44,6 +44,10 @@ The clean account transition also added the previously live-only X11 recovery
 guard and accepts GLib's typed empty extension-list representation (`@as []`)
 without weakening type validation. The root setup frontend explicitly uses
 Adwaita dark mode.
+Both disposable GNOME hosts disable Xwayland's GLX extension. A physical
+software-rendered test remained alive for its full bounded interval with that
+setting; without it, Xwayland could still enter Mesa's explicit DRM-device path
+and crash even when `XWAYLAND_NO_GLAMOR=1` was set.
 
 ## Installer-selected owner migration
 

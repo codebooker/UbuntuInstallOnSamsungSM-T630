@@ -6,8 +6,8 @@ The redistributable hardware orchestration is now built by
 `tools/build_hardware_runtime_deb.py` as a deterministic Debian package:
 
 - name: `t630-hardware-runtime_0.1.2_all.deb`
-- size: 31,712 bytes
-- SHA256: `3a9f102071bf1f0e9c656bce292213c0ff39afcdad382ec30e88b904669fd342`
+- size: 31,868 bytes
+- SHA256: `51d39bb832461513f95db7bc97efd7cdb3905975a2edd6b06a7c80ff08379694`
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
 arm64 `dpkg-deb` parsed and extracted the result on the tablet. The payload
@@ -22,6 +22,11 @@ source file before GNOME startup; no live-root fallback is required now.
 Bluetooth startup also lets the loader create its private persistent address
 after first boot instead of circularly requiring that generated file to exist
 before the loader runs.
+The cold-audio path now ships its guarded speaker-protection verifier as well;
+the launcher no longer references a development-root-only helper.
+`pulseaudio-utils` is an explicit dependency because the hardware launcher uses
+`pactl`; the minimal release root cannot rely on a desktop recommendation to
+provide that command.
 
 ## Included orchestration
 

@@ -44,6 +44,8 @@ FILES = {
     "usr/local/share/t630/t630-sound-nodes.py": ("ubuntu/t630-sound-nodes.py", 0o755),
     "usr/local/share/t630/t630-speaker-route.py": ("ubuntu/t630-speaker-route.py", 0o755),
     "usr/local/share/t630/test-audio-cold-order.sh": ("ubuntu/test-audio-cold-order.sh", 0o755),
+    "usr/local/share/t630/test-speaker-protection.py": (
+        "ubuntu/test-speaker-protection.py", 0o755),
     "usr/local/share/t630/owner-config/wireplumber/bluetooth.lua.d/51-t630-bluetooth.lua": (
         "ubuntu/51-t630-bluetooth.lua", 0o644),
     "usr/local/share/t630/owner-config/wireplumber/main.lua.d/51-t630-manual-alsa.lua": (
@@ -72,7 +74,7 @@ def build(output: Path, epoch: int) -> str:
 Version: {VERSION}
 Architecture: all
 Maintainer: SM-T630 Ubuntu Port contributors
-Depends: t630-desktop-runtime (= 0.1.1), python3, network-manager, wpasupplicant, bluez, pipewire, pipewire-pulse, wireplumber, alsa-utils, iio-sensor-proxy, util-linux
+Depends: t630-desktop-runtime (= 0.1.1), python3, network-manager, wpasupplicant, bluez, pipewire, pipewire-pulse, pulseaudio-utils, wireplumber, alsa-utils, iio-sensor-proxy, util-linux
 Recommends: libssc (>= 0.4.4-t6303), hexagonrpcd (>= 0.4.0-t6303), iio-sensor-proxy (>= 3.9-t6303), t630-stock-assets
 Section: admin
 Priority: optional

@@ -100,7 +100,11 @@ if [ "${1:-}" = --inner ]; then
     if [ -d /usr/local/share/t630/gnome-resource-overlay ]; then
         export G_RESOURCE_OVERLAYS=/org/gnome/shell/ui=/usr/local/share/t630/gnome-resource-overlay
     fi
-    /usr/bin/gnome-shell --nested --wayland --wayland-display="$wayland_name" &
+    # Match the installed owner session: Mutter's automatic Xwayland can enter
+    # the unsafe Qualcomm/Mesa path even though this explicit rootful host is
+    # forced to shared memory. The installer itself is Wayland-native.
+    /usr/bin/gnome-shell --nested --wayland --no-x11 \
+        --wayland-display="$wayland_name" &
     shell_pid=$!
     attempt=0
     until [ -S "$runtime/$wayland_name" ]; do

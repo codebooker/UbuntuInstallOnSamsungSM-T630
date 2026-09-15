@@ -85,6 +85,16 @@ Candidate v3, SHA256
 adds an ownerless clean-root exception to the orderly shutdown helper while
 retaining the exact fixed path and offline marker checks. The exact prior v2
 artifact is preserved on tablet storage. V3 full readback passed,
-and vendor_boot, init_boot, DTBO, and vbmeta remained byte-identical. This
-changes no running process and awaits its cold-boot acceptance after the
-current first-boot walkthrough.
+and vendor_boot, init_boot, DTBO, and vbmeta remained byte-identical.
+
+Candidate v4, SHA256
+`368279fde4962e2b2ff44b093892f58c872bf63c080c6938d489aa40fca06175`,
+makes the visible root terminal ownerless/recovery-only and removes its mapping
+delay from normal owner startup. Its ramdisk SHA256 is
+`2a0649ef16174c1285c007032be3030873f9ec341949392ec9fadd4039a21cf7`.
+Two independent builds were byte-identical. The guarded v4 writer accepted only
+the exact installed v3 hash, wrote only `boot`, verified the complete readback,
+and verified vendor_boot, init_boot, DTBO, and vbmeta unchanged. Its physical
+cold boot selected the personalized clean root, exposed no recovery terminal,
+started the complete managed GNOME chain, verified the password lock, and
+reconnected Wi-Fi. USB serial recovery remains active independently.

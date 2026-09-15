@@ -134,7 +134,13 @@ if [ "${T630_GNOME_BACKEND:-wayland}" = x11 ]; then
     export GDK_BACKEND=x11 XDG_SESSION_TYPE=x11
     "$@" /usr/bin/gnome-shell --x11 &
 else
-    "$@" /usr/bin/gnome-shell --nested --wayland --wayland-display=t630-gnome-0 &
+    # Mutter's automatically spawned Xwayland selects the Qualcomm DRM device
+    # even in this software-rendered nested session and can crash in Mesa
+    # before the lock screen is ready. The tablet desktop and packaged default
+    # applications are Wayland-native, so keep X11 compatibility disabled until
+    # that vendor-driver path is safe.
+    "$@" /usr/bin/gnome-shell --nested --wayland --no-x11 \
+        --wayland-display=t630-gnome-0 &
 fi
 shell_pid=$!
 if [ "${T630_GNOME_BACKEND:-wayland}" != x11 ]; then

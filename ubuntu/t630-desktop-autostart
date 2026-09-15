@@ -39,9 +39,12 @@ until [ -S /run/user/0/wayland-0 ] && [ -S /run/dbus/system_bus_socket ]; do
     fi
     sleep 1
 done
-# The initramfs opens its recovery terminal immediately after the same socket
-# appears. Let it map first so it cannot cover GNOME's fullscreen host window.
-sleep 3
+# Ownerless/recovery boots intentionally open a terminal on the parent Weston
+# compositor. Let it map before the installer or GNOME covers it. Normal owner
+# boots skip both the terminal and this otherwise visible three-second delay.
+if [ -e /run/t630-recovery-terminal ]; then
+    sleep 3
+fi
 managed_session=0
 login_requested=0
 if [ -f /etc/t630/login.enabled ]; then

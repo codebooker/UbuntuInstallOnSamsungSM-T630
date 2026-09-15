@@ -53,8 +53,12 @@ class DesktopRuntimePackageTests(unittest.TestCase):
             self.assertLess(ready, keyboard)
             self.assertIn("GTK_THEME=Adwaita:dark", session)
             self.assertIn("-extension GLX", session)
+            self.assertIn("--nested --wayland --no-x11", session)
             owner_session = (builder.ROOT / "ubuntu/t630-gnome-session").read_text()
             self.assertIn("-extension MIT-SHM -extension GLX", owner_session)
+            self.assertIn("--nested --wayland --no-x11", owner_session)
+            autostart = (builder.ROOT / "ubuntu/t630-desktop-autostart").read_text()
+            self.assertIn('if [ -e /run/t630-recovery-terminal ]', autostart)
             data_path = Path(directory) / "data.tar.xz"
             data_path.write_bytes(archive["data.tar.xz"])
             with tarfile.open(data_path, "r:xz") as payload:

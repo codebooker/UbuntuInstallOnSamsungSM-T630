@@ -60,7 +60,7 @@ Current deterministic artifacts at `SOURCE_DATE_EPOCH=1700000000` are:
 - `t630-first-boot_0.1.1_all.deb`:
   `3b3adf74477f0402e30d3d443dcd49068eb2bf139afa83a2f4c4e346bb18a14e`
 - `t630-desktop-runtime_0.1.1_all.deb`:
-  `fee31508d6e40640599515bec20e75d0a6f2025131d3b701b51e9301f8eb9c70`
+  `0948ac9acc73d24c17ec13935e5702860dc7a28d3b2d40c98d55545bef75d784`
 - `t630-hardware-runtime_0.1.2_all.deb`:
   `51d39bb832461513f95db7bc97efd7cdb3905975a2edd6b06a7c80ff08379694`
 - `t630-boot-runtime_0.1.0_all.deb`:
@@ -99,4 +99,12 @@ depend on `pulseaudio-utils`, and disable Xwayland GLX. The live repaired sessio
 then held its complete managed process chain and user runtime; GNOME dark mode,
 keyboard, Wi-Fi, the speaker and microphone defaults, accelerometer, Bluetooth,
 battery, package audit, and a zero-count targeted kernel-fault scan all passed.
-A final no-intervention cold boot remains before the return-to-stock rehearsal.
+The final no-intervention cold boot exposed that nested Mutter starts a second,
+internal Xwayland independent of the explicit GLX-disabled host. That process
+entered the same Mesa path and left the recovery desktop visible. Disabling the
+internal Xwayland for the Wayland-native installer and owner sessions fixed the
+actual failure. Boot v4 then started the complete managed process chain,
+verified the GNOME password lock, showed no recovery terminal, and reconnected
+`Wharf`; speaker and microphone defaults, accelerometer, Bluetooth, dark mode,
+keyboard setting, package audit, boot readback, and the targeted fault scan all
+passed. Return-to-stock rehearsal is the remaining release gate.

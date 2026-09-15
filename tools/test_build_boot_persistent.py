@@ -44,6 +44,14 @@ class PersistentBootTests(unittest.TestCase):
         self.assertIn("SM-T630 OFFLINE RELEASE ROOT", startup)
         self.assertIn("test ! -L \"$candidate\"", startup)
 
+    def test_visible_terminal_is_recovery_only(self):
+        startup = (builder.ROOT / "persistent/start-ubuntu").read_text()
+        self.assertIn('! -f "$root/etc/t630/owner"', startup)
+        self.assertIn('recovery-terminal.enabled', startup)
+        self.assertIn('t630-recovery-terminal', startup)
+        self.assertLess(startup.index('! -f "$root/etc/t630/owner"'),
+                        startup.index('/usr/bin/weston-terminal'))
+
     def test_rehearsal_armer_is_identity_guarded(self):
         armer = builder.ROOT / "tools/arm_rehearsal_boot.sh"
         subprocess.run(["sh", "-n", armer], check=True)
@@ -87,6 +95,16 @@ class PersistentBootTests(unittest.TestCase):
         text = writer.read_text()
         self.assertIn("old_hash=ce279665", text)
         self.assertIn("new_hash=2d9ebe83", text)
+        self.assertIn('dd if="$image" of=/dev/sda19', text)
+        for partition in ("/dev/sda20", "/dev/sda21", "/dev/sda22", "/dev/sde19"):
+            self.assertIn(partition, text)
+
+    def test_v4_writer_accepts_only_v3_and_pins_recovery_only_terminal(self):
+        writer = SOURCE.with_name("write_release_boot_v4.sh")
+        subprocess.run(["sh", "-n", writer], check=True)
+        text = writer.read_text()
+        self.assertIn("old_hash=2d9ebe83", text)
+        self.assertIn("new_hash=368279fd", text)
         self.assertIn('dd if="$image" of=/dev/sda19', text)
         for partition in ("/dev/sda20", "/dev/sda21", "/dev/sda22", "/dev/sde19"):
             self.assertIn(partition, text)

@@ -6,8 +6,8 @@ The architecture-independent Ubuntu integration is now built by
 `tools/build_desktop_runtime_deb.py` as a deterministic Debian package:
 
 - name: `t630-desktop-runtime_0.1.1_all.deb`
-- size: 44,640 bytes
-- SHA256: `fee31508d6e40640599515bec20e75d0a6f2025131d3b701b51e9301f8eb9c70`
+- size: 44,864 bytes
+- SHA256: `0948ac9acc73d24c17ec13935e5702860dc7a28d3b2d40c98d55545bef75d784`
 - regular files: 34
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
@@ -44,10 +44,17 @@ The clean account transition also added the previously live-only X11 recovery
 guard and accepts GLib's typed empty extension-list representation (`@as []`)
 without weakening type validation. The root setup frontend explicitly uses
 Adwaita dark mode.
-Both disposable GNOME hosts disable Xwayland's GLX extension. A physical
+Both explicit rootful Xwayland hosts disable the GLX extension. A physical
 software-rendered test remained alive for its full bounded interval with that
-setting; without it, Xwayland could still enter Mesa's explicit DRM-device path
-and crash even when `XWAYLAND_NO_GLAMOR=1` was set.
+setting. A later cold boot proved that nested Mutter's separately spawned
+internal Xwayland could still enter Mesa's explicit Qualcomm DRM path and crash.
+The Wayland-native installer and owner shells now use `--no-x11`; the explicit
+shared-memory host remains stable and supplies the visible nested window.
+
+Personalized startup also skips the initramfs recovery terminal and its former
+three-second mapping delay. Ownerless first boot retains it, as does an explicit
+root-owned `recovery-terminal.enabled` marker. The independent USB serial
+console remains available in both cases.
 
 ## Installer-selected owner migration
 

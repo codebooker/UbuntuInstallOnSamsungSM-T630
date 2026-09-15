@@ -15,10 +15,12 @@
    and desktop recovery payload gaps. The installer is dark by default. A cold
    boot of the personalized result automatically launched owner GNOME and
    reconnected Wi-Fi. Two cold boots exposed and corrected Bluetooth-address,
-   audio-mapper, speaker-verifier, `pactl`, and Xwayland GLX packaging
-   assumptions. The repaired live session passes the full hardware sweep; one
-   no-intervention cold boot remains before end-user acceptance. The backend creates and
-   validates the device's unique machine ID only after boot, preserving a blank
+   audio-mapper, speaker-verifier, `pactl`, and Xwayland packaging assumptions.
+   The third no-intervention cold boot passed the complete managed-session,
+   password-lock, Wi-Fi, audio, sensor, Bluetooth, package, and boot-image
+   checks. Normal owner startup no longer exposes the recovery terminal or
+   waits for its three-second mapping delay. The backend creates and validates
+   the device's unique machine ID only after boot, preserving a blank
    distributable image and unique Bluetooth identity.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
@@ -29,7 +31,8 @@
    compatible kernel and initramfs; its guarded write, two cold boots, full
    shutdown, automatic remote startup, and health checks passed. Clean-root
    installation completion and the return-to-stock rehearsal remain. Boot v3
-   also makes an incomplete ownerless setup cleanly recoverable. The
+   makes an incomplete ownerless setup cleanly recoverable; boot v4 retains
+   that terminal only for ownerless or explicitly requested recovery boots. The
    account-neutral Weston/Maliit host runtime is now packaged with reversible distro-file
    diversions. An exact-version base metapackage prevents incompatible
    component combinations, and the guarded offline assembler installed the
@@ -84,8 +87,9 @@ keyboard, time zone, hostname, and account-neutral desktop startup all passed.
 The backend refused a second run, and the release audit correctly rejected the
 personalized result. The later physical clean-boot run completed the same pages
 with the normal GNOME keyboard, connected Wi-Fi, created the chosen owner, and
-reached the new owner's password lock. Automatic startup on a subsequent cold
-boot is the remaining end-user-flow gate.
+reached the new owner's password lock. Three subsequent personalized cold boots
+now pass automatic startup; the final one also removes the visible recovery
+terminal from the normal path.
 
 ## Android applications
 

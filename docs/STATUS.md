@@ -36,8 +36,8 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Flashlight | Working | Rear LED current and PMIC switch mapped; GNOME Quick Settings provides a brightness slider and a leased toggle that fails off after 15 seconds if its controller disappears |
 | Optional I/O | Characterized | Kernel support exists for microSD, USB host/role switch, Samsung NFC, GNSS framework, and USB-C DisplayPort. The exact NFC I2C path and the proprietary NFC/GNSS service boundaries are documented; physical accessory and bounded-service tests remain |
 | User setup | Working | The physical ownerless-root walkthrough completed with the normal GNOME keyboard, Wi-Fi connection, user-selected account/password, unique post-install machine identity, owner-neutral asset migration, and transition to the new owner's GNOME password lock; the installer frontend now defaults to dark mode |
-| Release packaging | In progress | Thirteen exact-version component packages and a release metapackage build reproducibly; the identity-safe Ubuntu 24.04.5 ARM64 root completed first boot and launched owner GNOME with Wi-Fi; two personalized cold boots corrected Bluetooth identity, pd-mapper QRTR/maps, speaker-verifier, `pactl`, and Xwayland GLX assumptions; the fully repaired live session passes GNOME, Wi-Fi, audio, sensors, Bluetooth, battery, package, and kernel-fault checks; one no-intervention cold boot and return-to-stock acceptance remain |
-| Security | Lab configuration | GNOME password lock works, but the retained recovery compositor and USB root console mean this is not a hardened full-device login boundary |
+| Release packaging | In progress | Thirteen exact-version component packages and a release metapackage build reproducibly; the identity-safe Ubuntu 24.04.5 ARM64 root completed first boot and three personalized cold boots. Boot v4 starts the stable managed GNOME session without exposing the recovery terminal, verifies the password lock, and reconnects Wi-Fi while audio, sensors, Bluetooth, battery, package, and kernel-fault checks pass. Return-to-stock acceptance remains |
+| Security | Lab configuration | GNOME password lock works and normal owner boots no longer expose the recovery terminal, but the retained parent compositor and USB root console mean this is not a hardened full-device login boundary |
 
 ## Known limitations
 
@@ -47,6 +47,9 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 - Recovery to stock was prepared but has not been exercised end-to-end on the
   development tablet.
 - GPU acceleration is opt-in; software rendering is the safe fallback.
+- The stable nested GNOME path currently disables its internal Xwayland server;
+  the packaged default applications are Wayland-native, but legacy X11-only
+  applications will not run until the Qualcomm/Mesa crash path is resolved.
 - The stock kernel has `CONFIG_USER_NS` disabled. Firefox remains the safe
   default browser; the verified WebKit hardware-video path is not exposed as a
   launcher because it currently requires disabling WebKit's normal sandbox.

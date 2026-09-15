@@ -137,6 +137,17 @@ while [ ! -S "$root/run/user/0/wayland-0" ] && [ "$attempt" -lt 30 ]; do
     sleep 1
     attempt=$((attempt + 1))
 done
-chroot "$root" /usr/bin/env HOME=/root TERM=xterm-256color XDG_RUNTIME_DIR=/run/user/0 WAYLAND_DISPLAY=wayland-0 /usr/bin/weston-terminal --font-size=20 --shell=/bin/bash >/run/terminal.log 2>&1 &
+# Keep the visible terminal as an ownerless/recovery facility. A personalized
+# installation already has the independent USB serial console, and showing a
+# root terminal before its password lock is both confusing and unnecessary.
+if [ ! -f "$root/etc/t630/owner" ] ||
+   { [ -f "$root/etc/t630/recovery-terminal.enabled" ] &&
+     [ ! -L "$root/etc/t630/recovery-terminal.enabled" ]; }; then
+    : >"$root/run/t630-recovery-terminal"
+    chroot "$root" /usr/bin/env HOME=/root TERM=xterm-256color \
+        XDG_RUNTIME_DIR=/run/user/0 WAYLAND_DISPLAY=wayland-0 \
+        /usr/bin/weston-terminal --font-size=20 --shell=/bin/bash \
+        >/run/terminal.log 2>&1 &
+fi
 echo 'T630_PERSISTENT: Ubuntu startup dispatched'
 wait

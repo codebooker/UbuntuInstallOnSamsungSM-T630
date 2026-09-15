@@ -15,3 +15,7 @@ install -m 0644 "$script_dir/t630-xournalpp.desktop" \
 install -m 0644 "$script_dir/t630-mypaint.desktop" \
     /usr/local/share/applications/mypaint.desktop
 update-desktop-database /usr/local/share/applications
+if [ -x /usr/local/libexec/t630-app-grid ]; then
+    /usr/local/bin/t630-gnome-run /usr/local/libexec/t630-app-grid --pin-drawing ||
+        echo 'No running owner GNOME session; pin MyPaint Drawing after login if desired.'
+fi

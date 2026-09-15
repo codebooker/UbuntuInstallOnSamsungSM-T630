@@ -22,8 +22,10 @@
    waits for its three-second mapping delay. The backend creates and validates
    the device's unique machine ID only after boot, preserving a blank
    distributable image and unique Bluetooth identity. GNOME Settings is now an
-   explicit package dependency, the dead default app folder is removed after
-   Shell startup, Home/Recents mappings persist, and native Restart/Power Off
+   explicit package dependency, the dead default Utilities grouping is now
+   suppressed before Shell initializes using an invisible empty-folder sentinel
+   (the earlier post-start empty-list fix was incomplete), personal favorites
+   are no longer reset on boot, Home/Recents mappings persist, and native Restart/Power Off
    confirmations reach the guarded orderly shutdown path. Owner wallpaper
    choices now persist, and an orderly system action returns to the personalized
    clean installation while an abnormal boot still falls back to the lab root.

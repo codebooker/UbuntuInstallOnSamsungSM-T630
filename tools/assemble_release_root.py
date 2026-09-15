@@ -20,12 +20,12 @@ EXPECTED = {
     "t630-first-boot_0.1.1_all.deb": (
         "t630-first-boot", "0.1.1",
         "3b3adf74477f0402e30d3d443dcd49068eb2bf139afa83a2f4c4e346bb18a14e"),
-    "t630-desktop-runtime_0.1.2_all.deb": (
-        "t630-desktop-runtime", "0.1.2",
-        "b9536e95d16159ab7bffebc5d11037ecfe5df951f8ae3e072221ebc61d424e6d"),
-    "t630-hardware-runtime_0.1.3_all.deb": (
-        "t630-hardware-runtime", "0.1.3",
-        "09027ad06d32c8c31828a382b63754600c851074aef134e16ce36d4902ba5e50"),
+    "t630-desktop-runtime_0.1.3_all.deb": (
+        "t630-desktop-runtime", "0.1.3",
+        "a994884cb84305c01023d1e6ef6cbd0542eff34f9c9ba2cd65098311413a819e"),
+    "t630-hardware-runtime_0.1.4_all.deb": (
+        "t630-hardware-runtime", "0.1.4",
+        "9f0bfe0e67a13e1d8d47e73830f26c6ca946bba61276695a2eb85d9952dda4ed"),
     "t630-boot-runtime_0.1.0_all.deb": (
         "t630-boot-runtime", "0.1.0",
         "70c75d8b0e68c48fbc8366bbe0432df0e4a1acde99cde096ae05902f51bdde9e"),
@@ -56,12 +56,12 @@ EXPECTED = {
     "t630-stock-assets_1.0.1+dze3_arm64.deb": (
         "t630-stock-assets", "1.0.1+dze3",
         "934f3c361fedc806eef90b4b92a6f93c906492b6b29339cb4e2cf85c0c7b461e"),
-    "t630-release-base_0.1.10_arm64.deb": (
-        "t630-release-base", "0.1.10",
-        "0333bad3c3c49a92a992edb9aa2764efa7f64c6d0e4f110cefc2391f8a21ad70"),
+    "t630-release-base_0.1.11_arm64.deb": (
+        "t630-release-base", "0.1.11",
+        "faa09b361ce86783ccebd88640b2e419a4ca519def05c1b2191c2c3d57ff4514"),
 }
 INSTALL_ORDER = tuple(name for name in EXPECTED if not name.startswith("t630-release-base_"))
-META_PACKAGE = "t630-release-base_0.1.10_arm64.deb"
+META_PACKAGE = "t630-release-base_0.1.11_arm64.deb"
 
 
 def digest(path: Path) -> str:

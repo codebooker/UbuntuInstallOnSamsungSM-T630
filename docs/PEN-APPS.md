@@ -5,7 +5,7 @@ Physical evaluation on the personalized Ubuntu 24.04 clean root, 2026-09-15:
 - Xournal++ `1.2.2-2build3`: opens in nested GNOME; the physical test page contains
   continuous handwriting. Notes, PDF annotation, and pressure options are
   described in the [official guide](https://xournalpp.github.io/guide/).
-- MyPaint `2.0.1-10build2`: opens maximized with dark GTK controls, a native
+- MyPaint `2.0.1-10build2`, labeled **MyPaint Drawing** in the launcher: opens maximized with dark GTK controls, a native
   canvas, and its brush/background assets. It is designed for drawing tablets;
   see the [upstream project](https://github.com/mypaint/mypaint).
 - Krita `5.2.2`: not an accepted app on this desktop yet. Its upstream
@@ -27,6 +27,9 @@ overrides. `t630-gnome-run` joins the existing owner's GNOME session and drops
 administrator privileges before the app starts. `t630-pen-app` selects native
 Wayland and dark GTK controls; it does not reset preferences or documents. The
 Xournal++ paper itself retains the person's chosen paper/background settings.
+When an owner GNOME session is running, the updated installer also pins MyPaint
+Drawing to the dock without replacing existing favorites. Desktop runtime
+0.1.3 preserves those favorites on later startup instead of resetting them.
 This optional evaluation recipe is not yet in the exact-version release set.
 
 ## Pressure investigation

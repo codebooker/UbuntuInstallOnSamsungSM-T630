@@ -13,7 +13,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-desktop-runtime"
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 
 POSTINST = b"""#!/bin/sh
 set -e
@@ -23,6 +23,7 @@ fi
 """
 
 FILES = {
+    "usr/local/libexec/t630-app-grid": ("ubuntu/t630-app-grid.py", 0o755),
     "etc/polkit-1/rules.d/49-t630-sensorproxy.rules": ("ubuntu/49-t630-sensorproxy.rules", 0o644),
     "etc/udev/rules.d/71-t630-active-key.rules": ("ubuntu/71-t630-active-key.rules", 0o644),
     "etc/udev/rules.d/99-t630-input.rules": ("ubuntu/99-t630-input.rules", 0o644),

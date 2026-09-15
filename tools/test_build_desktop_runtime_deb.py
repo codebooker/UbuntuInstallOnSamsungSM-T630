@@ -63,7 +63,10 @@ class DesktopRuntimePackageTests(unittest.TestCase):
             self.assertIn('/usr/bin/xdg-user-dirs-update', owner_session)
             self.assertIn("XF86HomePage", owner_session)
             self.assertIn("XF86Launch6", owner_session)
-            self.assertIn("folder-children '@as []'", owner_session)
+            self.assertIn('/usr/local/libexec/t630-app-grid', owner_session)
+            self.assertLess(owner_session.index('/usr/local/libexec/t630-app-grid'),
+                            owner_session.index('/usr/bin/gnome-shell --nested'))
+            self.assertNotIn('gsettings set org.gnome.shell favorite-apps', owner_session)
             self.assertNotIn("org.gnome.desktop.background picture-options", owner_session)
             self.assertNotIn("org.gnome.desktop.background primary-color", owner_session)
             manager = (builder.ROOT / "ubuntu/t630-session-manager.py").read_text()

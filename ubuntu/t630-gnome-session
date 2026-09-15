@@ -42,7 +42,9 @@ fi
 gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true
 gsettings set org.gnome.shell.keybindings toggle-application-view "['<Super>a', 'XF86HomePage']"
 gsettings set org.gnome.shell.keybindings toggle-overview "['XF86Launch6']"
-gsettings set org.gnome.shell favorite-apps "['firefox.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Software.desktop', 'org.gnome.TextEditor.desktop', 'org.gnome.Terminal.desktop', 'org.gnome.Settings.desktop']"
+# Run before Shell constructs AppDisplay: its empty-folder defaults are lazy.
+# Initialize default favorites only once, never reset the owner's pinned apps.
+/usr/local/libexec/t630-app-grid
 # Mutter 46's nested backend uses X11. A private rootful Xwayland window
 # provides that without restarting Weston or enabling any network listener.
 test ! -e /tmp/.X11-unix/X3
@@ -162,9 +164,7 @@ if [ "${T630_GNOME_BACKEND:-wayland}" != x11 ]; then
         WAYLAND_DISPLAY=t630-gnome-0 GDK_BACKEND=wayland \
         dbus-update-activation-environment WAYLAND_DISPLAY GDK_BACKEND
 fi
-# GNOME Shell writes Ubuntu's default app-folder list while starting. Apply the
-# tablet's flat application layout only after Shell owns its session-bus name,
-# otherwise a dead X-GNOME Utilities folder can reappear on the clean root.
+# Wait for the managed Shell before starting services that call its API.
 attempt=0
 until gdbus call --session --dest org.freedesktop.DBus \
     --object-path /org/freedesktop/DBus \
@@ -174,7 +174,6 @@ until gdbus call --session --dest org.freedesktop.DBus \
     test "$attempt" -lt 20
     sleep 1
 done
-gsettings set org.gnome.desktop.app-folders folder-children '@as []'
 if [ -x /usr/libexec/gsd-media-keys ]; then
     (
         # The nested shell must publish its display before GTK initializes.

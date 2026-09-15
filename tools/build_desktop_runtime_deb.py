@@ -13,10 +13,11 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-desktop-runtime"
-VERSION = "0.1.3"
+VERSION = "0.1.4"
 
 POSTINST = b"""#!/bin/sh
 set -e
+install -d -m 0700 /var/lib/t630
 if ! getent group t630-owner >/dev/null; then
     addgroup --system t630-owner
 fi

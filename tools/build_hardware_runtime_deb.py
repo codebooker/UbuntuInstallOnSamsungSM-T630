@@ -13,7 +13,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-hardware-runtime"
-VERSION = "0.1.4"
+VERSION = "0.1.5"
 FILES = {
     "etc/t630-install-id": ("ubuntu/t630-install-id", 0o644),
     "etc/NetworkManager/conf.d/90-t630-network.conf": ("ubuntu/90-t630-network.conf", 0o644),
@@ -74,7 +74,7 @@ def build(output: Path, epoch: int) -> str:
 Version: {VERSION}
 Architecture: all
 Maintainer: SM-T630 Ubuntu Port contributors
-Depends: t630-desktop-runtime (= 0.1.3), python3, network-manager, wpasupplicant, bluez, pipewire, pipewire-pulse, pulseaudio-utils, wireplumber, alsa-utils, iio-sensor-proxy, util-linux
+Depends: t630-desktop-runtime (= 0.1.4), python3, network-manager, wpasupplicant, bluez, pipewire, pipewire-pulse, pulseaudio-utils, wireplumber, alsa-utils, iio-sensor-proxy, util-linux
 Recommends: libssc (>= 0.4.4-t6303), hexagonrpcd (>= 0.4.0-t6303), iio-sensor-proxy (>= 3.9-t6303), t630-stock-assets
 Section: admin
 Priority: optional

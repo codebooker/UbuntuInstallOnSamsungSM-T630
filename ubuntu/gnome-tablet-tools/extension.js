@@ -9,6 +9,18 @@ import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js'
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 export default class TabletKeyboard extends Extension {
+    _hideStockControl(item) {
+        if (!item)
+            return;
+        const wasVisible = item.visible;
+        const signal = item.connect('notify::visible', () => {
+            if (item.visible)
+                item.hide();
+        });
+        item.hide();
+        this._hiddenStock.push({item, signal, wasVisible});
+    }
+
     _displayRequest(args, callback = null) {
         try {
             const process = Gio.Subprocess.new(['/usr/local/bin/t630-display', ...args],
@@ -76,7 +88,25 @@ export default class TabletKeyboard extends Extension {
         this._indicator.add_child(button);
         Main.panel.addToStatusArea(this.uuid, this._indicator, 0, 'right');
         this._displayActive = true;
+        this._hiddenStock = [];
+        // GNOME 46's standard backlight path does not own this stock panel.
+        // Its rotation toggle controls the deliberately isolated nested handler.
+        const quickSettings = Main.panel.statusArea.quickSettings;
+        this._hideStockControl(quickSettings._brightness?.quickSettingsItems?.[0]);
+        this._hideStockControl(quickSettings._autoRotate?.quickSettingsItems?.[0]);
         this._powerIndicator = new QuickSettings.SystemIndicator();
+        this._rotationLock = new QuickSettings.QuickToggle({
+            title: 'Rotation Lock', iconName: 'rotation-locked-symbolic', toggleMode: true,
+        });
+        this._settings.bind('rotation-locked', this._rotationLock, 'checked',
+            Gio.SettingsBindFlags.DEFAULT);
+        const syncRotation = () => {
+            const locked = this._settings.get_boolean('rotation-locked');
+            this._rotationLock.subtitle = locked ? 'Keep current orientation' : 'Rotate automatically';
+            this._rotationLock.iconName = locked ? 'rotation-locked-symbolic' : 'rotation-allowed-symbolic';
+        };
+        this._rotationSignal = this._settings.connect('changed::rotation-locked', syncRotation);
+        syncRotation();
         this._settingsLauncher = new QuickSettings.QuickToggle({
             title: 'Settings', iconName: 'org.gnome.Settings-symbolic',
             toggleMode: false,
@@ -143,7 +173,7 @@ export default class TabletKeyboard extends Extension {
             });
         });
         this._powerIndicator.quickSettingsItems.push(
-            this._settingsLauncher, this._brightness, this._keepAwake, this._autoSuspend,
+            this._settingsLauncher, this._brightness, this._rotationLock, this._keepAwake, this._autoSuspend,
             this._flashlight, this._flashlightBrightness);
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._powerIndicator, 2);
         this._powerMenu = Main.panel.statusArea.quickSettings.menu;
@@ -168,6 +198,14 @@ export default class TabletKeyboard extends Extension {
         if (this._flashlight?.checked)
             this._displayRequest(['flashlight', 'off']);
         this._displayActive = false;
+        if (this._rotationSignal)
+            this._settings.disconnect(this._rotationSignal);
+        this._rotationSignal = 0;
+        for (const {item, signal, wasVisible} of this._hiddenStock ?? []) {
+            item.disconnect(signal);
+            item.visible = wasVisible;
+        }
+        this._hiddenStock = [];
         if (this._flashlightBrightnessTimer)
             GLib.Source.remove(this._flashlightBrightnessTimer);
         if (this._flashlightLeaseTimer)

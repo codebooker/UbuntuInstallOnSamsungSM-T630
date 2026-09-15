@@ -3,6 +3,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 source = Path(__file__).resolve().parents[1] / 'ubuntu/t630_display.py'
 spec = importlib.util.spec_from_file_location('display', source)
@@ -11,6 +12,34 @@ spec.loader.exec_module(module)
 
 
 class DisplayTests(unittest.TestCase):
+    def test_missing_state_directory_is_created_privately(self):
+        prefs = self.root / 'new-state' / 'settings.json'
+        settings = module.DisplaySettings(self.root, self.off, prefs)
+        settings.request('BRIGHTNESS 40')
+        self.assertTrue(settings.flush(force=True))
+        self.assertEqual(prefs.parent.stat().st_mode & 0o777, 0o700)
+        self.assertEqual(prefs.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(module.DisplaySettings(self.root, self.off, prefs).status()['brightness'], 40)
+
+    def test_save_failure_does_not_disable_controls_and_can_retry(self):
+        self.settings.request('BRIGHTNESS 40')
+        with patch.object(module.os, 'open', side_effect=PermissionError('test')):
+            self.assertFalse(self.settings.flush(force=True))
+        self.assertIsNotNone(self.settings.dirty_at)
+        self.settings.request('BRIGHTNESS 65')
+        self.assertEqual(self.settings.status()['brightness'], 65)
+        self.assertTrue(self.settings.flush(force=True))
+
+    def test_symlinked_state_directory_is_refused_without_killing_controls(self):
+        target = self.root / 'target'
+        target.mkdir()
+        link = self.root / 'linked-state'
+        link.symlink_to(target, target_is_directory=True)
+        settings = module.DisplaySettings(self.root, self.off, link / 'settings.json')
+        settings.request('BRIGHTNESS 40')
+        self.assertFalse(settings.flush(force=True))
+        self.assertFalse((target / 'settings.json').exists())
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)

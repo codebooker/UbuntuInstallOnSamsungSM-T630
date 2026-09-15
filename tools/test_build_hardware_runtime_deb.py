@@ -65,7 +65,7 @@ class HardwareRuntimePackageTests(unittest.TestCase):
             control_path.write_bytes(members["control.tar.xz"])
             with tarfile.open(control_path, "r:xz") as archive:
                 control = archive.extractfile("./control").read().decode()
-            self.assertIn("t630-desktop-runtime (= 0.1.3)", control)
+            self.assertIn("t630-desktop-runtime (= 0.1.4)", control)
             self.assertIn("wpasupplicant", control)
             self.assertIn("pulseaudio-utils", control)
             self.assertIn("libssc (>= 0.4.4-t6303)", control)

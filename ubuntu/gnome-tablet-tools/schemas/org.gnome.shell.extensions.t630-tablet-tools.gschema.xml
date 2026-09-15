@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
   <schema id="org.gnome.shell.extensions.t630-tablet-tools" path="/org/gnome/shell/extensions/t630-tablet-tools/">
+    <key name="rotation-locked" type="b">
+      <default>false</default>
+      <summary>Keep the tablet's current physical screen orientation</summary>
+      <description>Controls the calibrated SM-T630 rotation service, not Mutter's nested relative handler.</description>
+    </key>
     <key name="toggle-keyboard" type="as">
       <default>['XF86Launch5']</default>
       <summary>Show or hide the tablet keyboard</summary>

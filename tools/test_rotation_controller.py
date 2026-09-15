@@ -27,6 +27,32 @@ class RotationControllerTests(unittest.TestCase):
         self.assertIsNone(self.module.mapped_transform("undefined"))
         self.assertIsNone(self.module.mapped_transform("unexpected"))
 
+    def test_lock_cancels_queued_rotation_and_unlock_settles_again(self):
+        state = {'pending': 'bottom-up', 'since': 10.0}
+        self.module.queue_rotation(state, 'bottom-up', True, 11.0)
+        self.assertIsNone(state['pending'])
+        self.module.queue_rotation(state, 'bottom-up', False, 20.0)
+        self.assertEqual(state, {'pending': 'bottom-up', 'since': 20.0})
+        self.module.queue_rotation(state, 'bottom-up', False, 20.5)
+        self.assertEqual(state['since'], 20.0)
+
+    def test_lock_ignores_all_physical_orientations(self):
+        for orientation in self.module.ORIENTATION_TRANSFORMS:
+            state = {'pending': None, 'since': 10.0}
+            self.module.queue_rotation(state, orientation, True, 20.0)
+            self.assertIsNone(state['pending'])
+
+    def test_extension_and_controller_share_rotation_lock_and_hide_stock_controls(self):
+        extension = (ROOT / 'ubuntu/gnome-tablet-tools/extension.js').read_text()
+        controller = (ROOT / 'ubuntu/t630-rotation-controller.py').read_text()
+        schema = (ROOT / 'ubuntu/gnome-tablet-tools/schemas/'
+                  'org.gnome.shell.extensions.t630-tablet-tools.gschema.xml').read_text()
+        self.assertIn("bind('rotation-locked'", extension)
+        self.assertIn("get_boolean('rotation-locked')", controller)
+        self.assertIn('<key name="rotation-locked" type="b">', schema)
+        self.assertIn('_brightness?.quickSettingsItems?.[0]', extension)
+        self.assertIn('_autoRotate?.quickSettingsItems?.[0]', extension)
+
     def test_session_locks_stock_handler_and_starts_controller(self):
         session = (ROOT / "ubuntu/t630-gnome-session").read_text()
         self.assertIn("orientation-lock true", session)

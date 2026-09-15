@@ -180,13 +180,24 @@ class DisplaySettings:
         data = dict(brightness=status['brightness'], idle_seconds=self.idle_seconds,
                     auto_suspend=self.auto_suspend)
         temporary = self.preferences.with_suffix('.new')
-        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
-        with os.fdopen(fd, 'w') as stream:
-            json.dump(data, stream)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, self.preferences)
+        try:
+            self.preferences.parent.mkdir(mode=0o700, exist_ok=True)
+            if self.preferences.parent.is_symlink():
+                raise OSError('Refusing a symlinked display state directory')
+            fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+            with os.fdopen(fd, 'w') as stream:
+                json.dump(data, stream)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, self.preferences)
+        except OSError as error:
+            # Persistence failure must not kill Power/lock/wake or the socket.
+            # Keep the dirty state for a bounded-rate retry, without logging data.
+            self.dirty_at = time.monotonic()
+            print(f'Display preference save deferred: {type(error).__name__}', flush=True)
+            return False
         self.dirty_at = None
+        return True
 
 
 class ControlSocket:

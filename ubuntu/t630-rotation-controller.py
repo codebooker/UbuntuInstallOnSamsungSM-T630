@@ -49,6 +49,18 @@ def mapped_transform(orientation):
     return ORIENTATION_TRANSFORMS.get(orientation)
 
 
+def queue_rotation(state, orientation, locked, now):
+    """Lock cancels even an already queued sensor change; unlock settles anew."""
+    if locked:
+        state['pending'] = None
+        return
+    if mapped_transform(orientation) is None:
+        return
+    if state['pending'] != orientation:
+        state['pending'] = orientation
+        state['since'] = now
+
+
 def main():
     from gi.repository import Gio, GLib
 
@@ -57,6 +69,14 @@ def main():
         raise SystemExit("Run through t630-gnome-run as the selected owner")
     if Path("/etc/t630-install-id").read_text().strip() != INSTALL_ID:
         raise SystemExit("Refusing an unrecognized device installation")
+    schema_source = Gio.SettingsSchemaSource.new_from_directory(
+        str(Path(os.environ['XDG_DATA_HOME']) / 'gnome-shell/extensions/'
+            't630-tablet-tools@local/schemas'),
+        Gio.SettingsSchemaSource.get_default(), False)
+    schema = schema_source.lookup('org.gnome.shell.extensions.t630-tablet-tools', False)
+    if schema is None or not schema.has_key('rotation-locked'):
+        raise SystemExit('Matching tablet rotation-lock schema is required.')
+    controls = Gio.Settings.new_full(schema, None, None)
 
     sensor = Gio.DBusProxy.new_for_bus_sync(
         Gio.BusType.SYSTEM,
@@ -90,12 +110,8 @@ def main():
         return value.unpack() if value is not None else "undefined"
 
     def queue_orientation(orientation):
-        target = mapped_transform(orientation)
-        if target is None:
-            return
-        if state["pending"] != orientation:
-            state["pending"] = orientation
-            state["since"] = time.monotonic()
+        queue_rotation(state, orientation, controls.get_boolean('rotation-locked'),
+                       time.monotonic())
 
     def ensure_xwayland_mode(width, height):
         mode = "1920x1200" if (width, height) == (1920, 1200) else PORTRAIT_MODE
@@ -187,6 +203,8 @@ def main():
 
             orientation = read_orientation()
             queue_orientation(orientation)
+            if controls.get_boolean('rotation-locked'):
+                return GLib.SOURCE_CONTINUE
             if (
                 state["pending"] is not None
                 and time.monotonic() - state["since"] >= SETTLE_SECONDS

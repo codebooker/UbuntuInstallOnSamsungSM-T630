@@ -6,8 +6,8 @@ The architecture-independent Ubuntu integration is now built by
 `tools/build_desktop_runtime_deb.py` as a deterministic Debian package:
 
 - name: `t630-desktop-runtime_0.1.1_all.deb`
-- size: 46,336 bytes
-- SHA256: `5895d74c2b8a793b62e7eabf6e8f45e55cbc09f2b1d7637a55b3810079feb7f1`
+- size: 46,320 bytes
+- SHA256: `8a55de438d571b8269e317507048a5c8a65926c413b782af2beacd3b8943060d`
 - regular files: 34
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
@@ -71,6 +71,11 @@ display socket and then the exact root-owned outer shutdown helper; invalid or
 concurrent requests fail closed. Both dialogs were opened and canceled on the
 physical tablet before and after a clean desktop-session restart without an
 error or unintended system action.
+
+The owner launcher no longer writes `picture-options` or `primary-color` on
+every start. Those values belong to the owner's persistent GNOME profile, so a
+wallpaper selected in Settings now survives restart. The disposable ownerless
+installer retains its separate dark fallback background.
 
 ## Installer-selected owner migration
 

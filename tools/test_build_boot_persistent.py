@@ -119,6 +119,16 @@ class PersistentBootTests(unittest.TestCase):
         for partition in ("/dev/sda20", "/dev/sda21", "/dev/sda22", "/dev/sde19"):
             self.assertIn(partition, text)
 
+    def test_v6_writer_accepts_only_v5_and_pins_clean_root_persistence(self):
+        writer = SOURCE.with_name("write_release_boot_v6.sh")
+        subprocess.run(["sh", "-n", writer], check=True)
+        text = writer.read_text()
+        self.assertIn("old_hash=d1f475dc", text)
+        self.assertIn("new_hash=ca7caa12", text)
+        self.assertIn('dd if="$image" of=/dev/sda19', text)
+        for partition in ("/dev/sda20", "/dev/sda21", "/dev/sda22", "/dev/sde19"):
+            self.assertIn(partition, text)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -17,8 +17,6 @@ if [ -x /usr/local/share/t630/t630-apply-user-profile.py ]; then
 else
     gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us')]"
 fi
-gsettings set org.gnome.desktop.background picture-options none
-gsettings set org.gnome.desktop.background primary-color '#241331'
 gsettings set org.gnome.desktop.session idle-delay 0
 # Mutter's nested dummy monitor feeds its own transforms back into the stock
 # orientation handler. Keep that relative handler out of the loop; the

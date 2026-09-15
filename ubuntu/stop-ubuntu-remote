@@ -99,6 +99,23 @@ for suffix in "/run/user/$owner_uid/doc" "/run/user/$owner_uid/gvfs" \
 done
 if [ "$root" != /run/ubuntu ]; then
     test -z "$(grep " $root/" /proc/mounts || true)"
+    # An orderly action from the personalized clean root should return to that
+    # same installation. Preserve the one-shot selector's crash fallback: it
+    # remains consumed throughout runtime and is rearmed only after every
+    # process and nested mount has shut down successfully.
+    selector=/run/ubuntu/.t630-next-root
+    consumed=/run/ubuntu/.t630-next-root.consumed
+    if [ -e "$selector" ]; then
+        test -f "$selector"
+        test ! -L "$selector"
+        test "$(cat "$selector")" = opt/t630/rehearsal/release-root
+    else
+        test -f "$consumed"
+        test ! -L "$consumed"
+        test "$(cat "$consumed")" = opt/t630/rehearsal/release-root
+        mv "$consumed" "$selector"
+    fi
+    sync
 fi
 umount /run/ubuntu
 sync

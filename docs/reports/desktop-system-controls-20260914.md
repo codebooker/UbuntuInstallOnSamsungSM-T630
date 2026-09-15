@@ -35,10 +35,19 @@ methods opened GNOME Shell's real end-session dialog and were canceled. The
 SessionManager log contained only its ready line; no timeout or method error
 occurred.
 
-Boot v5 embeds the matching dual-action outer helper. It was built twice with
-identical output, written only after validating the exact v4 boot hash, read
+A subsequent tablet restart exposed that the owner-session launcher still
+reapplied its early flat-purple development background on every start. Those
+two background writes are now absent from the persistent owner launcher, while
+the disposable pre-account installer retains its deliberate dark fallback.
+GNOME's per-user wallpaper URI and presentation mode therefore remain owned by
+the user's dconf profile across restarts.
+
+Boot v5 first embedded the dual-action outer helper. Boot v6 then added safe
+clean-root reselection after an orderly action. V6 was built twice with
+identical output, written only after validating the exact v5 boot hash, read
 back as
-`d1f475dc2e2194f0ccfc03d83d06102e72a5c1ac4a9e76ed4e622f7121010638`,
-and left vendor_boot, init_boot, DTBO, and vbmeta unchanged. Cold-boot and
-confirmed-power-off checks remain pending so neither action was triggered
-without the person at the tablet choosing it.
+`ca7caa12d1228969b264815bf69f34dbbee5ced9e3a86d1134c590bff8c895dc`,
+and left vendor_boot, init_boot, DTBO, and vbmeta unchanged. Its next restart
+selected the clean root, started managed GNOME, and retained the saved wallpaper
+settings. Confirmed full Power Off remains pending so the tablet was not left
+off without the person at the tablet choosing it.

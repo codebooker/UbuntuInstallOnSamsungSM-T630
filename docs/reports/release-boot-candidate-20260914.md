@@ -110,3 +110,17 @@ vendor_boot, init_boot, DTBO, and vbmeta were unchanged. The running desktop
 opened and canceled both native confirmation dialogs before and after a clean
 session restart. A v5 cold boot and a user-confirmed full power-off remain its
 final physical acceptance checks.
+
+Candidate v6, SHA256
+`ca7caa12d1228969b264815bf69f34dbbee5ced9e3a86d1134c590bff8c895dc`,
+keeps the personalized clean installation selected across orderly Restart and
+Power Off actions. The one-shot selector is still consumed throughout normal
+runtime, preserving the automatic fallback to the old lab root after a crash;
+the shutdown helper rearms it only after all candidate processes and nested
+mounts have stopped successfully. Its ramdisk SHA256 is
+`2afd2e5aae78d0b8021131d00391c20a55a0d0a0cb82d2896ca458a9a5357bb1`.
+Two builds were byte-identical. The guarded writer accepted only installed v5,
+wrote and read back only `boot`, and verified all four protected neighbors
+unchanged. A subsequent restart selected the clean root again, consumed the
+rearmed marker, started managed GNOME, and retained the exact saved wallpaper
+URI, dark URI, zoom mode, and color values.

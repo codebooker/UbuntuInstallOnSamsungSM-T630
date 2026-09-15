@@ -24,7 +24,9 @@
    distributable image and unique Bluetooth identity. GNOME Settings is now an
    explicit package dependency, the dead default app folder is removed after
    Shell startup, Home/Recents mappings persist, and native Restart/Power Off
-   confirmations reach the guarded orderly shutdown path.
+   confirmations reach the guarded orderly shutdown path. Owner wallpaper
+   choices now persist, and an orderly system action returns to the personalized
+   clean installation while an abnormal boot still falls back to the lab root.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
    stack, ARM64 compatibility packages, isolated GDM/elogind password-login

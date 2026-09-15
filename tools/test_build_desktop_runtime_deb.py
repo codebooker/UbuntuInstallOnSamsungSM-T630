@@ -61,6 +61,8 @@ class DesktopRuntimePackageTests(unittest.TestCase):
             self.assertIn("XF86HomePage", owner_session)
             self.assertIn("XF86Launch6", owner_session)
             self.assertIn("folder-children '@as []'", owner_session)
+            self.assertNotIn("org.gnome.desktop.background picture-options", owner_session)
+            self.assertNotIn("org.gnome.desktop.background primary-color", owner_session)
             manager = (builder.ROOT / "ubuntu/t630-session-manager.py").read_text()
             for method in ("Logout", "Shutdown", "Reboot", "CanShutdown", "IsInhibited"):
                 self.assertIn(f"name='{method}'", manager)

@@ -60,7 +60,7 @@ Current deterministic artifacts at `SOURCE_DATE_EPOCH=1700000000` are:
 - `t630-first-boot_0.1.1_all.deb`:
   `3b3adf74477f0402e30d3d443dcd49068eb2bf139afa83a2f4c4e346bb18a14e`
 - `t630-desktop-runtime_0.1.1_all.deb`:
-  `5895d74c2b8a793b62e7eabf6e8f45e55cbc09f2b1d7637a55b3810079feb7f1`
+  `8a55de438d571b8269e317507048a5c8a65926c413b782af2beacd3b8943060d`
 - `t630-hardware-runtime_0.1.2_all.deb`:
   `51d39bb832461513f95db7bc97efd7cdb3905975a2edd6b06a7c80ff08379694`
 - `t630-boot-runtime_0.1.0_all.deb`:

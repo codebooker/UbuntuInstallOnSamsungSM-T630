@@ -29,6 +29,12 @@ class RemoteAccessTests(unittest.TestCase):
         self.assertIn("clean_root_ownerless=fed71eb", launcher)
         self.assertIn("The one-shot clean root must remain recoverable", helper)
         self.assertIn("owner_uid=65534", helper)
+        self.assertIn('selector=/run/ubuntu/.t630-next-root', helper)
+        self.assertIn('consumed=/run/ubuntu/.t630-next-root.consumed', helper)
+        self.assertLess(helper.index('test -z "$(grep " $root/"'),
+                        helper.index('mv "$consumed" "$selector"'))
+        self.assertLess(helper.index('mv "$consumed" "$selector"'),
+                        helper.index('umount /run/ubuntu'))
 
     def test_screen_server_has_its_own_single_instance_lock(self):
         source = (ROOT / "ubuntu/t630_screen.py").read_text()

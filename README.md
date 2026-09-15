@@ -68,8 +68,9 @@ be treated as a porting task, not as a reason to remove those checks.
 The repository can reproduce both the conservative diagnostic image and the
 physically accepted persistent boot image from matching stock firmware. Its
 guarded BOOT-only writes and repeated cold boots passed on the development
-SM-T630; the latest power-action-only boot revision has passed write/readback
-and protected-neighbor checks, with its cold-boot check still pending.
+SM-T630. The latest revision also keeps the personalized clean installation
+selected across orderly restarts, retains wallpaper settings, and preserves the
+old root as an abnormal-boot fallback.
 Packaging and physically installing the identity-clean Ubuntu filesystem as a
 safe public installer is still in progress; do not improvise the one-time
 userdata installation from the lab scripts unless you can recover the tablet

@@ -106,9 +106,13 @@ GTK3 [clones tool axes on proximity-in](https://github.com/GNOME/gtk/blob/3.24.4
 so an idle client's X/Y-only inventory does not prove that pressure was lost.
 Use `--window` for a bounded 30-second physical proximity/pressure check; it
 records only tool capabilities and aggregate pressure, not handwriting or
-coordinates. The current live tests received no usable pen samples and are
-**inconclusive**, not pressure failures or passes. Metadata remains experimental
-and is deliberately absent after restart.
+coordinates. The corrected September 15 probe confirmed varying pressure in
+the parent X11 session, but the native GNOME test still received no usable pen
+samples even though finger events arrived. Pressure inside GNOME is **not
+accepted**. The manual metadata/proximity experiments were removed from the
+live session; no pressure experiment is enabled at normal startup. See the
+[pressure-path report](reports/pen-pressure-path-20260915.md) for the measured
+boundary and rejected trials.
 
 Standard owner folders are now initialized with `xdg-user-dirs-update` without
 replacing chosen paths. Before the restart, the existing Xournal++ autosave was

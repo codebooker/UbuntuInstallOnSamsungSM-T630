@@ -18,6 +18,56 @@ ui_spec.loader.exec_module(ui)
 
 
 class PenAppTests(unittest.TestCase):
+    def test_startup_metadata_phases_never_reenumerate_input(self):
+        text = '\n'.join(f'xwayland-tablet {kind}:14 id={device}' for
+                         kind, device in (('stylus', 8), ('eraser', 9), ('cursor', 10)))
+        for phase, property_name in (('--prepare', 'Wacom Tool Type'),
+                                     ('--publish-tool', 'Wacom Serial IDs')):
+            calls = []
+            def run(argv, **_kwargs):
+                calls.append(argv)
+                return SimpleNamespace(stdout=text if argv[1:] == ['--list', '--short']
+                                       else 'Abs Pressure')
+            with patch.object(metadata.sys, 'argv', ['metadata', phase]), \
+                 patch.dict(metadata.os.environ, {'DISPLAY': ':3'}), \
+                 patch.object(metadata.subprocess, 'run', side_effect=run), \
+                 patch.object(metadata, 'pen_is_idle') as idle_check:
+                metadata.main()
+            idle_check.assert_not_called()
+            mutations = [argv for argv in calls if argv[1] == 'set-prop']
+            self.assertEqual(len(mutations), 3)
+            self.assertTrue(all(property_name in argv for argv in mutations))
+            self.assertFalse(any(argv[1] in ('disable', 'enable') for argv in calls))
+
+    def test_all_tablet_capabilities_checked_before_any_mutation(self):
+        text = '\n'.join(f'xwayland-tablet {kind}:14 id={device}' for
+                         kind, device in (('stylus', 8), ('eraser', 9), ('cursor', 10)))
+        calls = []
+        def run(argv, **_kwargs):
+            calls.append(argv)
+            return SimpleNamespace(stdout=text if argv[1:] == ['--list', '--short']
+                                   else ('' if argv[-1] == '10' else 'Abs Pressure'))
+        with patch.object(metadata.sys, 'argv', ['metadata', '--prepare']), \
+             patch.dict(metadata.os.environ, {'DISPLAY': ':3'}), \
+             patch.object(metadata.subprocess, 'run', side_effect=run):
+            with self.assertRaises(SystemExit):
+                metadata.main()
+        self.assertFalse(any(argv[1] == 'set-prop' for argv in calls))
+
+    def test_session_metadata_trial_is_opt_in_and_correctly_ordered(self):
+        from prepare_pen_session_trial import prepare
+        base = SOURCE.with_name('t630-gnome-session').read_bytes()
+        session = prepare(base, proximity=True).decode()
+        self.assertEqual(session.count('${T630_PEN_METADATA_TRIAL:-0}'), 3)
+        self.assertLess(session.index('t630-pen-x11-metadata --prepare'),
+                        session.index('/usr/bin/gnome-shell --nested'))
+        self.assertGreater(session.index('t630-pen-x11-metadata --publish-tool'),
+                           session.index('NameHasOwner org.gnome.Shell'))
+        self.assertNotIn('t630-pen-x11-metadata --refresh', session)
+        self.assertNotIn('T630_PEN_METADATA_TRIAL', base.decode())
+        with self.assertRaises(ValueError):
+            prepare(base + b'\n')
+
     def test_drawing_desktop_uses_installed_upstream_icon_and_guarded_launcher(self):
         text = SOURCE.with_name('t630-mypaint.desktop').read_text()
         self.assertIn('Icon=org.mypaint.MyPaint\n', text)

@@ -2,7 +2,9 @@
 """Give Mutter's nested X11 backend explicit Xwayland tablet metadata.
 
 No coordinate remapping, device grabs, input injection, or handwriting logging.
---refresh briefly re-enumerates only the stylus while the physical pen is idle.
+--refresh briefly re-enumerates the three virtual tools while the physical pen is idle.
+--prepare sets tool types before Mutter enumerates devices; --publish-tool
+publishes serials after Mutter is ready. Neither startup phase resets devices.
 Call with DISPLAY=:3 and its existing XAUTHORITY. Live --refresh needs the
 USB administrator for its read-only physical-pen idle check. This experiment
 is not automatically installed/enabled by the pen-app recipe.
@@ -40,8 +42,8 @@ def pen_is_idle():
 
 
 def main():
-    if sys.argv[1:] not in ([], ['--refresh']) or os.environ.get('DISPLAY') != ':3':
-        raise SystemExit('Run in the private :3 session; optional --refresh.')
+    if sys.argv[1:] not in ([], ['--refresh'], ['--prepare'], ['--publish-tool']) or os.environ.get('DISPLAY') != ':3':
+        raise SystemExit('Run in the private :3 session; optional --prepare/--publish-tool/--refresh.')
     refresh = sys.argv[1:] == ['--refresh']
     if refresh and not pen_is_idle():
         raise SystemExit('Physical pen is in use; leave it off the screen and retry.')
@@ -53,8 +55,10 @@ def main():
     for name, kind, device in devices:
         if 'Abs Pressure' not in xinput('--list', '--long', device):
             raise SystemExit('Expected pressure-capable tablet; refusing metadata changes.')
-        xinput('set-prop', '--type=atom', '--format=32', device,
-               'Wacom Tool Type', kind.upper())
+    for name, kind, device in devices:
+        if sys.argv[1:] != ['--publish-tool']:
+            xinput('set-prop', '--type=atom', '--format=32', device,
+                   'Wacom Tool Type', kind.upper())
         if refresh:
             # Recreate the immutable Mutter device classification, not the
             # physical digitizer. Always re-enable on a failed refresh.
@@ -65,8 +69,9 @@ def main():
         # Mutter's device-added path guesses only libinput serial metadata.
         # Publish Wacom serial AFTER re-enumeration so its property event sets
         # the current tool on the newly created device, not the destroyed one.
-        xinput('set-prop', '--type=int', '--format=32', device,
-               'Wacom Serial IDs', 0, 0, 0, 630)
+        if sys.argv[1:] != ['--prepare']:
+            xinput('set-prop', '--type=int', '--format=32', device,
+                   'Wacom Serial IDs', 0, 0, 0, 630)
     print('Private Xwayland tablet metadata configured; physical pressure acceptance pending.')
 
 

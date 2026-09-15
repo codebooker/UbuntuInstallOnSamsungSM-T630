@@ -66,7 +66,9 @@ Xournal++ unchanged. It refuses root, the wrong Wayland display, unsupported
 chooser types, and MyPaint versions other than `2.0.1-10build2`; review/update
 the adapter before upgrading that package. Normal file arguments are retained.
 Startup and unit tests pass, and the owner confirms physical touch and S Pen
-respond again. Sustained drawing and selector use are **not yet accepted**. See the
+respond again. The owner then confirmed the requested long-stroke and brush/color
+control check works. This accepts that bounded drawing/picker check, not extended
+session reliability, pressure, palm rejection, or save/reopen. See the
 [input-freeze investigation](reports/mypaint-popup-input-20260915.md).
 
 ## Pressure investigation

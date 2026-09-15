@@ -54,8 +54,10 @@ After recovery and the adapted app launch, the owner confirmed: "physical touch
 and spen both work". Restored physical input is accepted. This does not establish
 which chooser triggered the original fault or prove that every popup is safe.
 
-Continuous drawing and both quick selectors opening usable side panels without
-freezing touch/pen still require acceptance. Pressure,
+When asked to draw several long strokes and use the brush/color controls to check
+continued input responsiveness, the owner replied "works". That bounded physical
+drawing/picker check is accepted; prolonged sessions and other dialogs remain
+untested. Pressure,
 palm rejection, rotation, and drawing save/reopen remain separate gates.
 During the later screen check, the preview was black because display status
 reported `blanked: true` and GNOME ScreenSaver reported active. That observation

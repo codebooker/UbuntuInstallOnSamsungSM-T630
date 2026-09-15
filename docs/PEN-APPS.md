@@ -43,7 +43,9 @@ serial metadata.
 It identifies only the complete private stylus/eraser/cursor set and checks
 pressure capabilities before assigning explicit tool-type and software serial
 metadata. A live `--refresh` refuses a physical pen in proximity and re-enumerates
-only those software tablet devices, always re-enabling them. It needs the USB
+only those software tablet devices, always re-enabling them. Serial metadata is
+published **after** re-enumeration so Mutter updates the replacement device's
+current tool rather than a device it is about to remove. It needs the USB
 administrator for the read-only physical-pen idle check; do not widen input-device
 permissions to run it as the normal owner. No device grabs or synthetic strokes
 are used. It made the stylus visible to inner GTK, but pressure axes were still
@@ -52,6 +54,19 @@ unconfirmed before the next physical stroke. It is not a startup hook.
 `tools/probe_gdk_pen.py`, launched through `t630-gnome-run`, inventories device
 names, sources, and axis capabilities without recording handwriting. Neither
 the inventory nor continuous constant-width handwriting proves pressure works.
+GTK3 [clones tool axes on proximity-in](https://github.com/GNOME/gtk/blob/3.24.41/gdk/wayland/gdkdevice-wayland.c),
+so an idle client's X/Y-only inventory does not prove that pressure was lost.
+Use `--window` for a bounded 30-second physical proximity/pressure check; it
+records only tool capabilities and aggregate pressure, not handwriting or
+coordinates. The current live tests received no usable pen samples and are
+**inconclusive**, not pressure failures or passes. Metadata remains experimental
+and is deliberately absent after restart.
+
+Standard owner folders are now initialized with `xdg-user-dirs-update` without
+replacing chosen paths. Before the restart, the existing Xournal++ autosave was
+preserved as `Documents/T630-pen-test-before-restart.xopp`; its compressed data
+verified and the file survived restart. Opening it again in Xournal++ and the
+`.ora` drawing save/reopen test still require acceptance.
 
 ## Acceptance still required
 

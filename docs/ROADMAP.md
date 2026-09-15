@@ -27,6 +27,12 @@
    confirmations reach the guarded orderly shutdown path. Owner wallpaper
    choices now persist, and an orderly system action returns to the personalized
    clean installation while an abnormal boot still falls back to the lab root.
+   The next unattended orderly restart also passed automatic owner-only SSH and
+   screen-feed startup. Standard owner document folders are now initialized
+   without resetting chosen paths. Remove the 70-second CNSS startup wait by
+   testing the driver's normal filesystem-ready/calibration ordering; a guarded
+   probe is prepared, not yet integrated. Full Power Off remains a separate
+   clean-root acceptance test.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
    stack, ARM64 compatibility packages, isolated GDM/elogind password-login
@@ -58,7 +64,8 @@
    inside GNOME, and an Xournal++ page shows continuous physical handwriting.
    Krita 5.2.2 explicitly rejects native Wayland and is deferred alongside the
    legacy-X11 issue. The outer Xwayland advertises pressure, but the inner GTK
-   inventory initially had no pressure axis or stylus device. A bounded RAM-only
+   inventory initially missed the stylus device. Idle X/Y-only axes do not prove
+   pressure loss: GTK populates tool axes at proximity-in. A bounded RAM-only
    metadata experiment now makes Mutter recognize the missing stylus; genuine
    physical pressure and safe persistence are not yet accepted.
    Evaluate notes/PDF annotation and drawing using

@@ -55,8 +55,6 @@ def main():
             raise SystemExit('Expected pressure-capable tablet; refusing metadata changes.')
         xinput('set-prop', '--type=atom', '--format=32', device,
                'Wacom Tool Type', kind.upper())
-        xinput('set-prop', '--type=int', '--format=32', device,
-               'Wacom Serial IDs', 0, 0, 0, 630)
         if refresh:
             # Recreate the immutable Mutter device classification, not the
             # physical digitizer. Always re-enable on a failed refresh.
@@ -64,6 +62,11 @@ def main():
                 xinput('disable', device)
             finally:
                 xinput('enable', device)
+        # Mutter's device-added path guesses only libinput serial metadata.
+        # Publish Wacom serial AFTER re-enumeration so its property event sets
+        # the current tool on the newly created device, not the destroyed one.
+        xinput('set-prop', '--type=int', '--format=32', device,
+               'Wacom Serial IDs', 0, 0, 0, 630)
     print('Private Xwayland tablet metadata configured; physical pressure acceptance pending.')
 
 

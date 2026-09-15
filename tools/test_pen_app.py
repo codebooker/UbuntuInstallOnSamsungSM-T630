@@ -2,6 +2,7 @@ import importlib.util
 from pathlib import Path
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 
 SOURCE = Path(__file__).resolve().parents[1] / 'ubuntu/t630-pen-app.py'
 spec = importlib.util.spec_from_file_location('pen_app', SOURCE)
@@ -14,6 +15,33 @@ metadata_spec.loader.exec_module(metadata)
 
 
 class PenAppTests(unittest.TestCase):
+    def test_serial_metadata_is_published_after_device_refresh(self):
+        text = '\n'.join(f'xwayland-tablet {kind}:14 id={device}' for
+                         kind, device in (('stylus', 8), ('eraser', 9), ('cursor', 10)))
+        calls = []
+        def run(argv, **_kwargs):
+            calls.append(argv)
+            return SimpleNamespace(stdout=text if argv[1:] == ['--list', '--short'] else 'Abs Pressure')
+        with patch.object(metadata.sys, 'argv', ['metadata', '--refresh']), \
+             patch.dict(metadata.os.environ, {'DISPLAY': ':3'}), \
+             patch.object(metadata, 'pen_is_idle', return_value=True), \
+             patch.object(metadata.subprocess, 'run', side_effect=run):
+            metadata.main()
+        for device in (8, 9, 10):
+            enable = next(i for i, command in enumerate(calls) if command[1:] == ['enable', str(device)])
+            serial = next(i for i, command in enumerate(calls) if 'Wacom Serial IDs' in command and
+                          command[4] == str(device))
+            self.assertLess(enable, serial)
+
+    def test_active_pen_refuses_refresh_before_xinput(self):
+        with patch.object(metadata.sys, 'argv', ['metadata', '--refresh']), \
+             patch.dict(metadata.os.environ, {'DISPLAY': ':3'}), \
+             patch.object(metadata, 'pen_is_idle', return_value=False), \
+             patch.object(metadata.subprocess, 'run') as run:
+            with self.assertRaises(SystemExit):
+                metadata.main()
+            run.assert_not_called()
+
     def test_metadata_targets_only_complete_private_tablet_set(self):
         text = '\n'.join(f' ↳ xwayland-tablet {kind}:14\tid={device} [slave pointer]' for
                          kind, device in (('stylus', 8), ('eraser', 9), ('cursor', 10)))

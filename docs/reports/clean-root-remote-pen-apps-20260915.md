@@ -55,6 +55,11 @@ fallback. **No clean-root remote cold-boot test has been performed yet**, since
 the handwriting test document remains open. Full shutdown filesystem-busy
 acceptance is also still pending.
 
+Follow-up: the [subsequent orderly restart report](clean-root-restart-folders-20260915.md)
+records automatic clean-root remote startup, saved-note preservation, and the
+qualification that idle GTK axes alone cannot establish pressure loss. The
+same-boot observations above describe the earlier stage, not current acceptance.
+
 All app downloads were written to the tablet, not the Mac. The tablet retained
 more than 85 GiB free; the Mac data volume showed 60 GiB available. Only small
 diagnostic screenshots and source files were created locally.

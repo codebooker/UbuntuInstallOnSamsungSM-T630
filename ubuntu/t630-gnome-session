@@ -4,6 +4,11 @@ set -eu
 unset LD_PRELOAD GTK_IM_MODULE GTK_IM_MODULE_FILE QT_IM_MODULE GTK_THEME
 cd "$HOME"
 mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME"
+if [ -x /usr/bin/xdg-user-dirs-update ]; then
+    # The port does not run gnome-session's normal XDG-directory autostart.
+    # Use the distro tool so locale and existing user-selected paths survive.
+    /usr/bin/xdg-user-dirs-update || echo 'Unable to initialize standard user folders.' >&2
+fi
 if [ -x /usr/local/libexec/t630-install-owner-assets ]; then
     /usr/local/libexec/t630-install-owner-assets
 fi

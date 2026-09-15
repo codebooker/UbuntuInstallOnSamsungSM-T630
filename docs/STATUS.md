@@ -24,7 +24,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Everyday apps | Working | Clean-root provisioning installs GNOME Software/PackageKit, native Mozilla Firefox, Files, Terminal, Text Editor, LibreOffice, Contacts, media codecs, and the standard GNOME utilities; Snap remains absent because the stock kernel lacks its namespace requirements |
 | Physical keys | Working | Volume, Power, Home, Back, Recents, and red Active button mapped |
 | Desktop system controls | Working | Settings is packaged and available from the app grid, favorites, and Quick Settings; GNOME's standard Restart and Power Off confirmations reach the guarded orderly-shutdown path; dead default app folders are removed after Shell starts |
-| Wi-Fi / remote access | Working | Wi-Fi reconnects. Opt-in clean-root SSH uses the chosen owner and public-key-only login, rejects root login, and tunnels the single-instance loopback screen feed; same-boot access and isolation checks pass, with a new USB-pinned host key. Clean-root remote cold-start still needs testing; earlier lab-root remote cold-start passed |
+| Wi-Fi / remote access | Working, slow startup | Wi-Fi reconnects automatically around 80 seconds after restart; a missing pre-wlan filesystem-ready event leaves the stock CNSS calibration wait to time out after 70 seconds. Opt-in owner-only SSH and the loopback screen feed start automatically on the personalized clean root; host trust and same-boot isolation checks pass |
 | Bluetooth | Working | WCN6850 startup retry, firmware handoff, idle wake, BlueZ discovery, synchronized teardown, and supervised recovery physically tested; WirePlumber Bluetooth audio policy is enabled, pending a paired-headset playback test |
 | Speakers | Working | Stock calibration and guarded amplifier sequencing; GNOME volume control works |
 | Microphone | Working | Built-in microphone exposed as the normal PipeWire source through a demand-driven bridge |
@@ -49,6 +49,13 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 - Recovery to stock was prepared but has not been exercised end-to-end on the
   development tablet.
 - GPU acceleration is opt-in; software rendering is the safe fallback.
+- The personalized clean root now passes an unattended orderly restart with
+  automatic SSH/screen startup, preserved wallpaper and owner folders. Full
+  Power Off acceptance remains separate; this restart does not prove shutdown
+  on every path. See the [restart report](reports/clean-root-restart-folders-20260915.md).
+- Wi-Fi startup currently includes a 70-second calibration wait. A guarded
+  filesystem-ready probe is prepared but **not integrated or physically tested**;
+  it refuses a loading/running wlan module and does not bypass calibration.
 - The stable nested GNOME path currently disables its internal Xwayland server;
   the packaged default applications are Wayland-native, but legacy X11-only
   applications will not run until the Qualcomm/Mesa crash path is resolved.

@@ -50,6 +50,25 @@ an in-memory surface, not the display or physical pen. Its four-worker compariso
 is expected to crash on this unpatched build; the probe disables core dumps and
 has CPU/time bounds. It writes no document or GUI/input event.
 
+## Experimental chooser-popup input workaround
+
+The single-worker workaround does not fix MyPaint's separate
+[Wayland chooser-popup freeze](https://github.com/mypaint/mypaint/issues/1161).
+The live app logged the matching GDK grab warning when the owner reported touch
+and pen becoming unresponsive. Its autosave cache was copied into a unique
+`Documents/MyPaint-recovery-*` directory before only that app was terminated.
+
+The optional launcher now uses `t630-mypaint`, a version-guarded, app-local UI
+adapter. Brush and color quick selectors reveal MyPaint's existing dockable
+brush-group and HSV-wheel panels instead of popup windows with input grabs.
+It leaves installed package files, documents, preferences, the desktop, and
+Xournal++ unchanged. It refuses root, the wrong Wayland display, unsupported
+chooser types, and MyPaint versions other than `2.0.1-10build2`; review/update
+the adapter before upgrading that package. Normal file arguments are retained.
+Startup and unit tests pass; physical drawing, selector use, and recovery of
+touch/pen responsiveness are **not yet accepted**. See the
+[input-freeze investigation](reports/mypaint-popup-input-20260915.md).
+
 ## Pressure investigation
 
 The private rootful Xwayland host advertises six stylus valuators, including

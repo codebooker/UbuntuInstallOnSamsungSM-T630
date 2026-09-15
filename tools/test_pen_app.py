@@ -1,7 +1,7 @@
 import importlib.util
 from pathlib import Path
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from types import SimpleNamespace
 
 SOURCE = Path(__file__).resolve().parents[1] / 'ubuntu/t630-pen-app.py'
@@ -12,9 +12,54 @@ metadata_spec = importlib.util.spec_from_file_location(
     'pen_metadata', SOURCE.with_name('t630-pen-x11-metadata.py'))
 metadata = importlib.util.module_from_spec(metadata_spec)
 metadata_spec.loader.exec_module(metadata)
+ui_spec = importlib.util.spec_from_file_location('mypaint_ui', SOURCE.with_name('t630-mypaint.py'))
+ui = importlib.util.module_from_spec(ui_spec)
+ui_spec.loader.exec_module(ui)
 
 
 class PenAppTests(unittest.TestCase):
+    def test_ui_adapter_refuses_root_wrong_display_and_unknown_package(self):
+        with patch.object(ui.os, 'getuid', return_value=0):
+            with self.assertRaises(SystemExit):
+                ui.main()
+        with patch.object(ui.os, 'getuid', return_value=1000), \
+             patch.dict(ui.os.environ, {'WAYLAND_DISPLAY': 'wayland-0'}):
+            with self.assertRaises(SystemExit):
+                ui.main()
+        with patch.object(ui.os, 'getuid', return_value=1000), \
+             patch.dict(ui.os.environ, {'WAYLAND_DISPLAY': 't630-gnome-0'}), \
+             patch.object(ui.subprocess, 'check_output', return_value='future-package'), \
+             patch.object(ui.runpy, 'run_path') as execute:
+            with self.assertRaises(SystemExit):
+                ui.main()
+            execute.assert_not_called()
+
+    def test_ui_adapter_uses_normal_entrypoint_and_app_only_popup_override(self):
+        chooser_type = type('ChooserPopup', (), {})
+        with patch.object(ui.os, 'getuid', return_value=1000), \
+             patch.dict(ui.os.environ, {'WAYLAND_DISPLAY': 't630-gnome-0'}), \
+             patch.object(ui.subprocess, 'check_output', return_value='2.0.1-10build2'), \
+             patch.dict(ui.sys.modules, {'gui': SimpleNamespace(__path__=[]),
+                 'gui.windowing': SimpleNamespace(ChooserPopup=chooser_type)}), \
+             patch.object(ui.sys, 'path', []), \
+             patch.object(ui.runpy, 'run_path') as execute:
+            ui.main()
+            self.assertEqual(chooser_type.popup, ui.panel_popup)
+            execute.assert_called_once_with('/usr/bin/mypaint', run_name='__main__')
+            self.assertEqual(ui.os.environ['OMP_NUM_THREADS'], '1')
+
+    def test_chooser_controls_reveal_panels_without_popup_input_grabs(self):
+        for kind, expected in (('BrushChooserPopup', ('MyPaintBrushGroupTool', ('classic',))),
+                               ('ColorChooserPopup', ('MyPaintHSVWheelTool', ()))):
+            chooser = type(kind, (), {})()
+            reveal = Mock()
+            chooser.app = SimpleNamespace(workspace=SimpleNamespace(reveal_tool_widget=reveal))
+            chooser._chooser = SimpleNamespace(groups_sb=SimpleNamespace(get_value=lambda: 'classic'))
+            ui.panel_popup(chooser, event=object())
+            reveal.assert_called_once_with(*expected)
+        with self.assertRaises(RuntimeError):
+            ui.panel_popup(SimpleNamespace())
+
     def test_serial_metadata_is_published_after_device_refresh(self):
         text = '\n'.join(f'xwayland-tablet {kind}:14 id={device}' for
                          kind, device in (('stylus', 8), ('eraser', 9), ('cursor', 10)))

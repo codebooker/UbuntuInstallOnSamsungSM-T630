@@ -6,7 +6,7 @@ Does not create/reset preferences, record input, or modify existing documents.
 import os
 import sys
 
-COMMANDS = {'notes': '/usr/bin/xournalpp', 'drawing': '/usr/bin/mypaint'}
+COMMANDS = {'notes': '/usr/bin/xournalpp', 'drawing': '/usr/local/libexec/t630-mypaint'}
 
 
 def main():

@@ -57,3 +57,7 @@ fix using the currently installed native package.
 All 251 discovered tests completed successfully (247 passes, four skips),
 including the launcher test that requires the drawing-only OpenMP override and
 leaves the notes launch environment unchanged.
+
+Follow-up: the one-worker fix is not a fix for all GUI faults. The owner then
+reported touch/pen unresponsiveness with a matching chooser-popup grab warning;
+see the separate [popup/input report](mypaint-popup-input-20260915.md).

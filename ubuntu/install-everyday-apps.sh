@@ -3,7 +3,7 @@
 set -u
 export DEBIAN_FRONTEND=noninteractive
 apt-get install -y --no-install-recommends \
-  gnome-software packagekit nautilus gnome-text-editor evince eog file-roller \
+  at-spi2-core gnome-software packagekit nautilus gnome-text-editor evince eog file-roller \
   gnome-calculator gnome-clocks gnome-calendar gnome-system-monitor \
   gnome-disk-utility gnome-characters gnome-font-viewer gnome-terminal \
   libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-gtk3 \

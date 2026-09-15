@@ -1,6 +1,6 @@
 # Hardware and integration status
 
-Last updated: 2026-09-14. Unless stated otherwise, results are from one physical
+Last updated: 2026-09-15. Unless stated otherwise, results are from one physical
 SM-T630 on the exact `T630XXSBDZE3` baseline.
 
 ## Diagnostic safety
@@ -19,11 +19,12 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Display | Working | Internal DRM/MSM panel; GNOME fills both tested 1920×1200 landscape and 1200×1920 portrait positions without the recovery panel showing |
 | Touch | Working | Finger coordinates and click/drag corrected |
 | S Pen | Working | Position and clicking corrected; GNOME keyboard accepts pen input |
+| Pen apps | Evaluation | Native Xournal++ notes and MyPaint drawing launch in clean-root GNOME; continuous handwriting is visible. Genuine pressure, palm rejection, rotation, and save/reopen acceptance remain; Krita's native-Wayland rejection is documented |
 | Keyboard | Working | Maliit/GNOME on-screen keyboard with Shift, Enter, Backspace, and Hide |
 | Everyday apps | Working | Clean-root provisioning installs GNOME Software/PackageKit, native Mozilla Firefox, Files, Terminal, Text Editor, LibreOffice, Contacts, media codecs, and the standard GNOME utilities; Snap remains absent because the stock kernel lacks its namespace requirements |
 | Physical keys | Working | Volume, Power, Home, Back, Recents, and red Active button mapped |
 | Desktop system controls | Working | Settings is packaged and available from the app grid, favorites, and Quick Settings; GNOME's standard Restart and Power Off confirmations reach the guarded orderly-shutdown path; dead default app folders are removed after Shell starts |
-| Wi-Fi / remote access | Working | Wi-Fi reconnects and SSH/single-instance screen viewing work over LAN; the bounded BusyBox-supervisor fallback launched them automatically on two accepted release-image cold boots without USB intervention; clean-root testing made `wpasupplicant` an explicit dependency and the first-run picker now scans networks |
+| Wi-Fi / remote access | Working | Wi-Fi reconnects. Opt-in clean-root SSH uses the chosen owner and public-key-only login, rejects root login, and tunnels the single-instance loopback screen feed; same-boot access and isolation checks pass, with a new USB-pinned host key. Clean-root remote cold-start still needs testing; earlier lab-root remote cold-start passed |
 | Bluetooth | Working | WCN6850 startup retry, firmware handoff, idle wake, BlueZ discovery, synchronized teardown, and supervised recovery physically tested; WirePlumber Bluetooth audio policy is enabled, pending a paired-headset playback test |
 | Speakers | Working | Stock calibration and guarded amplifier sequencing; GNOME volume control works |
 | Microphone | Working | Built-in microphone exposed as the normal PipeWire source through a demand-driven bridge |

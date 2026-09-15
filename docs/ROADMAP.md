@@ -53,12 +53,19 @@
    reconstructed locally with complete input/output hashes directly from the
    tablet's read-only stock `super`; they matched the working runtime
    byte-for-byte. Writable camera state regenerates without a seed.
-3. Pen-friendly handwritten notes and drawing. Evaluate Xournal++ first for
-   notes/PDF annotation and Krita for drawing, using native ARM64 packages and
+3. Pen-friendly handwritten notes and drawing. Xournal++ and MyPaint are now
+   installed as native ARM64 apps on the personalized clean root; both launch
+   inside GNOME, and an Xournal++ page shows continuous physical handwriting.
+   Krita 5.2.2 explicitly rejects native Wayland and is deferred alongside the
+   legacy-X11 issue. The outer Xwayland advertises pressure, but the inner GTK
+   inventory initially had no pressure axis or stylus device. A bounded RAM-only
+   metadata experiment now makes Mutter recognize the missing stylus; genuine
+   physical pressure and safe persistence are not yet accepted.
+   Evaluate notes/PDF annotation and drawing using
    the stable Wayland desktop. Verify continuous S Pen strokes, pressure,
    palm rejection, pen-button tools, portrait/landscape alignment, performance,
    and save/reopen after restart before adding accepted apps to the clean-root
-   recipe. Current pen clicking does not prove pressure or palm rejection works
+   recipe. Current handwriting does not prove pressure or palm rejection works
    through the nested compositor.
 4. Broader camera lighting/application tests and photo-flash integration.
 5. Bluetooth headset playback, microphone, and reconnect testing.

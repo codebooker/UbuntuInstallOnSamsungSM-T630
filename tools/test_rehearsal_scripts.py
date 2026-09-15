@@ -42,6 +42,7 @@ class RehearsalScriptTests(unittest.TestCase):
         self.assertIn("libreoffice-writer", text)
         self.assertIn("firefox", text)
         self.assertIn("wpasupplicant", text)
+        self.assertIn("at-spi2-core", text)
 
     def test_checker_covers_release_and_mount_state(self):
         text = (TOOLS / "check_rehearsal_root.sh").read_text()

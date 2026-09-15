@@ -19,6 +19,8 @@ RUNTIME_FILES = (
     "ubuntu/t630-desktop-autostart",
     "ubuntu/t630-gnome-preview",
     "ubuntu/t630-gnome-run.py",
+    "ubuntu/t630-pen-app.py",
+    "ubuntu/install-remote-access.py",
     "ubuntu/t630-gnome-size.py",
     "ubuntu/t630-gpu-session-watch.py",
     "ubuntu/t630-install-owner-assets.py",

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Xournal++
+Comment=Handwritten notes and PDF annotation
+Exec=/usr/local/bin/t630-gnome-run /usr/local/bin/t630-pen-app notes %F
+Icon=com.github.xournalpp.xournalpp
+Terminal=false
+Categories=Office;
+MimeType=application/x-xopp;application/pdf;
+StartupNotify=true

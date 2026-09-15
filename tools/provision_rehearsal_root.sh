@@ -92,7 +92,7 @@ chroot "$root" /usr/bin/env \
 chroot "$root" /usr/bin/env \
     DEBIAN_FRONTEND=noninteractive LC_ALL=C \
     apt-get install -y --no-install-recommends \
-    alsa-utils bluez breeze-icon-theme chrony dbus file librsvg2-common \
+    alsa-utils at-spi2-core bluez breeze-icon-theme chrony dbus file librsvg2-common \
     gir1.2-gtk-3.0 gdm3 gnome-shell \
     iio-sensor-proxy libdrm2 libglib2.0-0t64 libglib2.0-bin \
     libgtk-3-0t64 libgudev-1.0-0 liblzma5 libprotobuf-c1 libqt5svg5 \

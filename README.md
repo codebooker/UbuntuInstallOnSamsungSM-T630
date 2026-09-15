@@ -28,6 +28,7 @@ full-screen GNOME desktop from internal storage.
 | Password lock and on-screen keyboard | Working |
 | Settings and standard Restart / Power Off menus | Working |
 | App store, native Firefox, LibreOffice, and everyday apps | Included in the clean release-root recipe |
+| S Pen notes and drawing apps | Xournal++ and MyPaint installed for evaluation; genuine pressure/palm rejection acceptance pending |
 | Charging and manual shallow suspend/wake | Working |
 | Accelerometer, light, proximity, magnetometer | Working |
 | GPU rendering | Experimental; software fallback retained |
@@ -64,6 +65,8 @@ be treated as a porting task, not as a reason to remove those checks.
    regressions, and recovery details.
 6. See the [completion roadmap](docs/ROADMAP.md) for the end-user installer and
    the deliberately deferred Android-app work.
+7. See [pen apps](docs/PEN-APPS.md) and [opt-in remote access](docs/REMOTE-ACCESS.md)
+   for the clean installation's current application and network-access recipes.
 
 The repository can reproduce both the conservative diagnostic image and the
 physically accepted persistent boot image from matching stock firmware. Its

@@ -1,14 +1,36 @@
 #!/usr/bin/env python3
 
 import subprocess
+import importlib.util
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
+spec = importlib.util.spec_from_file_location('remote_install', ROOT / 'ubuntu/install-remote-access.py')
+remote_install = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(remote_install)
 
 
 class RemoteAccessTests(unittest.TestCase):
+    def test_owner_access_policy_is_key_only_and_screen_tunnel_only(self):
+        config = remote_install.make_config('new_owner')
+        for required in ('AllowUsers new_owner', 'PermitRootLogin no',
+                         'PasswordAuthentication no', 'AuthenticationMethods publickey',
+                         'AllowTcpForwarding local', 'PermitOpen 127.0.0.1:8765',
+                         'AllowAgentForwarding no', 'X11Forwarding no'):
+            self.assertIn(required, config)
+        with self.assertRaises(ValueError):
+            remote_install.make_config('owner\nPermitRootLogin yes')
+
+    def test_public_key_input_rejects_private_keys_options_and_multiple_keys(self):
+        key = 'ssh-ed25519 AAAAB3NzaTest example'
+        self.assertEqual(remote_install.validate_public_key(key), key + '\n')
+        for text in ('-----BEGIN OPENSSH PRIVATE KEY-----', 'command="sh" ' + key,
+                     key + '\n' + key, 'ssh-rsa AAAA'):
+            with self.assertRaises(ValueError):
+                remote_install.validate_public_key(text)
+
     def test_dispatcher_waits_for_loopback_screen_endpoint(self):
         launcher = ROOT / "ubuntu/t630-remote-start"
         subprocess.run(["sh", "-n", launcher], check=True)

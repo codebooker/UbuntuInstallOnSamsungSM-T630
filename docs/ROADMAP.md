@@ -83,9 +83,10 @@
    Extended drawing sessions and the remaining pen acceptance gates are pending.
    A generated OpenRaster file now passes native archive/load/frame/settings
    checks, but pixel equality does not pass; GUI save/reopen is still separate.
-   The renewed launcher visibility report remains open: registration/layout
-   check out, the missing icon was corrected, and rendered tile verification is
-   pending. See [the pen follow-up](reports/pen-launcher-file-check-20260915.md).
+   The missing launcher icon was corrected; the post-Home live screenshot now
+   verifies MyPaint Drawing at the upper-left of the first app-grid page. A
+   physical launch from that tile remains to verify. See
+   [the pen follow-up](reports/pen-launcher-file-check-20260915.md).
    Evaluate notes/PDF annotation and drawing using
    the stable Wayland desktop. Verify continuous S Pen strokes, pressure,
    palm rejection, pen-button tools, portrait/landscape alignment, performance,

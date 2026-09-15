@@ -34,7 +34,9 @@ This optional evaluation recipe is not yet in the exact-version release set.
 The launcher now uses the installed upstream `org.mypaint.MyPaint` icon; the old
 `mypaint` icon name did not resolve on the clean root. After a renewed report
 that the app was absent, owner-session registration, non-favorite state, and the
-corrected icon were checked; visible app-grid placement still needs rechecking.
+corrected icon were checked. After the owner pressed Home, the live screenshot
+confirmed **MyPaint Drawing at the upper-left of the first app-grid page**.
+Launching it by tapping that tile remains separate from visibility acceptance.
 
 ## Ubuntu 24.04 first-stroke crash workaround
 

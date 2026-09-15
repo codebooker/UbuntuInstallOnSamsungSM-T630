@@ -14,8 +14,11 @@ The desktop override used `Icon=mypaint`, but the native package installs
 confirmed the corrected icon resolves. No personal favorites, folder order,
 application layout, or running drawing was reset. The view-only screenshot still
 showed the canvas, not the app grid; requested that the owner open the grid.
-Visible placement and a launch from the tile remain pending. The missing icon is
-a demonstrated defect, not yet a demonstrated explanation for the missing tile.
+After the owner pressed Home, the live screenshot at 13:59 showed **MyPaint
+Drawing as the upper-left tile on the first app-grid page**, with its label and
+icon visible. Visible placement is accepted; launching by tapping that tile
+remains untested. The missing icon was a demonstrated defect, but this sequence
+does not establish that it was the sole cause of the prior visibility report.
 
 ## Native OpenRaster persistence probe
 

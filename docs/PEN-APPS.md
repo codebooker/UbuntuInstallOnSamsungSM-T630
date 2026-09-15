@@ -65,8 +65,8 @@ It leaves installed package files, documents, preferences, the desktop, and
 Xournal++ unchanged. It refuses root, the wrong Wayland display, unsupported
 chooser types, and MyPaint versions other than `2.0.1-10build2`; review/update
 the adapter before upgrading that package. Normal file arguments are retained.
-Startup and unit tests pass; physical drawing, selector use, and recovery of
-touch/pen responsiveness are **not yet accepted**. See the
+Startup and unit tests pass, and the owner confirms physical touch and S Pen
+respond again. Sustained drawing and selector use are **not yet accepted**. See the
 [input-freeze investigation](reports/mypaint-popup-input-20260915.md).
 
 ## Pressure investigation

@@ -50,8 +50,12 @@ tests. These mocks and startup checks do not exercise physical picker clicks.
 
 ## Acceptance outstanding
 
-The owner must confirm restored input, continuous drawing, and both quick
-selectors opening usable side panels without freezing touch/pen. Pressure,
+After recovery and the adapted app launch, the owner confirmed: "physical touch
+and spen both work". Restored physical input is accepted. This does not establish
+which chooser triggered the original fault or prove that every popup is safe.
+
+Continuous drawing and both quick selectors opening usable side panels without
+freezing touch/pen still require acceptance. Pressure,
 palm rejection, rotation, and drawing save/reopen remain separate gates.
 During the later screen check, the preview was black because display status
 reported `blanked: true` and GNOME ScreenSaver reported active. That observation

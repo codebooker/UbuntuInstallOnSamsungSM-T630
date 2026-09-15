@@ -78,7 +78,8 @@
    A separate MyPaint Wayland popup-grab freeze is under investigation. Its
    autosave cache was preserved before closing the stuck app; an experimental
    app-only adapter replaces quick chooser popups with existing dockable panels.
-   Startup/tests pass, but physical input and picker acceptance remain pending.
+   Startup/tests pass and the owner confirms physical touch/S Pen recovery;
+   picker use and sustained drawing acceptance remain pending.
    Evaluate notes/PDF annotation and drawing using
    the stable Wayland desktop. Verify continuous S Pen strokes, pressure,
    palm rejection, pen-button tools, portrait/landscape alignment, performance,

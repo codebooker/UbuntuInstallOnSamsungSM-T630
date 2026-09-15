@@ -18,6 +18,11 @@ def main():
     if env.get('WAYLAND_DISPLAY') != 't630-gnome-0':
         raise SystemExit('Launch through the existing tablet GNOME session.')
     env.update(GDK_BACKEND='wayland', GTK_THEME='Adwaita:dark')
+    if sys.argv[1] == 'drawing':
+        # Noble's MyPaint extension calls Python from OpenMP workers without
+        # holding the GIL (upstream #1253, Debian #1079663). Until a patched
+        # native package is accepted, serialize this app only.
+        env['OMP_NUM_THREADS'] = '1'
     command = COMMANDS[sys.argv[1]]
     os.execve(command, [command, *sys.argv[2:]], env)
 

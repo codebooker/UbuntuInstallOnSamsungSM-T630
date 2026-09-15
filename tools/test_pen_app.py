@@ -66,6 +66,10 @@ class PenAppTests(unittest.TestCase):
                 self.assertEqual(env['GTK_THEME'], 'Adwaita:dark')
                 self.assertEqual(env['XDG_CONFIG_HOME'], '/home/owner/.config/profile')
                 self.assertNotIn('LD_PRELOAD', env)
+                if kind == 'drawing':
+                    self.assertEqual(env['OMP_NUM_THREADS'], '1')
+                else:
+                    self.assertNotIn('OMP_NUM_THREADS', env)
 
     def test_root_and_wrong_display_refused(self):
         with patch.object(pen.os, 'getuid', return_value=0):

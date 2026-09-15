@@ -63,3 +63,10 @@ state, preservation of personal folders and favorites, idempotent drawing pins,
 intentionally empty favorites, native desktop naming, and pre-Shell ordering.
 Restart persistence of this new fix is not yet physically tested; the code is
 packaged and the live grid change is verified.
+
+Follow-up: [MyPaint crash and drawer visibility](mypaint-crash-drawer-20260915.md)
+records that pinning caused GNOME to exclude the app from the drawer. The pin
+was removed and automatic pinning dropped from the optional installer. A real
+first-stroke rendering crash was then reproduced and an app-only single-worker
+workaround applied. The launcher-success observations above were not full
+drawing acceptance.

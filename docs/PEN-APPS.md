@@ -27,10 +27,28 @@ overrides. `t630-gnome-run` joins the existing owner's GNOME session and drops
 administrator privileges before the app starts. `t630-pen-app` selects native
 Wayland and dark GTK controls; it does not reset preferences or documents. The
 Xournal++ paper itself retains the person's chosen paper/background settings.
-When an owner GNOME session is running, the updated installer also pins MyPaint
-Drawing to the dock without replacing existing favorites. Desktop runtime
-0.1.3 preserves those favorites on later startup instead of resetting them.
+MyPaint Drawing is kept in the app drawer by default. GNOME 46 removes pinned
+favorites from that drawer, so the installer no longer auto-pins it. Desktop
+runtime 0.1.3 preserves the owner's favorites instead of resetting them.
 This optional evaluation recipe is not yet in the exact-version release set.
+
+## Ubuntu 24.04 first-stroke crash workaround
+
+The installed MyPaint 2.0.1 extension has a known OpenMP/Python-locking crash.
+See the [upstream report](https://github.com/mypaint/mypaint/issues/1253) and
+[proper upstream fix](https://github.com/mypaint/mypaint/commit/356716e7bacfcbb1f3ab80171fea405fdd10b2b9).
+This tablet reproduced a segmentation fault both in the GUI and in a bounded
+headless render test with four workers; the same 384-point test passed with one.
+`t630-pen-app drawing` now sets **only MyPaint's** `OMP_NUM_THREADS=1` before
+launch. This serializes rendering and may reduce performance; no system-wide
+thread setting, driver change, or library bypass is used. Close/reopen any
+already running copy to pick up the workaround. Physical drawing acceptance
+of the corrected launcher remains pending.
+
+`tools/probe_mypaint_strokes.py --threads 1` tests the native drawing engine on
+an in-memory surface, not the display or physical pen. Its four-worker comparison
+is expected to crash on this unpatched build; the probe disables core dumps and
+has CPU/time bounds. It writes no document or GUI/input event.
 
 ## Pressure investigation
 

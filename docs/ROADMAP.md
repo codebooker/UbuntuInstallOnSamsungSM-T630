@@ -70,6 +70,11 @@
    pressure loss: GTK populates tool axes at proximity-in. A bounded RAM-only
    metadata experiment now makes Mutter recognize the missing stylus; genuine
    physical pressure and safe persistence are not yet accepted.
+   MyPaint's first-stroke GUI crash was reproduced in an isolated headless test:
+   four rendering workers segfault, one worker passes. Its optional launcher now
+   serializes only MyPaint; corrected physical drawing remains to verify. The
+   drawing app is no longer automatically pinned because GNOME hides favorites
+   from the app drawer.
    Evaluate notes/PDF annotation and drawing using
    the stable Wayland desktop. Verify continuous S Pen strokes, pressure,
    palm rejection, pen-button tools, portrait/landscape alignment, performance,

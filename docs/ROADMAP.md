@@ -8,7 +8,10 @@
    migration and reproducible source-only desktop runtime package now work.
    The physical preview uses a RAM-only, unprivileged GNOME installer host, so
    the normal GNOME keyboard and both landscape/portrait layouts have passed.
-   Fresh-image execution remains.
+   A guarded one-shot physical boot now reaches the packaged wizard from the
+   ownerless clean root. It exposed and fixed the pre-account owner-group and
+   Wi-Fi-backend dependencies; network/account submission and the transition
+   into the selected owner's desktop remain.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
    stack, ARM64 compatibility packages, isolated GDM/elogind password-login
@@ -17,7 +20,8 @@
    The reproducible AVB-verified persistent boot image uses the current module-
    compatible kernel and initramfs; its guarded write, two cold boots, full
    shutdown, automatic remote startup, and health checks passed. Clean-root
-   installation and the return-to-stock rehearsal remain. The
+   installation completion and the return-to-stock rehearsal remain. Boot v3
+   also makes an incomplete ownerless setup cleanly recoverable. The
    account-neutral Weston/Maliit host runtime is now packaged with reversible distro-file
    diversions. An exact-version base metapackage prevents incompatible
    component combinations, and the guarded offline assembler installed the
@@ -70,8 +74,9 @@ The packaged backend has now completed in the fresh rehearsal root using a
 non-personal sample account: UID/GID 1000, password state, owner group, locale,
 keyboard, time zone, hostname, and account-neutral desktop startup all passed.
 The backend refused a second run, and the release audit correctly rejected the
-personalized result. A physical clean-boot run through every touch UI page is
-still required before this flow is considered end-user accepted.
+personalized result. The physical clean-boot run has reached the normal-keyboard
+network page from an ownerless root; completing all touch pages and entering the
+new owner's desktop is still required before this flow is end-user accepted.
 
 ## Android applications
 

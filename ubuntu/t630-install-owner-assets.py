@@ -41,6 +41,16 @@ def source_digest(source: Path = SOURCE) -> str:
     return digest.hexdigest()
 
 
+def parse_enabled_extensions(value: str) -> list[str]:
+    value = value.strip()
+    if value.startswith("@as "):
+        value = value[4:]
+    enabled = ast.literal_eval(value)
+    if not isinstance(enabled, list) or not all(isinstance(item, str) for item in enabled):
+        raise RuntimeError("invalid GNOME extension preference")
+    return enabled
+
+
 def enable_extension() -> None:
     result = subprocess.run(
         ["/usr/bin/gsettings", "get", "org.gnome.shell", "enabled-extensions"],
@@ -49,9 +59,7 @@ def enable_extension() -> None:
         timeout=10,
         check=True,
     )
-    enabled = ast.literal_eval(result.stdout.strip())
-    if not isinstance(enabled, list) or not all(isinstance(item, str) for item in enabled):
-        raise RuntimeError("invalid GNOME extension preference")
+    enabled = parse_enabled_extensions(result.stdout)
     if EXTENSION_ID not in enabled:
         enabled.append(EXTENSION_ID)
         subprocess.run(

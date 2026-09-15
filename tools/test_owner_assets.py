@@ -21,6 +21,9 @@ SPEC.loader.exec_module(assets)
 
 
 class OwnerAssetsTests(unittest.TestCase):
+    def test_empty_typed_gsettings_array_is_valid(self):
+        self.assertEqual(assets.parse_enabled_extensions("@as []\n"), [])
+
     def source(self, root):
         source = root / "source"
         (source / "schemas").mkdir(parents=True)

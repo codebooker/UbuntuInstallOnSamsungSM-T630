@@ -195,6 +195,7 @@ done
 # protocol and GNOME Shell supplies the keyboard.
 /usr/bin/env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/root LANG="${LANG:-C.UTF-8}" \
     XDG_RUNTIME_DIR="$runtime" WAYLAND_DISPLAY="$wayland_name" GDK_BACKEND=wayland \
+    GTK_THEME=Adwaita:dark \
     T630_FIRST_BOOT_GNOME=1 T630_WIFI_SSID="${T630_WIFI_SSID:-}" \
     /usr/bin/python3 /usr/local/libexec/t630-first-boot \
     ${wizard_args:+"$wizard_args"} &

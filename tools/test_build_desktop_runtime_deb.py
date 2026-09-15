@@ -51,10 +51,12 @@ class DesktopRuntimePackageTests(unittest.TestCase):
             keyboard = session.rindex(
                 "gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true")
             self.assertLess(ready, keyboard)
+            self.assertIn("GTK_THEME=Adwaita:dark", session)
             data_path = Path(directory) / "data.tar.xz"
             data_path.write_bytes(archive["data.tar.xz"])
             with tarfile.open(data_path, "r:xz") as payload:
                 names = {entry.name.removeprefix("./") for entry in payload.getmembers()}
+            self.assertIn("usr/local/libexec/t630-x11-recovery", names)
             self.assertIn("usr/local/libexec/t630-install-owner-assets", names)
             self.assertIn("usr/local/share/t630/gnome-tablet-tools/extension.js", names)
             self.assertIn("usr/local/sbin/t630-suspend", names)

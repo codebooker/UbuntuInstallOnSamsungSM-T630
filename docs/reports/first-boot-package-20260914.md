@@ -42,8 +42,11 @@ desktop autostart check. A UTS namespace kept the rehearsal hostname change from
 touching the live tablet. A second backend run was refused, and the identity
 audit then reported exactly the expected owner/profile/home/account state.
 
-This closes package and backend execution for the first-boot component. A
-physical clean-boot walkthrough through all touch UI pages still remains.
+This closes package and backend execution for the first-boot component. The
+later physical ownerless-root walkthrough completed every touch page, connected
+Wi-Fi, created the chosen owner, and reached that owner's GNOME password lock.
+The frontend now requests Adwaita dark mode. Automatic owner-session startup on
+a subsequent cold boot remains the final first-boot acceptance step.
 
 The clean walkthrough also removed the obsolete keyboard drawn inside the
 Wi-Fi helper. That window now scans and sorts visible networks, offers an

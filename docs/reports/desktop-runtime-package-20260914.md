@@ -6,8 +6,8 @@ The architecture-independent Ubuntu integration is now built by
 `tools/build_desktop_runtime_deb.py` as a deterministic Debian package:
 
 - name: `t630-desktop-runtime_0.1.1_all.deb`
-- size: 44,156 bytes
-- SHA256: `aa30feb97a50ef944ca0e8810aaa27aaff1cdc38404c5c4fe5223e22f1fe554a`
+- size: 44,624 bytes
+- SHA256: `d8ee083635d1149dadf87aa097fc617c7015173f7575df894240ab7b8b1e5353`
 - regular files: 34
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
@@ -40,6 +40,10 @@ Nested Mutter can recalculate keyboard availability while initializing because
 touch arrives through its parent compositor rather than a direct evdev device.
 The session now reasserts the enabled GNOME keyboard only after the nested
 Wayland socket proves Shell is ready.
+The clean account transition also added the previously live-only X11 recovery
+guard and accepts GLib's typed empty extension-list representation (`@as []`)
+without weakening type validation. The root setup frontend explicitly uses
+Adwaita dark mode.
 
 ## Installer-selected owner migration
 

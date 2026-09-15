@@ -60,29 +60,30 @@ Current deterministic artifacts at `SOURCE_DATE_EPOCH=1700000000` are:
 - `t630-first-boot_0.1.1_all.deb`:
   `f15cee6b1e31d509e44be2b1a4a22dad7a9401756cfc201146f842fa84c4cedb`
 - `t630-desktop-runtime_0.1.1_all.deb`:
-  `aa30feb97a50ef944ca0e8810aaa27aaff1cdc38404c5c4fe5223e22f1fe554a`
+  `d8ee083635d1149dadf87aa097fc617c7015173f7575df894240ab7b8b1e5353`
 - `t630-hardware-runtime_0.1.2_all.deb`:
-  `68831e1ac25b5ca1074c99c812c47c5969225865c3bbd2c71f6c770fb8e4094a`
+  `cf12578ba6256765b1d55dc47674824803ebcb76e954f3d3936aa1bb5d468549`
 - `t630-boot-runtime_0.1.0_all.deb`:
   `70c75d8b0e68c48fbc8366bbe0432df0e4a1acde99cde096ae05902f51bdde9e`
 
-All 229 repository tests passed with four documented skips. After the two GNOME
+All 230 repository tests passed with four documented skips. After the GNOME
 installer sessions and both rotations, Weston, owner GNOME, Wi-Fi, Bluetooth,
 speaker and microphone defaults, device permissions, battery reporting, and
 the accelerometer remained healthy. The targeted kernel log contained zero
 panic, Oops, KGSL-fault, watchdog, overload, or MSM video error markers.
 
-The remaining release gate is a complete run from a newly assembled,
-identity-clean root through account creation into the selected owner's GNOME
-desktop. Preview mode intentionally performs no backend write and cannot close
-that gate by itself.
+The physical clean-root run completed every packaged page without a pre-existing
+human account, connected to Wi-Fi, created the selected owner, and reached that
+owner's GNOME password lock. It caught and corrected four package-boundary
+issues: desktop-runtime creates the system-only `t630-owner` group before Weston
+starts, hardware-runtime explicitly depends on `wpasupplicant`, hardware-runtime
+ships the `mdev.conf` consumed by its permission repair, and desktop-runtime
+ships its X11 recovery guard. New-account GNOME settings can report an empty
+extension list as `@as []`; the owner migration now parses that typed form and
+installs the normal Tablet Controls extension. The installer frontend also uses
+Adwaita dark mode for future runs.
 
-The physical clean-root run has now reached that packaged GNOME wizard without
-a pre-existing human account. It caught and corrected two ordering/dependency
-issues: desktop-runtime creates the system-only `t630-owner` group before
-Weston starts, and hardware-runtime explicitly depends on `wpasupplicant`
-because the release provisioner omits recommended packages. After installing
-the verified Ubuntu ARM64 backend packages into the running candidate and
-restarting NetworkManager alone, both Wi-Fi devices changed from `unavailable`
-to `disconnected` and a scan found `Wharf`. Account submission and transition
-to the new owner's session remain the final part of this live walkthrough.
+The remaining release gate is a cold boot of the now-personalized result through
+automatic owner-session startup, followed by the documented return-to-stock
+rehearsal. The running candidate already has the corrected deterministic desktop
+and hardware packages staged and installed.

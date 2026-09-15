@@ -8,10 +8,12 @@
    migration and reproducible source-only desktop runtime package now work.
    The physical preview uses a RAM-only, unprivileged GNOME installer host, so
    the normal GNOME keyboard and both landscape/portrait layouts have passed.
-   A guarded one-shot physical boot now reaches the packaged wizard from the
-   ownerless clean root. It exposed and fixed the pre-account owner-group and
-   Wi-Fi-backend dependencies; network/account submission and the transition
-   into the selected owner's desktop remain.
+   A guarded one-shot physical boot completed the packaged wizard from the
+   ownerless clean root, connected Wi-Fi, created the selected owner, and reached
+   that owner's GNOME password lock. It exposed and fixed the pre-account owner
+   group, Wi-Fi backend, device-permission configuration, owner-settings parser,
+   and desktop recovery payload gaps. The installer is dark by default. A cold
+   boot of the personalized result remains before end-user acceptance.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
    stack, ARM64 compatibility packages, isolated GDM/elogind password-login
@@ -70,13 +72,14 @@ the current hard-coded lab account is not a shippable default. Ubuntu 24.04's
 OEM installs are not supported by its desktop installer, so this image needs a
 tested first-boot provisioning flow rather than a misleading OEM-mode shortcut.
 
-The packaged backend has now completed in the fresh rehearsal root using a
+The packaged backend first completed in the fresh rehearsal root using a
 non-personal sample account: UID/GID 1000, password state, owner group, locale,
 keyboard, time zone, hostname, and account-neutral desktop startup all passed.
 The backend refused a second run, and the release audit correctly rejected the
-personalized result. The physical clean-boot run has reached the normal-keyboard
-network page from an ownerless root; completing all touch pages and entering the
-new owner's desktop is still required before this flow is end-user accepted.
+personalized result. The later physical clean-boot run completed the same pages
+with the normal GNOME keyboard, connected Wi-Fi, created the chosen owner, and
+reached the new owner's password lock. Automatic startup on a subsequent cold
+boot is the remaining end-user-flow gate.
 
 ## Android applications
 

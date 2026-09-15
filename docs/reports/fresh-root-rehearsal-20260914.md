@@ -79,6 +79,9 @@ That is expected: only an unpersonalized root may become a distributable image.
 ## Remaining boundary
 
 This proves clean-root assembly, reversible host-runtime installation, and
-account-backend execution, not bootability. Next are boot-artifact assembly, a physical clean-boot UI walkthrough, and a
-destructive boot/recovery rehearsal. The proprietary DZE3 package remains
+account-backend execution. A later guarded one-shot boot of the preserved clean
+root completed the physical Wi-Fi and account walkthrough and reached the new
+owner's GNOME password lock. The remaining acceptance step is a cold boot of
+that personalized result through automatic owner-session startup, followed by
+the destructive return-to-stock rehearsal. The proprietary DZE3 package remains
 owner-only on the tablet and is not part of the repository.

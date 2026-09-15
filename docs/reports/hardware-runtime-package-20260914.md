@@ -6,8 +6,8 @@ The redistributable hardware orchestration is now built by
 `tools/build_hardware_runtime_deb.py` as a deterministic Debian package:
 
 - name: `t630-hardware-runtime_0.1.2_all.deb`
-- size: 31,524 bytes
-- SHA256: `68831e1ac25b5ca1074c99c812c47c5969225865c3bbd2c71f6c770fb8e4094a`
+- size: 31,716 bytes
+- SHA256: `cf12578ba6256765b1d55dc47674824803ebcb76e954f3d3936aa1bb5d468549`
 
 Two builds with `SOURCE_DATE_EPOCH=1700000000` were byte-identical. Native
 arm64 `dpkg-deb` parsed and extracted the result on the tablet. The payload
@@ -15,6 +15,10 @@ contains only UTF-8 scripts and policy plus the repository license. It contains
 no home directory, `/opt/t630` development tree, firmware, calibration blob,
 compiled library, executable binary, owner state, credential, or device
 identity.
+
+The package now includes the validated `mdev.conf` consumed by its own
+device-permission repair helper. A clean owner session caught this missing
+source file before GNOME startup; no live-root fallback is required now.
 
 ## Included orchestration
 

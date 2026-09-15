@@ -48,6 +48,7 @@ FILES = {
     "usr/local/libexec/t630-rotation-controller": ("ubuntu/t630-rotation-controller.py", 0o755),
     "usr/local/libexec/t630-session-manager": ("ubuntu/t630-session-manager.py", 0o755),
     "usr/local/libexec/t630-user-app": ("ubuntu/t630-user-app", 0o755),
+    "usr/local/libexec/t630-x11-recovery": ("ubuntu/t630-x11-recovery.py", 0o755),
     "usr/local/sbin/t630-desktop-autostart": ("ubuntu/t630-desktop-autostart", 0o755),
     "usr/local/sbin/t630-login-start": ("ubuntu/t630-login-start", 0o755),
     "usr/local/sbin/t630-power-button": ("ubuntu/t630-power-button.py", 0o755),

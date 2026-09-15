@@ -18,6 +18,7 @@ FILES = {
     "etc/t630-install-id": ("ubuntu/t630-install-id", 0o644),
     "etc/NetworkManager/conf.d/90-t630-network.conf": ("ubuntu/90-t630-network.conf", 0o644),
     "etc/udev/rules.d/61-t630-sensors.rules": ("ubuntu/61-t630-sensors.rules", 0o644),
+    "usr/local/share/t630/mdev.conf": ("ubuntu/mdev.conf", 0o644),
     "usr/local/bin/t630-microphone-bridge": ("ubuntu/t630-microphone-bridge", 0o755),
     "usr/local/libexec/t630-bluetooth/t630_qca_bt.py": ("tools/t630_qca_bt.py", 0o755),
     "usr/local/sbin/t630-audio-start": ("ubuntu/t630-audio-start", 0o755),

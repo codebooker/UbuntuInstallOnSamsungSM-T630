@@ -8,6 +8,14 @@ the normal installed MyPaint Drawing desktop entry remains visible through Gio.
 The optional installer no longer auto-pins it. Personal favorites and folders
 otherwise remain untouched.
 
+The live saved app-picker layout had no MyPaint position, leaving it after the
+first page's existing icons. Added MyPaint at position 0 on page 0, incrementing
+the existing first-page positions without dropping other app entries or resetting
+the whole layout. The operation first refused any unrecognized metadata format.
+The physical live-view screenshot then verified **MyPaint Drawing at the
+upper-left of the first drawer page**. This is a one-time owner-layout change,
+not continuous enforcement of the user's app order.
+
 ## Crash reproduction
 
 Reopened MyPaint detached from SSH with a dedicated local log and core dumps

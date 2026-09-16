@@ -24,6 +24,7 @@ Pinned development references:
 | Ubuntu `policykit-1-gnome` source | `0.105-7ubuntu5`; orig SHA256 `1784494963b8bf9a00eedc6cd3a2868fb123b8a5e516e66c5eda48df17ab9369`, Debian patch SHA256 `957ebefe04c896fc621ef8c578f6e77f04e72cd2092c6500b47e578ae91d1cf1` |
 | elogind source | `v255.27`; archive SHA256 `1ef0dffaad77e8d8ded047895fc5e60b7ab5cf7137d356cebd821cc5a0d566c9` |
 | Ubuntu GDM source | `46.2-1ubuntu1~24.04.9`; orig SHA256 `4ee345422a16537150cd842450cda52b2ca86984bc51ee20cdc025dcf4bd268b`, Debian patch SHA256 `0a4bfa56afc053f257f56a7918c679fe3edce1048817811de359f80ef0fff653` |
+| Ubuntu Mutter diagnostic source | `46.2-1ubuntu0.24.04.16`; orig SHA256 `009baa77f8362612caa2e18c338a1b3c8aad3b5fe2964c2fef7824d321228983`, Debian patch SHA256 `688d078edc4c5c8afb682d56216534fff37aebcf740cf4df16fcfd55387ddbfc`, DSC SHA256 `6c1684cfc841c6f1abbd59d5aade2dc2ca9016e82ec423763160c7418419e166`. Lab-only build, not a default compositor; see the [pressure-path report](reports/pen-pressure-path-20260915.md) |
 | Mozilla native Firefox APT signing key | fingerprint `35BA A0B3 3E9E B396 F59C A838 C0BA 5CE6 DC63 15A3`; downloaded key SHA256 `3ecc63922b7795eb23fdc449ff9396f9114cb3cf186d6f5b53ad4cc3ebfbb11f` |
 | S9 Ultra inspiration/reference | `bb55ceb87b61db7629c0820101ce7884ff8d987b` |
 | Waydroid source reviewed for container/session integration | `5a51271131bfca8b7ee75ed067d09b26460f3a7b` |

@@ -1,11 +1,49 @@
 import tempfile
 from pathlib import Path
 import unittest
+from unittest.mock import patch
+import hashlib
 
 import prepare_mutter_pen_trace as trace
 
 
 class MutterPenTraceTests(unittest.TestCase):
+    def test_syncobj_build_fix_changes_only_includes(self):
+        with tempfile.TemporaryDirectory(prefix='t630-mutter-syncobj-test-') as directory:
+            root = Path(directory)
+            path = root / 'src/wayland/meta-wayland-linux-drm-syncobj.c'
+            path.parent.mkdir(parents=True)
+            path.write_text(trace.SYNCOBJ_ANCHOR)
+            with self.assertRaises(ValueError):
+                trace.build_syncobj_configuration_patch(root)
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            with patch.object(trace, 'SYNCOBJ_SHA', digest):
+                result = trace.build_syncobj_configuration_patch(root)
+            changes = [line[1:] for line in result.splitlines()
+                       if line[:1] in ('+', '-') and line[:3] not in ('+++', '---')]
+            self.assertEqual(len(changes), 5)
+            self.assertTrue(all(line.startswith('#include ') for line in changes))
+            self.assertEqual(path.read_text(), trace.SYNCOBJ_ANCHOR)
+
+    def test_nested_build_fix_only_removes_redundant_else(self):
+        with tempfile.TemporaryDirectory(prefix='t630-mutter-context-test-') as directory:
+            root = Path(directory)
+            path = root / 'src/core/meta-context-main.c'
+            path.parent.mkdir(parents=True)
+            path.write_text(trace.CONTEXT_ANCHOR + '\n')
+            with self.assertRaises(ValueError):
+                trace.build_nested_configuration_patch(root)
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            with patch.object(trace, 'CONTEXT_SHA', digest):
+                result = trace.build_nested_configuration_patch(root)
+            removed = [line for line in result.splitlines()
+                       if line.startswith('-') and not line.startswith('---')]
+            added = [line for line in result.splitlines()
+                     if line.startswith('+') and not line.startswith('+++')]
+            self.assertEqual(removed, ['-      else'])
+            self.assertEqual(added, [])
+            self.assertEqual(path.read_text(), trace.CONTEXT_ANCHOR + '\n')
+
     def test_instrumentation_is_bounded_and_does_not_replace_events(self):
         fixtures = {
             'src/backends/x11/meta-seat-x11.c':

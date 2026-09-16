@@ -15,6 +15,14 @@
   libraries are not distributed by this repository.
 - `ubuntu/MaliitKeyboard.qml` retains its upstream BSD-style license notice.
 - `ubuntu/maliit-waylandplatform.cpp` retains its upstream LGPL-2.1 notice.
+- Mutter source fragments and generated diffs in
+  `tools/prepare_mutter_pen_trace.py` and
+  `tools/prepare_mutter_pen_source_trial.py` retain the licenses of the files
+  they modify: the X11 seat is LGPL-2.0-or-later (Red Hat, 2019; Carlos
+  Garnacho), the Wayland tablet files are GPL-2.0-or-later (Red Hat, 2015;
+  Carlos Garnacho), the context file is GPL-2.0-or-later (Havoc Pennington,
+  Elijah Newren, Red Hat), and the syncobj file is GPL-2.0-or-later (NVIDIA,
+  2023; Austin Shafer). These fragments do not relicense the downloaded source.
 
 When contributing code copied or adapted from another project, preserve its
 copyright and license notices and document the source in `docs/PROVENANCE.md`.

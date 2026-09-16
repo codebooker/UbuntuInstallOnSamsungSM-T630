@@ -65,11 +65,14 @@
    installed as native ARM64 apps on the personalized clean root; both launch
    inside GNOME, and an Xournal++ page shows continuous physical handwriting.
    Krita 5.2.2 explicitly rejects native Wayland and is deferred alongside the
-   legacy-X11 issue. The outer Xwayland advertises pressure, but the inner GTK
-   inventory initially missed the stylus device. Idle X/Y-only axes do not prove
-   pressure loss: GTK populates tool axes at proximity-in. A bounded RAM-only
-   metadata experiment now makes Mutter recognize the missing stylus; genuine
-   physical pressure and safe persistence are not yet accepted.
+   legacy-X11 issue. The physical pen sensor and the corrected GTK test before
+   GNOME now confirm varying pressure. Native GTK inside GNOME receives finger
+   events but still has no accepted pen samples. The manual metadata/proximity
+   trials were removed after failing acceptance and causing a hover regression.
+   A matching-source, isolated diagnostic Mutter build now starts safely to
+   inspect tool registration and focus without injecting events. See the
+   [pressure-path report](reports/pen-pressure-path-20260915.md); genuine native
+   GNOME pressure and safe persistence are not yet accepted.
    MyPaint's first-stroke GUI crash was reproduced in an isolated headless test:
    four rendering workers segfault, one worker passes. Its optional launcher now
    serializes only MyPaint; corrected physical drawing remains to verify. The

@@ -19,6 +19,17 @@ SOURCE_SHA = {
     'src/wayland/meta-wayland-tablet-tool.c':
         '669cf5a9b57d5252c89a78afd229028aa142ddcda2cec92a3e1e2eb6fdf0729f',
 }
+CONTEXT_SHA = 'a559e0b970c23f9f04fce303d1077f2ec9d20196d685b61c2aae0830a6b4d2d7'
+SYNCOBJ_SHA = 'e1860178a9e0720377a0a67de9391935fd4d182669c610dec22af5c61bb64181'
+SYNCOBJ_ANCHOR = '''#include "backends/native/meta-backend-native-types.h"
+#include "backends/native/meta-device-pool.h"
+#include "backends/native/meta-renderer-native.h"
+'''
+CONTEXT_ANCHOR = '''      if (context_main->options.nested)
+        return create_nested_backend (context, error);
+      else
+#endif
+#ifdef HAVE_NATIVE_BACKEND'''
 
 HELPER = '''/* Source-only T630 lab trace. Each call site logs at most eight events. */
 static gboolean
@@ -130,11 +141,53 @@ def build_patch(source):
     return ''.join(patches)
 
 
+def build_nested_configuration_patch(source):
+    # Ubuntu .16 leaves an orphan "else" when native_backend=false. The
+    # preceding branch returns, so removing else preserves backend selection.
+    relative = 'src/core/meta-context-main.c'
+    data = (source / relative).read_bytes()
+    if hashlib.sha256(data).hexdigest() != CONTEXT_SHA:
+        raise ValueError('Unreviewed backend configuration source.')
+    text = data.decode()
+    if text.count(CONTEXT_ANCHOR) != 1:
+        raise ValueError('Ambiguous backend configuration branch.')
+    modified = text.replace(CONTEXT_ANCHOR,
+                            CONTEXT_ANCHOR.replace('      else\n', ''))
+    return ''.join(difflib.unified_diff(
+        text.splitlines(keepends=True), modified.splitlines(keepends=True),
+        fromfile='a/' + relative, tofile='b/' + relative))
+
+
+def build_syncobj_configuration_patch(source):
+    # The backport uses MetaDrmTimeline, not native renderer/device-pool APIs.
+    # Include the actual Wayland timeline declaration without native headers.
+    relative = 'src/wayland/meta-wayland-linux-drm-syncobj.c'
+    data = (source / relative).read_bytes()
+    if hashlib.sha256(data).hexdigest() != SYNCOBJ_SHA:
+        raise ValueError('Unreviewed syncobj configuration source.')
+    text = data.decode()
+    if text.count(SYNCOBJ_ANCHOR) != 1:
+        raise ValueError('Ambiguous syncobj includes.')
+    modified = text.replace(SYNCOBJ_ANCHOR,
+                            '#include <xf86drm.h>\n#include "wayland/meta-drm-timeline.h"\n')
+    return ''.join(difflib.unified_diff(
+        text.splitlines(keepends=True), modified.splitlines(keepends=True),
+        fromfile='a/' + relative, tofile='b/' + relative))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('source', type=Path)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--nested-configuration-fix', action='store_true',
+                        help='Emit the separately hash-gated orphan-else build fix instead of tracing')
+    mode.add_argument('--syncobj-configuration-fix', action='store_true',
+                      help='Emit the separately hash-gated unused-native-header build fix')
     args = parser.parse_args()
-    sys.stdout.write(build_patch(args.source))
+    builder = (build_nested_configuration_patch if args.nested_configuration_fix
+               else build_syncobj_configuration_patch if args.syncobj_configuration_fix
+               else build_patch)
+    sys.stdout.write(builder(args.source))
 
 
 if __name__ == '__main__':

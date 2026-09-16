@@ -394,7 +394,8 @@ The priority-100 helper remains as `t630-mypaint.before-default-priority-2026091
 with SHA-256 `5a5b1836b37e4e62ad24307347177b4641282c46f2043851507543ce84f4e13d`;
 the original helper remains separately available. Stock presets, the global
 pressure curve, GTK/input scheduling and user documents were unchanged. Final
-subjective comparison and extended-session acceptance remain pending.
+physical comparison reports that the normal app feels better; this is not a
+claim of zero latency. Extended-session acceptance remains pending.
 
 ## Hover-out source boundary
 

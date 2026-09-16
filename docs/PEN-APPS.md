@@ -216,7 +216,9 @@ MyPaint value 200. Installed SHA-256 is
 `959ea629374210f2f4bd5ce4532ad054ac7ca5834a6f0f5dfe9ce6642a00b270`;
 the priority-100 helper and original helper remain beside it as exact rollback
 copies. This does not change global GTK/input scheduling or force zero tracking
-on artistic presets. Subjective final feel and a longer session remain pending.
+on artistic presets. The owner reports this final normal configuration feels
+better; that is physical comparative acceptance, not a claim of zero latency.
+A longer session remains pending.
 
 Standard owner folders are now initialized with `xdg-user-dirs-update` without
 replacing chosen paths. Before the restart, the existing Xournal++ autosave was

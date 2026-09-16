@@ -101,7 +101,8 @@
    slow-tracking values are zero. That control measured 28/49 ms queue age at
    priority 100 and 26/43 ms at priority 0, with sub-millisecond stroke callbacks
    and fast redraws. The exact-version normal adapter now uses 0, with both older
-   helpers retained for rollback; final physical acceptance remains pending. The
+   helpers retained for rollback. The owner reports the resulting normal app
+   feels better; longer-session acceptance remains pending. The
    drawing app is no longer automatically pinned because GNOME hides favorites
    from the app drawer.
    A separate MyPaint Wayland popup-grab freeze is under investigation. Its

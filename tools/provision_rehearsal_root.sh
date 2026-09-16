@@ -104,13 +104,14 @@ chroot "$root" /usr/bin/env \
     desktop-file-utils eog evince evolution-data-server file-roller firefox \
     fonts-crosextra-caladea fonts-crosextra-carlito fonts-noto-color-emoji \
     gnome-calculator gnome-calendar gnome-characters gnome-clocks \
+    gnome-control-center \
     gnome-contacts gnome-disk-utility gnome-font-viewer gnome-snapshot \
     gnome-software gnome-system-monitor gnome-terminal gnome-text-editor \
     gstreamer1.0-libav gstreamer1.0-plugins-bad \
     gstreamer1.0-plugins-base-apps gstreamer1.0-plugins-good \
     gstreamer1.0-tools gvfs-backends gvfs-fuse hunspell-en-us \
     libreoffice-calc libreoffice-gtk3 libreoffice-impress libreoffice-writer \
-    nautilus packagekit totem xdg-user-dirs xdg-utils
+    mypaint nautilus packagekit totem xdg-user-dirs xdg-utils xournalpp
 
 cleanup
 trap - EXIT HUP INT TERM

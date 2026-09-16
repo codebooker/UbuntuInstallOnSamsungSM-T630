@@ -35,10 +35,10 @@ chroot "$root" dpkg-query -W \
 echo "everyday_apps:"
 chroot "$root" dpkg-query -W \
     -f='${Package} ${Version} ${db:Status-Status}\n' \
-    firefox gnome-software packagekit nautilus gnome-text-editor \
+    firefox gnome-control-center gnome-software packagekit nautilus gnome-text-editor \
     gnome-terminal libreoffice-writer libreoffice-calc libreoffice-impress \
     evince eog file-roller gnome-calculator gnome-calendar gnome-contacts \
-    gnome-clocks gnome-snapshot gnome-system-monitor totem
+    gnome-clocks gnome-snapshot gnome-system-monitor mypaint totem xournalpp
 firefox_version=$(chroot "$root" dpkg-query -W -f='${Version}' firefox)
 case "$firefox_version" in
     1:1snap*) echo "Ubuntu Firefox Snap transition package installed" >&2; exit 1 ;;

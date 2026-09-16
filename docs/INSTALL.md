@@ -511,14 +511,14 @@ The stager revalidates the seal locally, requires the exact model, kernel,
 userdata geometry, battery level, and enough available memory, then creates a
 bounded `nosuid,nodev,noexec` tmpfs. Files are streamed at constant host memory
 use; each transfer is hashed by the tablet. The tablet finally validates the
-fixed checksum-file shape, all five covered files, the accepted v12 BOOT hash,
+fixed checksum-file shape, all seven covered entries, the accepted v12 BOOT hash,
 and the private/baseline manifest markers. Its success message explicitly says
 that no device was written. Restarting clears the staged data. This transport
-is implemented and unit-tested but has not yet been exercised with a complete
-multi-gigabyte release archive on the physical tablet. The constant-memory
-stream itself physically transferred the accepted 100,663,296-byte v12 BOOT
-image into `/run` in 5.6 seconds, matched its SHA256 on the tablet, and removed
-the RAM copy afterward.
+is implemented and unit-tested. Its constant-memory USB stream physically
+transferred the accepted 100,663,296-byte v12 BOOT image into `/run` in 5.6
+seconds, matched its SHA256 on the tablet, and removed the RAM copy afterward.
+The full sealed bundle was physically exercised through the tablet-local path
+below, avoiding a redundant transfer through the Mac.
 
 The stager uploads `install_staged_release.sh` separately and runs its default
 `--check` mode. That mode is read-only. It additionally requires userdata to
@@ -532,6 +532,27 @@ mounted and is therefore refused before authorization.
 The physical development tablet passed the corresponding negative test:
 `--check` returned `INSTALLER_REFUSED: userdata is mounted` with exit status 1,
 before any staged-bundle, authorization, format, or extraction operation.
+
+When the private bundle is built directly on the tablet, it can be copied from
+mounted userdata into the same bounded recovery-RAM staging area without first
+copying the multi-gigabyte archive to another computer:
+
+```sh
+python3 tools/stage_installer_bundle_local.py \
+  /run/ubuntu/absolute/path/to/sealed-bundle
+```
+
+This path accepts only a canonical directory below `/run/ubuntu`, verifies the
+complete seal before and after the copy, checks available RAM, mounts a bounded
+`nosuid,nodev,noexec` tmpfs, and uploads only the small guarded installer over
+USB. It does not unmount or modify userdata. The operator must stop the running
+Ubuntu session and unmount userdata before the read-only installer check can
+pass; the separate typed authorization gate remains unchanged.
+
+The physical tablet completed this path with a 1,230,162,230-byte private
+rootfs archive. After the normal session was stopped and userdata was genuinely
+unmounted, `install_staged_release.sh --check` also passed its protected-
+partition and isolated-runtime checks without formatting or writing storage.
 
 The destructive command exists for the eventual physical clean-install
 rehearsal, but that rehearsal has **not** happened yet:
@@ -551,9 +572,8 @@ It never writes BOOT or another partition.
 
 This completes the source implementation for host assembly, RAM staging, and
 the guarded userdata installer. It does not make the release end-user ready:
-the full clean-root build, multi-gigabyte transfer, destructive install, first
-boot, and return-to-stock sequence must still pass physically before the top
-warning can be removed.
+the destructive install, first boot, and return-to-stock sequence must still
+pass physically before the top warning can be removed.
 
 Do not overwrite a mapped live library merely to test the package. Extract it
 to a temporary directory and run the dependency/symbol probes described in the

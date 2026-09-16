@@ -35,7 +35,7 @@ full-screen GNOME desktop from internal storage.
 | Stock hardware video decoding | Working for tested FFmpeg and GStreamer H.264/VP9 playback |
 | Browser video acceleration | WebKit hardware selection verified; safe launcher blocked by the stock kernel's missing user-namespace support |
 | Cameras | Front and rear GNOME previews work at 720×480; rear exposure, autofocus, tone, and live color adjustment work; HD Snapshot and flash remain |
-| First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow and packaged GDM password login implemented; identity-clean host bundle implemented, device-side installer still pending |
+| First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow and packaged GDM password login implemented; full private bundle and unmounted read-only device gate passed, destructive clean-install acceptance remains |
 | Android applications | Deferred until all native Ubuntu and installer work is complete; current kernel-only approach is ABI-incompatible with Samsung modules |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).
@@ -75,9 +75,11 @@ guarded BOOT-only writes and repeated cold boots passed on the development
 SM-T630. The latest revision also keeps the personalized clean installation
 selected across orderly restarts, retains wallpaper settings, and preserves the
 old root as an abnormal-boot fallback.
-The guarded recovery-hosted USB transfer and userdata installation stage is
-still in progress; do not improvise the one-time userdata installation from the
-lab scripts unless you can recover the tablet independently.
+The guarded recovery-hosted RAM transfer and read-only userdata installation
+gate passed with the complete 1.2 GB private bundle. The destructive
+clean-install/first-boot rehearsal and return-to-stock rehearsal remain; do not
+improvise either operation from the lab scripts unless you can recover the
+tablet independently.
 
 ## Repository layout
 

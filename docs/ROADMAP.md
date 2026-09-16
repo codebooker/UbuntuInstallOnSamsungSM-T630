@@ -57,14 +57,17 @@
    Samsung tar MD5 without extracting the 6.4 GB factory package. The remaining
    RAM-only USB-serial stager now verifies the sealed bundle locally, streams
    files at constant host memory cost, and rechecks all hashes on the exact
-   tablet without any block-device write; its full-size physical run remains.
+   tablet without any block-device write. A tablet-local path now avoids a
+   second multi-gigabyte host copy. The complete 1.2 GB private bundle was
+   copied into bounded recovery RAM and verified there on the physical tablet.
    A private recovery-tool builder and two-phase installer now implement exact
    userdata formatting and extraction with preserved ownership/ACLs/xattrs,
    post-extract identity/package checks, unmounted read-only fsck, one-attempt
-   locking, explicit typed authorization, and no automatic reboot. The code
-   refuses a mounted working Ubuntu root, so it cannot be trialed destructively
-   as an incidental health check. Remaining gates are the full physical
-   clean-install/first-boot run and stock-return rehearsal. Boot v3
+   locking, explicit typed authorization, and no automatic reboot. After the
+   working system was stopped and userdata was genuinely unmounted, the full
+   physical read-only gate verified every protected partition and the isolated
+   recovery runtime without formatting. Remaining gates are the explicitly
+   authorized clean-install/first-boot run and stock-return rehearsal. Boot v3
    makes an incomplete ownerless setup cleanly recoverable; boot v4 retains
    that terminal only for ownerless or explicitly requested recovery boots. The
    account-neutral Weston/Maliit host runtime is now packaged with reversible distro-file

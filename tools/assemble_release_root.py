@@ -17,12 +17,12 @@ from audit_release_root import audit
 OFFLINE_MARKER = "SM-T630 OFFLINE RELEASE ROOT\n"
 INSTALL_ID = "SM-T630-T630XXSBDZE3-Ubuntu-v1"
 EXPECTED = {
-    "t630-first-boot_0.1.1_all.deb": (
-        "t630-first-boot", "0.1.1",
-        "3b3adf74477f0402e30d3d443dcd49068eb2bf139afa83a2f4c4e346bb18a14e"),
-    "t630-desktop-runtime_0.1.5_all.deb": (
-        "t630-desktop-runtime", "0.1.5",
-        "d78c7934aa120f407a84db30b545128f1080a7f1c50ccb4a986fdf42428ec8c4"),
+    "t630-first-boot_0.1.2_all.deb": (
+        "t630-first-boot", "0.1.2",
+        "b7ed553d9de129834176b406c350d65775d1f03637ff7f6c4b0f3a2ca5751340"),
+    "t630-desktop-runtime_0.1.6_all.deb": (
+        "t630-desktop-runtime", "0.1.6",
+        "18b3a14f12b4f4d64d889c983eb5cf50e2a97ce26d43acc0b5c0c3534ed9bf5b"),
     "t630-hardware-runtime_0.1.6_all.deb": (
         "t630-hardware-runtime", "0.1.6",
         "a0864399a0211e474128f1b84529e1dd2a47a0417b526193bbb2bd77bb59c02b"),
@@ -35,9 +35,9 @@ EXPECTED = {
     "t630-login-runtime_0.1.2_arm64.deb": (
         "t630-login-runtime", "0.1.2",
         "173be4723fc419c6a87f1d9e922831c87cae6b168c2fbe8ee62672deec98dd20"),
-    "t630-camera-runtime_0.1.5_arm64.deb": (
-        "t630-camera-runtime", "0.1.5",
-        "23693c00b83b4a3b5edef9c4d47c108d48065d7868a0065a70555db102a8c585"),
+    "t630-camera-runtime_0.1.6_arm64.deb": (
+        "t630-camera-runtime", "0.1.6",
+        "a257c14407b41db5f14dafec3270058923a216ee008c8e260ca5a57c71fc4abe"),
     "t630-native-userspace_0.1.0_arm64.deb": (
         "t630-native-userspace", "0.1.0",
         "b6e9dffc3ce27278084a0fbc9022189e289eaf3c06fdcc5db1e9877a6dfed6ff"),
@@ -56,12 +56,12 @@ EXPECTED = {
     "t630-stock-assets_1.0.2+dze3_arm64.deb": (
         "t630-stock-assets", "1.0.2+dze3",
         "7bfa16d266592116bddae1c2a23c607585802a1e9b2c05905bc97e25210f0efe"),
-    "t630-release-base_0.1.14_arm64.deb": (
-        "t630-release-base", "0.1.14",
-        "7ae9ee1cd6ebaaa207fe4f71afa8d925b2a9f809be00aa641f75f015a2349d3f"),
+    "t630-release-base_0.1.15_arm64.deb": (
+        "t630-release-base", "0.1.15",
+        "ec9d3804e08a9e4e18abd4daa76c3298b3e4a4eb62fa141096f52d0d3a5adc46"),
 }
 INSTALL_ORDER = tuple(name for name in EXPECTED if not name.startswith("t630-release-base_"))
-META_PACKAGE = "t630-release-base_0.1.14_arm64.deb"
+META_PACKAGE = "t630-release-base_0.1.15_arm64.deb"
 
 
 def digest(path: Path) -> str:

@@ -299,8 +299,15 @@ class FirstBoot(Gtk.Window):
 
     @staticmethod
     def primary_wifi():
-        for device in Path("/sys/class/net").iterdir():
-            if (device / "wireless").is_dir():
+        # qcacld exposes client, soft-AP and P2P interfaces.  Directory order
+        # is nondeterministic, and selecting swlan0/p2p0 makes the stock
+        # regulatory worker dereference an invalid vdev on its first scan.
+        client = Path("/sys/class/net/wlan0")
+        if (client / "wireless").is_dir():
+            return client.name
+        for device in sorted(Path("/sys/class/net").iterdir()):
+            if ((device / "wireless").is_dir()
+                    and not device.name.startswith(("swlan", "p2p"))):
                 return device.name
         raise OSError("Primary Wi-Fi radio not ready")
 
@@ -376,9 +383,17 @@ class FirstBoot(Gtk.Window):
                     ["/usr/bin/nmcli", "-g", "GENERAL.CONNECTION", "device",
                      "show", interface], capture_output=True, text=True,
                     timeout=5, check=True).stdout.strip()
+                hardware_address = subprocess.run(
+                    ["/usr/bin/nmcli", "-g", "GENERAL.HWADDR", "device",
+                     "show", interface], capture_output=True, text=True,
+                    timeout=5, check=True).stdout.strip()
+                if not hardware_address:
+                    raise OSError("Primary Wi-Fi MAC address is unavailable")
                 subprocess.run(
                     ["/usr/bin/nmcli", "connection", "modify", profile,
-                     "connection.interface-name", ""], capture_output=True,
+                     "connection.interface-name", "",
+                     "802-11-wireless.mac-address", hardware_address],
+                    capture_output=True,
                     timeout=5, check=True)
         except (OSError, subprocess.SubprocessError):
             success = False

@@ -19,6 +19,15 @@ exec >/run/bringup.log 2>&1
 hostname ubuntablet
 mdev -s
 echo 'T630_PERSISTENT: init reached; USB fallback starts before Ubuntu' >/dev/kmsg
+[ -r /proc/cmdline ]
+case " $(cat /proc/cmdline) " in
+    *' androidboot.mode=charger '*|*' sec_mparam.lpcharge=1 '*)
+        charger_boot=1
+        ;;
+    *)
+        charger_boot=0
+        ;;
+esac
 [ ! -w /sys/power/wake_lock ] || echo t630_bringup >/sys/power/wake_lock
 mount -t configfs configfs /config
 g=/config/usb_gadget/t630_bringup
@@ -46,6 +55,16 @@ while [ "$attempt" -lt 60 ]; do
     sleep 1
 done
 mdev -s
+# Samsung charger/LPM boot skips cfg80211 regulatory initialization.  Starting
+# the WLAN stack in that state reproducibly panics handle_reg_beacon on the
+# first scan.  A clean reboot leaves charger mode and performs a normal boot;
+# do this before start-ubuntu can consume the one-shot release-root selector.
+if [ "$charger_boot" = 1 ]; then
+    echo 'T630_PERSISTENT: charger/LPM boot detected; rebooting before Ubuntu' >/dev/kmsg
+    sync
+    /bin/busybox reboot -f
+    while :; do sleep 1; done
+fi
 /bin/busybox sh /bin/start-ubuntu >/run/ubuntu-start.log 2>&1 &
 while :; do
     mdev -s

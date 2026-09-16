@@ -31,12 +31,15 @@
    clean installation while an abnormal boot still falls back to the lab root.
    The next unattended orderly restart also passed automatic owner-only SSH and
    screen-feed startup. Standard owner document folders are now initialized
-   without resetting chosen paths. The exact-device filesystem-ready helper is
-   now integrated between `cnss2` and `wlan`: physical boot accepted it at 3.77
-   seconds, completed calibration at 19.55 seconds, returned from WLAN module
-   loading at 20.83 seconds, associated around 25.6 seconds, and completed DHCP
-   around 27.7 seconds without the former 70-second timeout. Full Power Off
-   remains a separate clean-root acceptance test.
+   without resetting chosen paths. The exact-device filesystem-ready helper
+   produced fast warm boots but is not used by normal startup: repeated
+   charger/LPM cold boots proved that Samsung's kernel skips cfg80211 regulatory
+   initialization in that mode and panics in `handle_reg_beacon` on the first
+   scan. Boot v12 detects charger mode before consuming the one-shot selector
+   and performs a clean normal reboot. The saved network is MAC-bound to the
+   real `wlan0` client rather than secondary/P2P interfaces. Full Power Off
+   while USB-powered then passed GNOME, the stock CNSS timeout, first scan,
+   DHCP, and zero-fault health checks.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
    stack, ARM64 compatibility packages, isolated GDM/elogind password-login
@@ -65,7 +68,7 @@
    byte-for-byte. Writable camera state regenerates without a seed.
    The 2026-09-16 package refresh also removed stale exact dependencies left by
    incremental development. Component packages use compatible minimum versions,
-   while `t630-release-base` 0.1.14 remains the single exact-version lock for a
+   while `t630-release-base` 0.1.15 remains the single exact-version lock for a
    release. The live personalized root now passes `dpkg --audit` and
    `apt-get check` after a clean reboot; the login runtime rebuild is
    byte-identical. See the

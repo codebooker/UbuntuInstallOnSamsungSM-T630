@@ -18,6 +18,24 @@ case "$root" in
 esac
 test -d "$root"
 test ! -L "$root"
+journal=/run/ubuntu/.t630-last-system-action
+journal_temp=/run/ubuntu/.t630-last-system-action.tmp
+if [ -e "$journal" ]; then
+    test -f "$journal"
+    test ! -L "$journal"
+fi
+test ! -e "$journal_temp"
+system_action_stage() {
+    stage=$1
+    (
+        umask 077
+        printf 'action=%s\nroot=%s\nstage=%s\n' "$action" "$root" "$stage" \
+            >"$journal_temp"
+        mv "$journal_temp" "$journal"
+        sync
+    )
+}
+system_action_stage starting
 owner_uid=65534
 if [ -f "$root/etc/t630/owner" ]; then
     owner_name=$(cat "$root/etc/t630/owner")
@@ -117,6 +135,7 @@ if [ "$root" != /run/ubuntu ]; then
     fi
     sync
 fi
+system_action_stage ready-to-unmount
 umount /run/ubuntu
 sync
 # This script finishes in the outer recovery root, but a desktop or SSH

@@ -13,7 +13,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-desktop-runtime"
-VERSION = "0.1.5"
+VERSION = "0.1.6"
 
 POSTINST = b"""#!/bin/sh
 set -e
@@ -86,7 +86,7 @@ def build(output: Path, epoch: int) -> str:
 Version: {VERSION}
 Architecture: all
 Maintainer: SM-T630 Ubuntu Port contributors
-Depends: t630-first-boot (= 0.1.1), t630-native-userspace (= 0.1.0), python3, python3-gi, gnome-shell, gnome-control-center, at-spi2-core, xdg-user-dirs, xwayland, xauth, x11-utils, xdotool, libglib2.0-bin, util-linux
+Depends: t630-first-boot (= 0.1.2), t630-native-userspace (= 0.1.0), python3, python3-gi, gnome-shell, gnome-control-center, at-spi2-core, xdg-user-dirs, xwayland, xauth, x11-utils, xdotool, libglib2.0-bin, util-linux
 Section: admin
 Priority: optional
 Description: account-neutral Ubuntu desktop integration for Samsung SM-T630

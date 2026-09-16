@@ -35,6 +35,14 @@ class PersistentBootTests(unittest.TestCase):
         self.assertIn(b"/run/t630-selected-root", cpio_one)
         self.assertIn(b"/usr/local/share/t630/weston.ini", cpio_one)
 
+    def test_charger_boot_reboots_before_consuming_release_selector(self):
+        init = (builder.ROOT / "persistent/init").read_text()
+        self.assertIn("androidboot.mode=charger", init)
+        self.assertIn("sec_mparam.lpcharge=1", init)
+        self.assertIn("/bin/busybox reboot -f", init)
+        self.assertLess(init.index('if [ "$charger_boot" = 1 ]'),
+                        init.index("/bin/start-ubuntu"))
+
     def test_clean_root_selector_is_fixed_consumed_and_recoverable(self):
         startup = (builder.ROOT / "persistent/start-ubuntu").read_text()
         self.assertIn("opt/t630/rehearsal/release-root", startup)
@@ -44,14 +52,30 @@ class PersistentBootTests(unittest.TestCase):
             startup.index('root=$candidate'))
         self.assertIn("SM-T630 OFFLINE RELEASE ROOT", startup)
         self.assertIn("test ! -L \"$candidate\"", startup)
+        self.assertIn("boot_journal=$hostroot/.t630-last-boot", startup)
+        self.assertIn("previous_boot_journal=$hostroot/.t630-previous-boot", startup)
+        for stage in ("userdata-mounted", "selector-consumed",
+                      "runtime-mounts-ready", "udev-ready",
+                      "core-services-ready", "weston-ready",
+                      "startup-dispatched"):
+            self.assertIn(f"boot_stage {stage}", startup)
+        self.assertIn("boot_stage() {\n    stage=$1\n    (", startup)
 
-    def test_wifi_filesystem_ready_precedes_wlan_with_slow_fallback(self):
+    def test_wifi_uses_proven_cnss_timeout_instead_of_unsafe_fast_signal(self):
         startup = (builder.ROOT / "persistent/start-ubuntu").read_text()
-        signal = startup.index("/bin/signal-wifi-filesystem-ready --signal-ready")
-        wlan = startup.index("qca_cld3_wlan.ko")
-        self.assertLess(signal, wlan)
-        self.assertIn("CNSS_FILESYSTEM_READY_REFUSED; retaining timeout fallback", startup)
+        self.assertNotIn("/bin/signal-wifi-filesystem-ready --signal-ready", startup)
+        self.assertIn(
+            "CNSS_FILESYSTEM_READY_DEFERRED; retaining proven timeout fallback",
+            startup)
         self.assertIn("[ -d /sys/module/wlan ] ||", startup)
+
+    def test_network_services_are_ready_before_timeout_wlan_registration(self):
+        startup = (builder.ROOT / "persistent/start-ubuntu").read_text()
+        wlan = startup.index("qca_cld3_wlan.ko")
+        self.assertLess(startup.index("service wpa /usr/sbin/wpa_supplicant"), wlan)
+        self.assertLess(
+            startup.index("service network /usr/sbin/NetworkManager"), wlan)
+        self.assertNotIn("t630-wlan-settled", startup)
 
     def test_visible_terminal_is_recovery_only(self):
         startup = (builder.ROOT / "persistent/start-ubuntu").read_text()
@@ -144,6 +168,17 @@ class PersistentBootTests(unittest.TestCase):
         text = writer.read_text()
         self.assertIn("old_hash=ca7caa12", text)
         self.assertIn("new_hash=83a3eb1e", text)
+        self.assertIn('dd if="$image" of=/dev/sda19', text)
+        for partition in ("/dev/sda20", "/dev/sda21", "/dev/sda22", "/dev/sde19"):
+            self.assertIn(partition, text)
+
+    def test_v12_writer_accepts_v11_and_pins_charger_guard_candidate(self):
+        writer = SOURCE.with_name("write_release_boot_v12.sh")
+        subprocess.run(["sh", "-n", writer], check=True)
+        text = writer.read_text()
+        self.assertIn("v7_hash=83a3eb1e", text)
+        self.assertIn("v11_hash=52004ee2", text)
+        self.assertIn("new_hash=a7bde825", text)
         self.assertIn('dd if="$image" of=/dev/sda19', text)
         for partition in ("/dev/sda20", "/dev/sda21", "/dev/sda22", "/dev/sde19"):
             self.assertIn(partition, text)

@@ -25,7 +25,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Everyday apps | Working | Clean-root provisioning installs GNOME Software/PackageKit, native Mozilla Firefox, Files, Terminal, Text Editor, LibreOffice, Contacts, media codecs, and the standard GNOME utilities; Snap remains absent because the stock kernel lacks its namespace requirements |
 | Physical keys | Working | Volume, Power, Home, Back, Recents, and red Active button mapped |
 | Desktop system controls | Working | Settings is packaged and available from the app grid, favorites, and Quick Settings; GNOME's standard Restart and Power Off confirmations reach the guarded orderly-shutdown path. The default Utilities folder is now flattened before Shell starts using an invisible empty-folder sentinel; the live grid passes, with new-fix restart acceptance pending |
-| Wi-Fi / remote access | Working | The normal pre-wlan filesystem-ready event now starts stock CNSS cold-boot calibration at 3.77 seconds; calibration completed at 19.55 seconds, WLAN module loading returned at 20.83 seconds, association began around 25.6 seconds, and DHCP completed around 27.7 seconds with no 70-second timeout. Owner-only SSH, real HTTPS, and the loopback screen feed start automatically on the personalized clean root; host trust and same-boot isolation checks pass |
+| Wi-Fi / remote access | Working | Normal boots use the stock CNSS timeout and connect the MAC-bound client radio as `wlan0`; the filesystem-ready shortcut remains diagnostic-only because charger/LPM boots exposed a regulatory null dereference on first scan. Boot v12 detects Samsung charger mode before consuming the release selector and cleanly reboots into normal mode. Owner-only SSH, real HTTPS, and the loopback screen feed start automatically. See the [cold-boot WLAN report](reports/cold-boot-wlan-charger-guard-20260916.md) |
 | Bluetooth | Working | WCN6850 startup retry, firmware handoff, idle wake, BlueZ discovery, synchronized teardown, and supervised recovery physically tested; WirePlumber Bluetooth audio policy is enabled, pending a paired-headset playback test |
 | Speakers | Working | Stock calibration and guarded amplifier sequencing; GNOME volume control works |
 | Microphone | Working | Built-in microphone exposed as the normal PipeWire source through a demand-driven bridge |
@@ -41,7 +41,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Flashlight | Working | Rear LED current and PMIC switch mapped; GNOME Quick Settings provides a brightness slider and a leased toggle that fails off after 15 seconds if its controller disappears |
 | Optional I/O | Characterized | Kernel support exists for microSD, USB host/role switch, Samsung NFC, GNSS framework, and USB-C DisplayPort. The exact NFC I2C path and the proprietary NFC/GNSS service boundaries are documented; physical accessory and bounded-service tests remain |
 | User setup | Working | The physical ownerless-root walkthrough completed with the normal GNOME keyboard, Wi-Fi connection, user-selected account/password, unique post-install machine identity, owner-neutral asset migration, and transition to the new owner's GNOME password lock; the installer frontend now defaults to dark mode |
-| Release packaging | In progress | The thirteen-component set is now dependency-consistent under `t630-release-base` 0.1.14. A package refresh repaired stale exact internal dependencies, the native login builder is byte-reproducible and survives the root's documentation-exclusion policy, and the installed tablet passes both `dpkg --audit` and `apt-get check` after a clean reboot. The identity-safe Ubuntu 24.04.5 ARM64 root completed first boot and repeated personalized cold boots. Boot v7 keeps that root selected after orderly system actions while preserving crash fallback; exact write/readback, protected-neighbor checks, managed GNOME startup, Wi-Fi filesystem-ready startup, and wallpaper persistence pass. Return-to-stock acceptance remains |
+| Release packaging | In progress | The thirteen-component set is dependency-consistent under `t630-release-base` 0.1.15. First-boot 0.1.2 selects the real client WLAN deterministically and MAC-binds its saved profile; desktop and camera dependencies were refreshed with it. The installed tablet passes `dpkg --audit` and `apt-get check`. Boot v12 keeps the personalized root selected after orderly actions, preserves one-shot crash fallback, rejects charger/LPM WLAN startup, and passed exact write/readback, protected-neighbor verification, managed GNOME, Wi-Fi, and full Power Off acceptance. Return-to-stock acceptance remains |
 | Security | Lab configuration | GNOME password lock works and normal owner boots no longer expose the recovery terminal, but the retained parent compositor and USB root console mean this is not a hardened full-device login boundary |
 
 ## Known limitations
@@ -52,14 +52,14 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 - Recovery to stock was prepared but has not been exercised end-to-end on the
   development tablet.
 - GPU acceleration is opt-in; software rendering is the safe fallback.
-- The personalized clean root now passes an unattended orderly restart with
-  automatic SSH/screen startup, preserved wallpaper and owner folders. Full
-  Power Off acceptance remains separate; this restart does not prove shutdown
-  on every path. See the [restart report](reports/clean-root-restart-folders-20260915.md).
-- Wi-Fi cold-boot calibration now follows the stock driver's required ordering
-  and physically passes. If any exact model/kernel/root/firmware/order gate
-  refuses, startup deliberately falls back to the older slow path instead of
-  leaving Wi-Fi unavailable.
+- The personalized clean root passes unattended orderly restart and full Power
+  Off while connected to USB power. Samsung charger/LPM boot is deliberately
+  converted into a normal reboot before Ubuntu or WLAN starts; this adds one
+  bootloader cycle after powered-off charging. See the
+  [cold-boot WLAN report](reports/cold-boot-wlan-charger-guard-20260916.md).
+- Wi-Fi deliberately retains the stock driver's roughly 70-second CNSS timeout.
+  The faster filesystem-ready signal is unsafe on this stock kernel's charger
+  path and is not used by normal startup.
 - The stable nested GNOME path currently disables its internal Xwayland server;
   the packaged default applications are Wayland-native, but legacy X11-only
   applications will not run until the Qualcomm/Mesa crash path is resolved.

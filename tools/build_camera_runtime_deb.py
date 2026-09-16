@@ -14,7 +14,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-camera-runtime"
-VERSION = "0.1.5"
+VERSION = "0.1.6"
 SOURCE_FILES = {
     "etc/sudoers.d/t630-camera": ("ubuntu/t630-camera-sudoers", 0o440),
     "usr/local/bin/t630-camera-app": ("ubuntu/t630-camera-app", 0o755),
@@ -92,7 +92,7 @@ def build(staging: Path, output: Path, epoch: int) -> str:
 Version: {VERSION}
 Architecture: arm64
 Maintainer: SM-T630 Ubuntu Port contributors
-Depends: t630-first-boot (= 0.1.1), t630-desktop-runtime (>= 0.1.5), t630-hardware-runtime (>= 0.1.6), t630-stock-assets (>= 1.0.2+dze3), python3, python3-gi, gir1.2-gtk-4.0, sudo, dmsetup, util-linux, pipewire, gstreamer1.0-tools, gstreamer1.0-plugins-base, gstreamer1.0-plugins-good, gnome-snapshot
+Depends: t630-first-boot (= 0.1.2), t630-desktop-runtime (>= 0.1.6), t630-hardware-runtime (>= 0.1.6), t630-stock-assets (>= 1.0.2+dze3), python3, python3-gi, gir1.2-gtk-4.0, sudo, dmsetup, util-linux, pipewire, gstreamer1.0-tools, gstreamer1.0-plugins-base, gstreamer1.0-plugins-good, gnome-snapshot
 Section: admin
 Priority: optional
 Description: camera compatibility runtime for Ubuntu on Samsung SM-T630

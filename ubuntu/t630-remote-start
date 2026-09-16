@@ -19,9 +19,11 @@ pre_owner_migration=f50044913572a64d10e018f99b562ea2969bd407f9ffbc9aca9c580cad64
 pre_vendor_map=8052b449c98360c03baabdad700ea7d2b973ca7ca004236c10b2ff47d7efa278
 clean_root_boot=5577ebe08fc2ed99c1e9c1b541b620b0eaaccd700af10a9c773319a37282ccea
 clean_root_ownerless=fed71eb1522dd5d7d34e649fc0600d0e851172804ac8f9d782f6c8328d69fc64
+cold_boot_journal=0341f64e1e2d91c4f8ab9c23cae6c81d1ffaca9a9bda6760767a80391d149981
+cold_boot_journal_fixed=7e27393b83ae28c48558c01c5c6749c63b778d6b52af955c2464504866df4517
 current=$(/usr/bin/sha256sum "$host/bin/stop-ubuntu" | /usr/bin/cut -d' ' -f1)
 updated=$(/usr/bin/sha256sum /usr/local/share/t630/stop-ubuntu | /usr/bin/cut -d' ' -f1)
-test "$current" = "$old" || test "$current" = "$previous" || test "$current" = "$pre_login" || test "$current" = "$pre_camera" || test "$current" = "$pre_explicit_reboot" || test "$current" = "$pre_owner_migration" || test "$current" = "$pre_vendor_map" || test "$current" = "$clean_root_boot" || test "$current" = "$clean_root_ownerless" || test "$current" = "$updated"
+test "$current" = "$old" || test "$current" = "$previous" || test "$current" = "$pre_login" || test "$current" = "$pre_camera" || test "$current" = "$pre_explicit_reboot" || test "$current" = "$pre_owner_migration" || test "$current" = "$pre_vendor_map" || test "$current" = "$clean_root_boot" || test "$current" = "$clean_root_ownerless" || test "$current" = "$cold_boot_journal" || test "$current" = "$cold_boot_journal_fixed" || test "$current" = "$updated"
 /usr/bin/install -m 755 /usr/local/share/t630/stop-ubuntu "$host/bin/stop-ubuntu"
 /usr/sbin/sshd -t -f /etc/ssh/sshd_config_t630
 sshd_pid=$(cat /run/t630-sshd.pid 2>/dev/null || true)

@@ -88,6 +88,9 @@ class FirstBootPackageTests(unittest.TestCase):
         self.assertNotIn("self.keyboard", helper)
         self.assertIn("LOCK_EX | fcntl.LOCK_NB", helper)
         self.assertIn("window.password.grab_focus()", helper)
+        self.assertIn("Path('/sys/class/net/wlan0')", helper)
+        self.assertIn("802-11-wireless.mac-address", helper)
+        self.assertIn("GENERAL.HWADDR", helper)
 
     def test_first_boot_embeds_wifi_in_the_existing_wizard_surface(self):
         wizard = (builder.ROOT / "ubuntu/t630-first-boot-ui.py").read_text()
@@ -95,6 +98,9 @@ class FirstBootPackageTests(unittest.TestCase):
         self.assertIn("def connect_wifi_worker", wizard)
         self.assertIn("self.wifi_password.grab_focus()", wizard)
         self.assertNotIn("subprocess.Popen", wizard)
+        self.assertIn('Path("/sys/class/net/wlan0")', wizard)
+        self.assertIn("802-11-wireless.mac-address", wizard)
+        self.assertIn("GENERAL.HWADDR", wizard)
 
 
 if __name__ == "__main__":

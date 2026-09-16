@@ -22,6 +22,33 @@ test "$(dd if=/dev/sda34 bs=1 skip=1128 count=16 2>/dev/null | od -An -tx1 | tr 
 mkdir -p "$hostroot"
 mount -t ext4 -o noatime,errors=remount-ro /dev/sda34 "$hostroot"
 test "$(cat "$hostroot/etc/t630-install-id")" = 'SM-T630-T630XXSBDZE3-Ubuntu-v1'
+boot_journal=$hostroot/.t630-last-boot
+previous_boot_journal=$hostroot/.t630-previous-boot
+boot_journal_temp=$hostroot/.t630-last-boot.tmp
+for path in "$boot_journal" "$previous_boot_journal"; do
+    if [ -e "$path" ]; then
+        test -f "$path"
+        test ! -L "$path"
+    fi
+done
+if [ -e "$boot_journal_temp" ]; then
+    test -f "$boot_journal_temp"
+    test ! -L "$boot_journal_temp"
+    rm "$boot_journal_temp"
+fi
+if [ -e "$boot_journal" ]; then
+    mv -f "$boot_journal" "$previous_boot_journal"
+fi
+boot_stage() {
+    stage=$1
+    (
+        umask 077
+        printf 'root=%s\nstage=%s\n' "$root" "$stage" >"$boot_journal_temp"
+        mv "$boot_journal_temp" "$boot_journal"
+        sync
+    )
+}
+boot_stage userdata-mounted
 # A guarded rehearsal may select the fixed, preserved clean root for one boot.
 # Consume the selector before entering the candidate so any later failure falls
 # back to the known-good filesystem root at the next hardware restart.
@@ -39,6 +66,7 @@ if [ -e "$selector" ]; then
     mv "$selector" "$consumed"
     sync
     root=$candidate
+    boot_stage selector-consumed
     echo 'T630_PERSISTENT: consumed clean-root one-shot selector' >/dev/kmsg
 fi
 printf '%s\n' "$root" >/run/t630-selected-root
@@ -52,6 +80,7 @@ mount --bind /sys "$root/sys"
 mount -t tmpfs -o mode=0755,nosuid,nodev,size=128m tmpfs "$root/run"
 mkdir -p "$root/dev/shm"
 mount -t tmpfs -o mode=1777,nosuid,nodev,size=256m tmpfs "$root/dev/shm"
+boot_stage runtime-mounts-ready
 mkdir -p "$root/run/user/0" "$root/run/dbus" "$root/run/udev" "$root/var/log/chrony"
 chmod 700 "$root/run/user/0"
 chmod 755 "$root/run/dbus" "$root/run/udev"
@@ -78,6 +107,7 @@ chroot "$root" /usr/bin/env SYSTEMD_IGNORE_CHROOT=1 /usr/bin/udevadm trigger --a
 chroot "$root" /usr/bin/env SYSTEMD_IGNORE_CHROOT=1 /usr/bin/udevadm trigger --action=add --subsystem-match=input
 chroot "$root" /usr/bin/env SYSTEMD_IGNORE_CHROOT=1 /usr/bin/udevadm trigger --action=add --subsystem-match=net
 chroot "$root" /usr/bin/udevadm settle --timeout=10 || true
+boot_stage udev-ready
 # Supervise only this prototype's services; a stop marker prevents respawn.
 service() {
     name=$1
@@ -122,15 +152,11 @@ service clock /usr/sbin/chronyd -d -f /etc/chrony/t630.conf
     for name in cnss_prealloc cnss_nl cnss_utils device_management_service_v01 wlan_firmware_service_v01 cnss2; do
         [ -d "/sys/module/$name" ] || insmod "$root/opt/t630/vendor/lib/modules/$name.ko"
     done
-    # Samsung's CNSS cold-boot calibration expects the normal filesystem-ready
-    # event after cnss2 probes and before qcacld registers. The helper pins the
-    # exact device, kernel, selected root, firmware, and unloaded wlan state. If
-    # any gate refuses, retain the known-working (but 70-second slower) path.
-    if /bin/signal-wifi-filesystem-ready --signal-ready; then
-        echo "CNSS_FILESYSTEM_READY_ACCEPTED uptime=$(cut -d ' ' -f 1 /proc/uptime)"
-    else
-        echo "CNSS_FILESYSTEM_READY_REFUSED; retaining timeout fallback"
-    fi
+    # Do not send CNSS's filesystem-ready event.  On this stock Samsung kernel,
+    # three reproduced cold boots using the shortcut panicked in
+    # handle_reg_beacon on the first scan.  The driver's own bounded timeout is
+    # slower but preserves the calibration/regulatory initialization sequence.
+    echo "CNSS_FILESYSTEM_READY_DEFERRED; retaining proven timeout fallback"
     [ -d /sys/module/wlan ] ||
         insmod "$root/opt/t630/vendor/lib/modules/qca_cld3_wlan.ko"
     mdev -s
@@ -141,12 +167,14 @@ while [ ! -S "$root/run/seatd.sock" ] && [ "$attempt" -lt 20 ]; do
     sleep 1
     attempt=$((attempt + 1))
 done
+boot_stage core-services-ready
 service weston /usr/bin/env HOME=/root TERM=xterm-256color XDG_RUNTIME_DIR=/run/user/0 LIBSEAT_BACKEND=seatd LD_PRELOAD=/usr/local/lib/t630-drm-compat.so WESTON_DISABLE_GBM_MODIFIERS=1 /usr/bin/weston --backend=drm-backend.so --renderer=pixman --config=/usr/local/share/t630/weston.ini --log=/run/weston.log --socket=wayland-0
 attempt=0
 while [ ! -S "$root/run/user/0/wayland-0" ] && [ "$attempt" -lt 30 ]; do
     sleep 1
     attempt=$((attempt + 1))
 done
+boot_stage weston-ready
 # Keep the visible terminal as an ownerless/recovery facility. A personalized
 # installation already has the independent USB serial console, and showing a
 # root terminal before its password lock is both confusing and unnecessary.
@@ -159,5 +187,6 @@ if [ ! -f "$root/etc/t630/owner" ] ||
         /usr/bin/weston-terminal --font-size=20 --shell=/bin/bash \
         >/run/terminal.log 2>&1 &
 fi
+boot_stage startup-dispatched
 echo 'T630_PERSISTENT: Ubuntu startup dispatched'
 wait

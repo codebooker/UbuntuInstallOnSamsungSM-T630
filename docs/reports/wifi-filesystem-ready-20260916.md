@@ -1,5 +1,12 @@
 # CNSS filesystem-ready acceptance (2026-09-16)
 
+> **Superseded for normal startup.** The fast path below passed a normal reboot,
+> but later full Power Off testing exposed a Samsung charger/LPM-only kernel
+> panic on the first scan. Normal startup no longer sends the filesystem-ready
+> shortcut and uses the stock timeout. Boot v12 first converts charger/LPM boot
+> into a normal boot. See
+> [the corrective report](cold-boot-wlan-charger-guard-20260916.md).
+
 ## Problem
 
 The stock WCN6850 stack previously loaded `cnss2` and `qca_cld3_wlan`

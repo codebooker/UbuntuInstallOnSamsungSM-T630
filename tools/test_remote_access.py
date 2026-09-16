@@ -49,6 +49,8 @@ class RemoteAccessTests(unittest.TestCase):
         self.assertIn("pre_explicit_reboot=a0ac11c", launcher)
         self.assertIn("clean_root_boot=5577ebe", launcher)
         self.assertIn("clean_root_ownerless=fed71eb", launcher)
+        self.assertIn("cold_boot_journal=0341f64e", launcher)
+        self.assertIn("cold_boot_journal_fixed=7e27393b", launcher)
         self.assertIn("The one-shot clean root must remain recoverable", helper)
         self.assertIn("owner_uid=65534", helper)
         self.assertIn('selector=/run/ubuntu/.t630-next-root', helper)
@@ -56,6 +58,12 @@ class RemoteAccessTests(unittest.TestCase):
         self.assertLess(helper.index('test -z "$(grep " $root/"'),
                         helper.index('mv "$consumed" "$selector"'))
         self.assertLess(helper.index('mv "$consumed" "$selector"'),
+                        helper.index('umount /run/ubuntu'))
+        self.assertIn('journal=/run/ubuntu/.t630-last-system-action', helper)
+        self.assertIn('system_action_stage starting', helper)
+        self.assertIn('system_action_stage ready-to-unmount', helper)
+        self.assertIn('system_action_stage() {\n    stage=$1\n    (', helper)
+        self.assertLess(helper.index('system_action_stage ready-to-unmount'),
                         helper.index('umount /run/ubuntu'))
 
     def test_screen_server_has_its_own_single_instance_lock(self):

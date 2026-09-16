@@ -58,8 +58,13 @@
    RAM-only USB-serial stager now verifies the sealed bundle locally, streams
    files at constant host memory cost, and rechecks all hashes on the exact
    tablet without any block-device write; its full-size physical run remains.
-   The destructive installer gap is exact userdata extraction with preserved
-   ownership/ACLs/xattrs, followed by a physical stock-return rehearsal. Boot v3
+   A private recovery-tool builder and two-phase installer now implement exact
+   userdata formatting and extraction with preserved ownership/ACLs/xattrs,
+   post-extract identity/package checks, unmounted read-only fsck, one-attempt
+   locking, explicit typed authorization, and no automatic reboot. The code
+   refuses a mounted working Ubuntu root, so it cannot be trialed destructively
+   as an incidental health check. Remaining gates are the full physical
+   clean-install/first-boot run and stock-return rehearsal. Boot v3
    makes an incomplete ownerless setup cleanly recoverable; boot v4 retains
    that terminal only for ownerless or explicitly requested recovery boots. The
    account-neutral Weston/Maliit host runtime is now packaged with reversible distro-file

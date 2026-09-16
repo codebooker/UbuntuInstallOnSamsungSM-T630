@@ -35,6 +35,8 @@ python3 "$script_dir/prepare_rehearsal_root.py" "$base" "$root"
 "$script_dir/provision_rehearsal_root.sh" "$root"
 python3 "$script_dir/assemble_release_root.py" "$packages" --root "$root" --apply
 "$script_dir/check_rehearsal_root.sh" "$root"
+python3 "$script_dir/build_installer_runtime.py" \
+    "$root" "$work/t630-installer-runtime.tar.gz"
 python3 "$script_dir/build_release_archive.py" \
     "$root" "$work/t630-release-rootfs.tar.gz"
 python3 "$script_dir/build_boot_persistent.py" \
@@ -43,6 +45,8 @@ python3 "$script_dir/audit_release_root.py" "$root"
 python3 "$script_dir/finalize_installer_bundle.py" "$work"
 chmod 0600 "$work/t630-release-rootfs.tar.gz" \
     "$work/t630-release-rootfs.tar.gz.manifest.json" \
+    "$work/t630-installer-runtime.tar.gz" \
+    "$work/t630-installer-runtime.tar.gz.manifest.json" \
     "$work/boot/boot.img" "$work/boot/manifest.json" \
     "$work/installer-bundle.json" "$work/SHA256SUMS"
 

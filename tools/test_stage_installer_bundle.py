@@ -17,6 +17,8 @@ class InstallerStagingTests(unittest.TestCase):
         self.assertIn("tmpfs", text)
         self.assertIn("sha256sum -c SHA256SUMS", text)
         self.assertIn("INSTALLER_BUNDLE_VERIFIED_IN_RAM_NO_DEVICE_WRITE", text)
+        self.assertIn("install_staged_release.sh", text)
+        self.assertIn("INSTALLER_CHECK_PASSED_USERDATA_UNMOUNTED_NO_DEVICE_WRITE", text)
         for forbidden in ("mkfs", "dd if=", "of=/dev/", "heimdall", "--write"):
             self.assertNotIn(forbidden, text)
 

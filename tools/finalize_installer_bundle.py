@@ -17,6 +17,8 @@ ROOT_UUID = "64de8544-53ea-4fdc-8946-d6b07e238630"
 INPUTS = (
     "t630-release-rootfs.tar.gz",
     "t630-release-rootfs.tar.gz.manifest.json",
+    "t630-installer-runtime.tar.gz",
+    "t630-installer-runtime.tar.gz.manifest.json",
     "boot/boot.img",
     "boot/manifest.json",
 )
@@ -75,8 +77,19 @@ def validate(work: Path) -> dict:
             root_record.get("contains_network_credentials") is not False):
         raise ValueError("rootfs identity boundary is not clean")
 
-    boot = paths[INPUTS[2]]
-    boot_record = read_manifest(paths[INPUTS[3]])
+    runtime = paths[INPUTS[2]]
+    runtime_record = read_manifest(paths[INPUTS[3]])
+    if runtime_record.get("status") != "PRIVATE_INSTALLER_RUNTIME_ARM64_NO_DEVICE_WRITE":
+        raise ValueError("installer runtime manifest status mismatch")
+    if (runtime_record.get("model") != "SM-T630" or
+            runtime_record.get("stock_build") != "T630XXSBDZE3" or
+            runtime_record.get("archive") != runtime.name or
+            runtime_record.get("archive_bytes") != runtime.stat().st_size or
+            runtime_record.get("archive_sha256") != digest(runtime)):
+        raise ValueError("installer runtime manifest content mismatch")
+
+    boot = paths[INPUTS[4]]
+    boot_record = read_manifest(paths[INPUTS[5]])
     if (boot_record.get("model") != "SM-T630" or
             boot_record.get("stock_build") != "T630XXSBDZE3" or
             boot_record.get("root_uuid") != ROOT_UUID):

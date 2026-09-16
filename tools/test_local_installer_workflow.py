@@ -17,6 +17,7 @@ class LocalInstallerWorkflowTests(unittest.TestCase):
         self.assertIn("prepare_rehearsal_root.py", text)
         self.assertIn("assemble_release_root.py", text)
         self.assertIn("check_rehearsal_root.sh", text)
+        self.assertIn("build_installer_runtime.py", text)
         self.assertIn("build_release_archive.py", text)
         self.assertIn("build_boot_persistent.py", text)
         self.assertIn("finalize_installer_bundle.py", text)

@@ -24,6 +24,16 @@ class InstallerBundleTests(unittest.TestCase):
         }
         (root / "t630-release-rootfs.tar.gz.manifest.json").write_text(
             json.dumps(root_record), encoding="utf-8")
+        runtime = root / "t630-installer-runtime.tar.gz"
+        runtime.write_bytes(b"runtime")
+        runtime_record = {
+            "status": "PRIVATE_INSTALLER_RUNTIME_ARM64_NO_DEVICE_WRITE",
+            "model": "SM-T630", "stock_build": "T630XXSBDZE3",
+            "archive": runtime.name, "archive_bytes": runtime.stat().st_size,
+            "archive_sha256": hashlib.sha256(b"runtime").hexdigest(),
+        }
+        (root / "t630-installer-runtime.tar.gz.manifest.json").write_text(
+            json.dumps(runtime_record), encoding="utf-8")
         boot = root / "boot/boot.img"
         boot.write_bytes(b"boot")
         boot_record = {

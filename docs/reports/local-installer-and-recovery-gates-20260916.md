@@ -99,3 +99,49 @@ and the temporary `/run/t630-transfer-test-v12.img` was removed. No block device
 was opened by the test. The live personalized root then still reported GNOME,
 Wi-Fi, Bluetooth audio roles, speaker/microphone defaults, permissions,
 accelerometer, and battery healthy with zero precise kernel-fault markers.
+
+## Recovery tool runtime and two-phase install
+
+The local builder now derives a minimal private recovery runtime from the same
+audited ownerless ARM64 root. It includes only `mke2fs`, `e2fsck`, GNU tar,
+`dpkg-query`, `mke2fs.conf`, the ARM64 loader, and libraries reported by `ldd`.
+Every binary is checked as ARM64 ELF64; missing libraries, symlink escapes,
+identity-dirty roots, and existing output paths fail closed. The runtime and
+manifest are sealed into the bundle and covered by tablet-side SHA256 checks.
+Read-only probes on the live ARM64 root confirmed all four binaries exist,
+their complete `ldd` output resolves through `/lib/aarch64-linux-gnu` plus
+`/lib/ld-linux-aarch64.so.1`, GNU tar resolves its ACL/SELinux/PCRE libraries,
+and `dpkg-query` supports the required `--root=<directory>` option.
+
+`tools/install_staged_release.sh` defaults to read-only `--check`. It requires
+the exact model, kernel, partition number/major-minor/size, at least 50% battery
+with external power, no userdata mount or holder, accepted v12 BOOT on disk and
+in the bundle, and unchanged recovery/vendor_boot/DTBO/VBMETA hashes. It probes
+all runtime tools through the staged ARM64 loader. Because the current working
+Ubuntu root is mounted from userdata, this tablet is refused before any erase
+authorization can be considered.
+
+That refusal was exercised physically: the exact installer script was uploaded
+to `/run`, invoked with `--check`, and returned
+`INSTALLER_REFUSED: userdata is mounted` with exit status 1. The temporary
+script was deleted. It did not reach staged checksum reads, tool extraction,
+authorization, formatting, or any block-device write.
+
+`--apply` additionally requires a one-time, exact RAM token. The host helper
+repeats check mode and requires the typed phrase `ERASE SM-T630 USERDATA` plus a
+stock-recovery acknowledgement before creating that token. Apply locks out a
+second format attempt in the same boot, formats only `sda34` with the accepted
+UUID/features, extracts numeric ownership/ACLs/xattrs, and validates the device
+marker, blank machine identity, absent owner/human/home/network/SSH state, and
+exact release metapackage. It unmounts and runs `e2fsck -fn`; it neither writes
+BOOT nor reboots automatically.
+
+Twelve additional tests cover the runtime dependency parser, ARM64/source
+boundaries, path escapes, installer shell syntax, ordering of check,
+authorization, format, extraction, package validation and fsck, exact partition
+guards, BOOT read-only handling, the typed phrase, recovery acknowledgement,
+one-time token creation, and no automatic apply before the final check.
+
+The implementation is ready for a controlled destructive clean-install
+rehearsal, but no such rehearsal was performed on the working tablet in this
+pass.

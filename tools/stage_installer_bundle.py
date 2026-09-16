@@ -18,15 +18,17 @@ stage=/run/t630-installer
 cd "$stage"
 test -f SHA256SUMS
 test ! -L SHA256SUMS
-test "$(wc -l <SHA256SUMS)" -eq 5
+test "$(wc -l <SHA256SUMS)" -eq 7
 awk '
     length($1) != 64 || NF != 2 { bad=1 }
     NR == 1 && $2 != "t630-release-rootfs.tar.gz" { bad=1 }
     NR == 2 && $2 != "t630-release-rootfs.tar.gz.manifest.json" { bad=1 }
-    NR == 3 && $2 != "boot/boot.img" { bad=1 }
-    NR == 4 && $2 != "boot/manifest.json" { bad=1 }
-    NR == 5 && $2 != "installer-bundle.json" { bad=1 }
-    END { exit (NR == 5 && !bad) ? 0 : 1 }
+    NR == 3 && $2 != "t630-installer-runtime.tar.gz" { bad=1 }
+    NR == 4 && $2 != "t630-installer-runtime.tar.gz.manifest.json" { bad=1 }
+    NR == 5 && $2 != "boot/boot.img" { bad=1 }
+    NR == 6 && $2 != "boot/manifest.json" { bad=1 }
+    NR == 7 && $2 != "installer-bundle.json" { bad=1 }
+    END { exit (NR == 7 && !bad) ? 0 : 1 }
 ' SHA256SUMS
 sha256sum -c SHA256SUMS
 test "$(stat -c %s boot/boot.img)" = 100663296
@@ -37,6 +39,8 @@ test "$(stat -c %s t630-release-rootfs.tar.gz)" -gt 104857600
 test "$(stat -c %s t630-release-rootfs.tar.gz)" -le 4294967296
 grep -Fq '"status": "LOCAL_PRIVATE_INSTALLER_INPUT_DO_NOT_REDISTRIBUTE"' \
   t630-release-rootfs.tar.gz.manifest.json
+grep -Fq '"status": "PRIVATE_INSTALLER_RUNTIME_ARM64_NO_DEVICE_WRITE"' \
+  t630-installer-runtime.tar.gz.manifest.json
 grep -Fq '"status": "PRIVATE_INSTALLER_BUNDLE_SEALED_NOT_DEVICE_WRITE_AUTHORIZATION"' \
   installer-bundle.json
 grep -Fq '"model": "SM-T630"' installer-bundle.json
@@ -85,6 +89,13 @@ def stage(work: Path) -> None:
         result = link.run(VERIFY_SCRIPT, timeout=180)
         if "INSTALLER_BUNDLE_VERIFIED_IN_RAM_NO_DEVICE_WRITE" not in result:
             raise RuntimeError("tablet-side installer bundle verification failed")
+        print(result, end="")
+        installer = Path(__file__).with_name("install_staged_release.sh")
+        remote_installer = f"{STAGING}/install-staged-release"
+        link.upload_file_ram(installer, remote_installer)
+        result = link.run(f"sh {remote_installer} --check", timeout=180)
+        if "INSTALLER_CHECK_PASSED_USERDATA_UNMOUNTED_NO_DEVICE_WRITE" not in result:
+            raise RuntimeError("tablet-side pre-install check failed")
         print(result, end="")
 
 

@@ -489,9 +489,13 @@ SHA256, size, member count, identity state, and redistribution warning. The
 archive uses GNU tar with numeric ownership, ACLs, xattrs, deterministic member
 order and timestamps, and gzip without a timestamp. The builder re-runs the
 identity audit after packaging. It then refuses any BOOT other than the exact
-physically accepted v12 image and seals the four inputs in
-`installer-bundle.json` plus a BusyBox-compatible `SHA256SUMS`. All six files
-remain mode 0600.
+physically accepted v12 image and seals the six inputs in
+`installer-bundle.json` plus a BusyBox-compatible `SHA256SUMS`. The bundle also
+contains a small private ARM64 recovery runtime built from the audited clean
+root: `mke2fs`, `e2fsck`, GNU tar, `dpkg-query`, the dynamic loader and their
+resolved libraries, plus `mke2fs.conf`. Its builder rejects unresolved
+libraries, non-ARM64 binaries, root escapes, and existing outputs. All eight
+payload/control files remain mode 0600.
 
 The sealed bundle can be checked again on the host and staged into a dedicated
 tablet **RAM-only** tmpfs over the existing USB recovery console:
@@ -516,11 +520,40 @@ stream itself physically transferred the accepted 100,663,296-byte v12 BOOT
 image into `/run` in 5.6 seconds, matched its SHA256 on the tablet, and removed
 the RAM copy afterward.
 
-This completes the host-side assembly and RAM-staging boundaries. It does not
-authorize flashing: the recovery environment must still format exact
-`userdata`, extract the already verified archive with ownership, ACLs and
-xattrs intact, validate the installed root, and only then write the accepted
-BOOT image.
+The stager uploads `install_staged_release.sh` separately and runs its default
+`--check` mode. That mode is read-only. It additionally requires userdata to
+have no mount or block holder, verifies the installed BOOT and the untouched
+recovery, vendor_boot, DTBO, and VBMETA partitions, extracts and probes the
+private ARM64 tool runtime in RAM, and then reports readiness. A stock Android
+userdata filesystem is expected to remain unmounted because boot v12 recognizes
+only the exact provisioned ext4 UUID. An already running Ubuntu installation is
+mounted and is therefore refused before authorization.
+
+The physical development tablet passed the corresponding negative test:
+`--check` returned `INSTALLER_REFUSED: userdata is mounted` with exit status 1,
+before any staged-bundle, authorization, format, or extraction operation.
+
+The destructive command exists for the eventual physical clean-install
+rehearsal, but that rehearsal has **not** happened yet:
+
+```sh
+python3 tools/authorize_staged_install.py --acknowledge-stock-recovery
+```
+
+It first repeats the tablet-side read-only check, then requires the operator to
+type `ERASE SM-T630 USERDATA` exactly. Only then does it create a one-time RAM
+token and invoke `--apply`. Apply formats only validated `sda34`, extracts with
+numeric ownership, ACLs, and xattrs, rejects identity/account/network leakage,
+requires `t630-release-base` 0.1.15, unmounts, and runs read-only `e2fsck`.
+Failures after format stay in recovery with the bundle available for diagnosis;
+the same boot cannot silently retry. Success still requires an explicit reboot.
+It never writes BOOT or another partition.
+
+This completes the source implementation for host assembly, RAM staging, and
+the guarded userdata installer. It does not make the release end-user ready:
+the full clean-root build, multi-gigabyte transfer, destructive install, first
+boot, and return-to-stock sequence must still pass physically before the top
+warning can be removed.
 
 Do not overwrite a mapped live library merely to test the package. Extract it
 to a temporary directory and run the dependency/symbol probes described in the

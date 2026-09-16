@@ -9,6 +9,51 @@ import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js'
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 export default class TabletKeyboard extends Extension {
+    _isWaydroidWindow(window) {
+        const identities = [
+            Shell.WindowTracker.get_default().get_window_app(window)?.get_id(),
+            window.get_wm_class?.(),
+            window.get_wm_class_instance?.(),
+            window.get_gtk_application_id?.(),
+            window.get_sandboxed_app_id?.(),
+        ];
+        if (identities.some(value =>
+            typeof value === 'string' && value.toLowerCase().includes('waydroid')))
+            return true;
+        // Waydroid's native xdg-shell hardware composer does not always expose
+        // its desktop-file hint through Mutter's normal application identity
+        // fields. Its peer PID is still authenticated by the Wayland socket,
+        // so use the fixed composer command line as a narrow fallback.
+        const pid = window.get_pid?.();
+        if (!Number.isInteger(pid) || pid < 2)
+            return false;
+        try {
+            const [ok, contents] = GLib.file_get_contents(`/proc/${pid}/cmdline`);
+            const command = ok ? new TextDecoder().decode(contents) : '';
+            return command.includes('android.hardware.graphics.composer@2.1-service') &&
+                command.includes('--desktop_file_hint=Waydroid.desktop');
+        } catch (_) {
+            return false;
+        }
+    }
+
+    _queueWaydroidFullscreen(window) {
+        if (!this._isWaydroidWindow(window) || window.is_fullscreen())
+            return;
+        const timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 250, () => {
+            this._waydroidTimers.delete(timer);
+            // The delay lets Mutter finish mapping the xdg-toplevel first.
+            // Fullscreening at window-created time is otherwise racy on the
+            // nested Wayland session used by this port.
+            if (!Main.sessionMode.isLocked && !window.is_fullscreen()) {
+                window.make_fullscreen();
+                console.log('T630 tablet tools: made a Waydroid surface fullscreen.');
+            }
+            return GLib.SOURCE_REMOVE;
+        });
+        this._waydroidTimers.add(timer);
+    }
+
     _hideStockControl(item) {
         if (!item)
             return;
@@ -73,6 +118,11 @@ export default class TabletKeyboard extends Extension {
 
     enable() {
         this._settings = this.getSettings();
+        this._waydroidTimers = new Set();
+        this._waydroidWindowCreated = global.display.connect(
+            'window-created', (_display, window) => this._queueWaydroidFullscreen(window));
+        for (const actor of global.get_window_actors())
+            this._queueWaydroidFullscreen(actor.meta_window);
         Main.wm.addKeybinding(
             'toggle-keyboard', this._settings,
             Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
@@ -216,6 +266,13 @@ export default class TabletKeyboard extends Extension {
             GLib.Source.remove(this._fullscreenTimer);
         this._brightnessTimer = this._fullscreenTimer = 0;
         this._flashlightBrightnessTimer = this._flashlightLeaseTimer = 0;
+        if (this._waydroidWindowCreated)
+            global.display.disconnect(this._waydroidWindowCreated);
+        this._waydroidWindowCreated = 0;
+        for (const timer of this._waydroidTimers ?? [])
+            GLib.Source.remove(timer);
+        this._waydroidTimers?.clear();
+        this._waydroidTimers = null;
         if (this._powerMenuId)
             this._powerMenu.disconnect(this._powerMenuId);
         this._powerMenuId = 0;

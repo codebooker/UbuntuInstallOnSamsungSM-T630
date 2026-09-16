@@ -97,6 +97,14 @@ Launch the full Android UI as the account created by first boot:
 waydroid show-full-ui
 ```
 
+With `t630-desktop-runtime` 0.1.8 or newer, the tablet controls extension makes
+new Waydroid surfaces true GNOME fullscreen after they finish mapping. This
+scales the 1024×623 software-rendering profile across the physical display
+without making Android render every frame at 1920×1168 again. The physical
+Home and Recents buttons can still open GNOME's application grid and overview.
+Normal Ubuntu windows are not affected; the rule matches Waydroid's desktop
+identity rather than a window title.
+
 Android applications installed by Waydroid receive `.desktop` launchers in
 that owner's app grid. The wrapper resolves the owner and runtime directory at
 execution time; no lab user name or fixed home path is packaged.

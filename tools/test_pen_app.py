@@ -1,5 +1,6 @@
 import importlib.util
 from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import Mock, patch
 from types import SimpleNamespace
@@ -15,6 +16,10 @@ metadata_spec.loader.exec_module(metadata)
 ui_spec = importlib.util.spec_from_file_location('mypaint_ui', SOURCE.with_name('t630-mypaint.py'))
 ui = importlib.util.module_from_spec(ui_spec)
 ui_spec.loader.exec_module(ui)
+defaults_spec = importlib.util.spec_from_file_location(
+    'xournal_defaults', SOURCE.with_name('t630-xournalpp-defaults.py'))
+defaults = importlib.util.module_from_spec(defaults_spec)
+defaults_spec.loader.exec_module(defaults)
 
 
 class PenAppTests(unittest.TestCase):
@@ -188,7 +193,8 @@ class PenAppTests(unittest.TestCase):
                  patch.object(pen.sys, 'argv', ['t630-pen-app', kind, '/home/owner/My Drawing.ora']), \
                  patch.dict(pen.os.environ, {'WAYLAND_DISPLAY': 't630-gnome-0',
                             'XDG_CONFIG_HOME': '/home/owner/.config/profile'}, clear=True), \
-                 patch.object(pen.os, 'execve') as execute:
+                 patch.object(pen.os, 'execve') as execute, \
+                 patch.object(pen.subprocess, 'run') as run:
                 pen.main()
                 binary, argv, env = execute.call_args.args
                 self.assertEqual(binary, command)
@@ -199,8 +205,55 @@ class PenAppTests(unittest.TestCase):
                 self.assertNotIn('LD_PRELOAD', env)
                 if kind == 'drawing':
                     self.assertEqual(env['OMP_NUM_THREADS'], '1')
+                    run.assert_not_called()
                 else:
                     self.assertNotIn('OMP_NUM_THREADS', env)
+                    run.assert_called_once_with([pen.XOURNAL_DEFAULTS], env=env, check=False)
+
+    def test_xournal_default_enables_internal_hand_recognition_once(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            config = base / 'config'
+            state = base / 'state'
+            app = config / 'xournalpp'
+            app.mkdir(parents=True)
+            settings = app / 'settings.xml'
+            original = (b'<?xml version="1.0"?>\n<settings>\n'
+                        b'  <!--preserve me-->\n  <data name="touch"/>\n</settings>\n')
+            settings.write_bytes(original)
+            self.assertEqual(defaults.seed_palm_rejection(config, state), 'enabled')
+            updated = settings.read_bytes()
+            self.assertIn(b'value="true"', updated)
+            self.assertIn(b'<!--preserve me-->', updated)
+            self.assertEqual(settings.with_name(
+                'settings.xml.before-t630-palm-default').read_bytes(), original)
+            first = settings.stat().st_mtime_ns
+            self.assertEqual(defaults.seed_palm_rejection(config, state), 'already-seeded')
+            self.assertEqual(settings.stat().st_mtime_ns, first)
+
+    def test_xournal_default_respects_explicit_existing_choice(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            settings = base / 'config/xournalpp/settings.xml'
+            settings.parent.mkdir(parents=True)
+            original = (b'<settings>\n  <data name="touch">\n'
+                        b'    <attribute name="disableTouch" type="boolean" value="false"/>\n'
+                        b'  </data>\n</settings>\n')
+            settings.write_bytes(original)
+            result = defaults.seed_palm_rejection(base / 'config', base / 'state')
+            self.assertEqual(result, 'existing-choice-preserved')
+            self.assertEqual(settings.read_bytes(), original)
+            self.assertFalse(settings.with_name('settings.xml.before-t630-palm-default').exists())
+
+    def test_xournal_default_creates_minimal_first_run_settings(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            result = defaults.seed_palm_rejection(base / 'config', base / 'state')
+            self.assertEqual(result, 'enabled')
+            settings = base / 'config/xournalpp/settings.xml'
+            root = defaults.ET.parse(settings).getroot()
+            self.assertEqual(root.tag, 'settings')
+            self.assertIn(b'value="true"', settings.read_bytes())
 
     def test_root_and_wrong_display_refused(self):
         with patch.object(pen.os, 'getuid', return_value=0):

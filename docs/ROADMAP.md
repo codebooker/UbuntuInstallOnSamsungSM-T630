@@ -105,6 +105,12 @@
    feels better; longer-session acceptance remains pending. The
    drawing app is no longer automatically pinned because GNOME hides favorites
    from the app drawer.
+   Xournal++'s initial `touchDrawing=false` setting prevented finger ink but
+   still allowed the palm to pan the page. Its distinct internal hand
+   recognition is now enabled with a one-second post-pen timeout. A one-time
+   account-local seeder backs up an existing settings file and respects all
+   explicit existing or later choices. Physical palm-plus-pen and post-timeout
+   finger-scroll acceptance remain pending.
    A separate MyPaint Wayland popup-grab freeze is under investigation. Its
    autosave cache was preserved before closing the stuck app; an experimental
    app-only adapter replaces quick chooser popups with existing dockable panels.

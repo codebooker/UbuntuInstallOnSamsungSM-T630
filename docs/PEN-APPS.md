@@ -25,8 +25,15 @@ sudo sh ubuntu/install-pen-apps.sh
 The recipe installs native Ubuntu ARM64 packages and two account-neutral desktop
 overrides. `t630-gnome-run` joins the existing owner's GNOME session and drops
 administrator privileges before the app starts. `t630-pen-app` selects native
-Wayland and dark GTK controls; it does not reset preferences or documents. The
-Xournal++ paper itself retains the person's chosen paper/background settings.
+Wayland and dark GTK controls; it does not reset documents. The Xournal++ paper
+itself retains the person's chosen paper/background settings. On its first
+Xournal++ launch, an account-local helper enables the application's **internal
+hand recognition** only when that setting has no existing value. Xournal++ then
+ignores touch events for one second after pen activity, so a palm cannot pan the
+page while writing; ordinary finger scrolling returns after the pen becomes
+inactive. The helper makes an exact backup before editing an existing file,
+records a one-time state marker, and never overrides an explicit existing or
+later preference choice.
 MyPaint Drawing is kept in the app drawer by default. GNOME 46 removes pinned
 favorites from that drawer, so the installer no longer auto-pins it. Desktop
 runtime 0.1.3 preserves the owner's favorites instead of resetting them.
@@ -37,6 +44,29 @@ that the app was absent, owner-session registration, non-favorite state, and the
 corrected icon were checked. After the owner pressed Home, the live screenshot
 confirmed **MyPaint Drawing at the upper-left of the first app-grid page**.
 Launching it by tapping that tile remains separate from visibility acceptance.
+
+## Xournal++ palm rejection
+
+`touchDrawing=false` only prevents finger ink. Xournal++ still routes those
+touches to its normal touch handler, where they can pan or zoom the page. That
+is why the initial physical test still moved the canvas under a resting palm.
+
+Xournal++ 1.2.2 has a separate internal hand-recognition path. After a pen event
+it blocks the application's touchscreen device and schedules re-enablement after
+the configured timeout. The in-app block is active on Wayland even though its
+optional X11-wide device disabler is not. The tablet default is therefore:
+
+```xml
+<data name="touch">
+  <attribute name="disableTouch" type="boolean" value="true"/>
+  <attribute name="method" type="string" value="auto"/>
+  <attribute name="timeout" type="int" value="1000"/>
+</data>
+```
+
+The live owner profile has this setting and Xournal++ was reopened with it on
+2026-09-16. Physical pen-plus-palm and post-timeout finger-scroll acceptance is
+still pending. See the [palm-rejection report](reports/xournal-palm-rejection-20260916.md).
 
 ## Ubuntu 24.04 first-stroke crash workaround
 

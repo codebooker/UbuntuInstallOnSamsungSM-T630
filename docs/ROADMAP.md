@@ -93,11 +93,15 @@
    to 41/81 ms while canvas redraws continued. The exact-version normal adapter
    now applies that priority before MyPaint starts; it does not change ordinary
    input priority, GTK globally, or the normal launcher for other apps. The
-   owner reported much better pressure and only slight remaining lag. The live
-   preset was then identified as stock `classic/short_grass`, which deliberately
-   uses slow tracking 2.0. A guarded settings backup was made and the selected
-   latency control changed to stock pressure-aware `deevad/ballpen`, whose two
-   slow-tracking values are zero; physical comparison remains pending. The
+   owner reported much better pressure and only slight remaining lag, while
+   Xournal++ had no perceptible lag. The MyPaint preset was stock
+   `classic/short_grass`, which deliberately uses slow tracking 2.0. Its real
+   per-device stylus clone—not merely the general selected-brush preference—was
+   backed up and changed to stock pressure-aware `deevad/ballpen`, whose two
+   slow-tracking values are zero. That control measured 28/49 ms queue age at
+   priority 100 and 26/43 ms at priority 0, with sub-millisecond stroke callbacks
+   and fast redraws. The exact-version normal adapter now uses 0, with both older
+   helpers retained for rollback; final physical acceptance remains pending. The
    drawing app is no longer automatically pinned because GNOME hides favorites
    from the app drawer.
    A separate MyPaint Wayland popup-grab freeze is under investigation. Its

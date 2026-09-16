@@ -93,7 +93,8 @@ class PenAppTests(unittest.TestCase):
     def test_ui_adapter_uses_normal_entrypoint_and_app_only_popup_override(self):
         chooser_type = type('ChooserPopup', (), {})
         freehand_type = SimpleNamespace(MOTION_QUEUE_PRIORITY=200)
-        glib = SimpleNamespace(PRIORITY_DEFAULT_IDLE=200, PRIORITY_HIGH_IDLE=100)
+        glib = SimpleNamespace(PRIORITY_DEFAULT_IDLE=200, PRIORITY_HIGH_IDLE=100,
+                               PRIORITY_DEFAULT=0)
         with patch.object(ui.os, 'getuid', return_value=1000), \
              patch.dict(ui.os.environ, {'WAYLAND_DISPLAY': 't630-gnome-0',
                                         'T630_MYPAINT_QUEUE_DIAGNOSTIC': '0'}), \
@@ -109,7 +110,7 @@ class PenAppTests(unittest.TestCase):
             self.assertEqual(chooser_type.popup, ui.panel_popup)
             execute.assert_called_once_with('/usr/bin/mypaint', run_name='__main__')
             self.assertEqual(ui.os.environ['OMP_NUM_THREADS'], '1')
-            self.assertEqual(freehand_type.MOTION_QUEUE_PRIORITY, 100)
+            self.assertEqual(freehand_type.MOTION_QUEUE_PRIORITY, 0)
 
     def test_diagnostic_owns_queue_and_contract_changes_refuse(self):
         chooser_type = type('ChooserPopup', (), {})
@@ -123,12 +124,14 @@ class PenAppTests(unittest.TestCase):
              patch.object(ui.runpy, 'run_path') as execute:
             ui.main()
             execute.assert_called_once()
-        for priority, default, high in ((201, 200, 100), (200, 199, 100)):
+        for priority, default, high, main in (
+                (201, 200, 100, 0), (200, 199, 100, 0), (200, 200, 100, 1)):
             mode = SimpleNamespace(MOTION_QUEUE_PRIORITY=priority)
             with self.assertRaises(RuntimeError):
                 ui.configure_stroke_queue(
                     mode, SimpleNamespace(PRIORITY_DEFAULT_IDLE=default,
-                                          PRIORITY_HIGH_IDLE=high))
+                                          PRIORITY_HIGH_IDLE=high,
+                                          PRIORITY_DEFAULT=main))
             self.assertEqual(mode.MOTION_QUEUE_PRIORITY, priority)
 
     def test_chooser_controls_reveal_panels_without_popup_input_grabs(self):

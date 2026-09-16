@@ -29,9 +29,10 @@ def configure_stroke_queue(mode, glib):
     """Apply the measured app-local priority without changing input priority."""
     if mode.MOTION_QUEUE_PRIORITY != glib.PRIORITY_DEFAULT_IDLE:
         raise RuntimeError('Unexpected MyPaint stroke queue priority; review adaptation.')
-    if (glib.PRIORITY_DEFAULT_IDLE, glib.PRIORITY_HIGH_IDLE) != (200, 100):
+    if (glib.PRIORITY_DEFAULT_IDLE, glib.PRIORITY_HIGH_IDLE,
+            glib.PRIORITY_DEFAULT) != (200, 100, 0):
         raise RuntimeError('Unexpected GLib priorities; review adaptation.')
-    mode.MOTION_QUEUE_PRIORITY = glib.PRIORITY_HIGH_IDLE
+    mode.MOTION_QUEUE_PRIORITY = glib.PRIORITY_DEFAULT
 
 
 def main():

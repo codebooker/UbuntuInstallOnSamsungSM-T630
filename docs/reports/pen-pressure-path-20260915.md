@@ -366,17 +366,35 @@ relaunch gets the setting from the installed adapter. Subjective feel and an
 extended session remain separate acceptance gates.
 
 On the next normal launch the owner reported pressure was much better, with
-only slight remaining lag. The recorded brush bases mapped exactly to the stock
+only slight remaining lag. Xournal++ had no perceptible lag in the same session,
+isolating the remaining path to MyPaint. The recorded brush bases mapped to stock
 `classic/short_grass` preset, including deliberate `slow_tracking=2.0`.
 Therefore that observation cannot be treated as residual system latency. After
 the app's own corner close button failed, its exact PID, UID and command line
 were verified before sending `SIGTERM`. A one-shot owner process preserved the
-complete settings file as `settings-before-responsive-brush-*.json`, changed
-only `brushmanager.selected_brush` from `classic/short_grass` to stock
-`deevad/ballpen`, and relaunched through the normal helper. The selected control
-preset is pressure-aware and sets both slow-tracking values to zero. The stock
-preset files, global pressure curve, queue fix and user documents were not
-changed. Physical comparison of that control remains pending.
+complete settings file as `settings-before-responsive-brush-*.json`. Changing
+only `brushmanager.selected_brush` proved insufficient: MyPaint restores a
+separate persistent clone for each pen identity. A look-alike UUID was first
+targeted and remained isolated; it did not replace the live stylus clone. The
+actual `xwayland-tablet stylus:14` clone was then backed up exactly and replaced
+with a clone of stock `deevad/ballpen`. The loaded numeric values confirmed
+pressure response and both slow-tracking values at zero.
+
+With the correct zero-tracking clone, high-idle 100 measured 3,209 queued samples
+at 28 ms median/49 ms p95/84 ms maximum. Stroke callbacks were 0.232/0.593 ms
+median/p95 and canvas draws 1.426/3.783 ms. A separate priority-0 trial measured
+5,623 queued samples at 26/43/101 ms; stroke callbacks were 0.246/0.703 ms and
+draws 1.506/4.953 ms. The trial remained stable and was closed after sufficient
+samples, before its scheduled final print.
+
+The exact-version normal adapter now verifies GLib priorities 0/100/200 and
+uses 0 only for MyPaint's stroke queue. Its installed SHA-256 is
+`959ea629374210f2f4bd5ce4532ad054ac7ca5834a6f0f5dfe9ce6642a00b270`.
+The priority-100 helper remains as `t630-mypaint.before-default-priority-20260915`
+with SHA-256 `5a5b1836b37e4e62ad24307347177b4641282c46f2043851507543ce84f4e13d`;
+the original helper remains separately available. Stock presets, the global
+pressure curve, GTK/input scheduling and user documents were unchanged. Final
+subjective comparison and extended-session acceptance remain pending.
 
 ## Hover-out source boundary
 

@@ -59,8 +59,11 @@ def main():
                         help='35s baseline, then high-idle queue scheduling until 90s; restores afterward')
     parser.add_argument('--high-idle-only', action='store_true',
                         help='Keep high-idle scheduling in this process until it closes; no normal-launcher change')
+    parser.add_argument('--default-priority-only', action='store_true',
+                        help='Keep GLib default-priority scheduling in this process until it closes; diagnostic only')
     args = parser.parse_args()
-    if sum((args.profile_strokes, args.queue_priority_trial, args.high_idle_only)) > 1:
+    if sum((args.profile_strokes, args.queue_priority_trial, args.high_idle_only,
+            args.default_priority_only)) > 1:
         parser.error('Run profiling and each scheduling trial separately.')
     if os.getuid() == 0 or os.environ.get('WAYLAND_DISPLAY') != 't630-gnome-0':
         raise SystemExit('Use the normal-owner tablet GNOME launcher.')
@@ -78,11 +81,19 @@ def main():
     from gui.tileddrawwidget import CanvasRenderer
     from lib.gibindings import GLib
     original_priority = FreehandMode.MOTION_QUEUE_PRIORITY
-    if (args.queue_priority_trial or args.high_idle_only) and original_priority != GLib.PRIORITY_DEFAULT_IDLE:
+    if (args.queue_priority_trial or args.high_idle_only or
+            args.default_priority_only) and original_priority != GLib.PRIORITY_DEFAULT_IDLE:
         raise SystemExit('Unexpected queue priority; comparison refused.')
     if args.high_idle_only:
         FreehandMode.MOTION_QUEUE_PRIORITY = GLib.PRIORITY_HIGH_IDLE
         print(f'QUEUE_PRIORITY_HIGH_IDLE_ONLY: priority={GLib.PRIORITY_HIGH_IDLE}; '
+              'active until this test process closes, normal launcher unchanged.', flush=True)
+    elif args.default_priority_only:
+        if (GLib.PRIORITY_DEFAULT, GLib.PRIORITY_HIGH_IDLE,
+                GLib.PRIORITY_DEFAULT_IDLE) != (0, 100, 200):
+            raise SystemExit('Unexpected GLib priorities; comparison refused.')
+        FreehandMode.MOTION_QUEUE_PRIORITY = GLib.PRIORITY_DEFAULT
+        print(f'QUEUE_PRIORITY_DEFAULT_ONLY: priority={GLib.PRIORITY_DEFAULT}; '
               'active until this test process closes, normal launcher unchanged.', flush=True)
 
     metrics = {key: deque(maxlen=20000) for key in
@@ -169,7 +180,7 @@ def main():
                 FreehandMode.MOTION_QUEUE_PRIORITY = original_priority
                 count = reschedule_queues(modes, GLib, original_priority)
                 print(f'QUEUE_PRIORITY_RESTORED: priority={original_priority} pending_sources={count}', flush=True)
-            elif args.high_idle_only:
+            elif args.high_idle_only or args.default_priority_only:
                 print(f'QUEUE_PRIORITY_TEST_STILL_ACTIVE: priority={FreehandMode.MOTION_QUEUE_PRIORITY}; '
                       'normal launcher unchanged.', flush=True)
             for cls, name, original in originals:
@@ -200,7 +211,12 @@ def main():
     def begin_window():
         nonlocal deadline, phase
         deadline = time.monotonic() + 90
-        phase = 'high-idle-only' if args.high_idle_only else 'baseline-default-idle'
+        if args.high_idle_only:
+            phase = 'high-idle-only'
+        elif args.default_priority_only:
+            phase = 'default-priority-only'
+        else:
+            phase = 'baseline-default-idle'
         for values in metrics.values():
             values.clear()
         GLib.timeout_add_seconds(15, lambda: report() if active() else False)

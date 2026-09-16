@@ -6,6 +6,43 @@ from probe_mypaint_latency import describe
 
 
 class MyPaintLatencySummaryTests(unittest.TestCase):
+    def test_default_priority_only_uses_zero_and_remains_after_collection(self):
+        from unittest.mock import Mock
+        class Freehand:
+            MOTION_QUEUE_PRIORITY = 200
+            def motion_notify_cb(self, *args):
+                pass
+            def _process_queued_event(self, *args):
+                pass
+        class Canvas:
+            def _draw_cb(self, *args):
+                pass
+        original = Freehand._process_queued_event
+        glib = SimpleNamespace(PRIORITY_DEFAULT=0, PRIORITY_HIGH_IDLE=100,
+                               PRIORITY_DEFAULT_IDLE=200,
+                               timeout_add_seconds=Mock(return_value=1))
+        def entrypoint(*args, **kwargs):
+            self.assertEqual(Freehand.MOTION_QUEUE_PRIORITY, 0)
+            Freehand()._process_queued_event(object(), (10, 0, 0, .5, 0, 0, 1, 0, 0))
+            glib.timeout_add_seconds.call_args_list[-1].args[1]()
+            self.assertIs(Freehand._process_queued_event, original)
+            self.assertEqual(Freehand.MOTION_QUEUE_PRIORITY, 0)
+        modules = {'gui': SimpleNamespace(__path__=[]), 'lib': SimpleNamespace(__path__=[]),
+                   'gui.freehand': SimpleNamespace(FreehandMode=Freehand),
+                   'gui.tileddrawwidget': SimpleNamespace(CanvasRenderer=Canvas),
+                   'gui.application': SimpleNamespace(get_app=lambda: None),
+                   'lib.gibindings': SimpleNamespace(GLib=glib)}
+        with patch.object(probe.sys, 'argv', ['probe', '--default-priority-only']), \
+             patch.object(probe.os, 'getuid', return_value=1000), \
+             patch.dict(probe.os.environ, {'WAYLAND_DISPLAY': 't630-gnome-0'}), \
+             patch.object(probe.resource, 'setrlimit'), \
+             patch.object(probe.subprocess, 'check_output', return_value='2.0.1-10build2'), \
+             patch.dict(probe.sys.modules, modules), \
+             patch.object(probe.sys, 'path', []), \
+             patch.object(probe, 'event_age_ms', return_value=5), \
+             patch.object(probe.runpy, 'run_path', side_effect=entrypoint):
+            probe.main()
+
     def test_high_idle_only_remains_after_collection_without_package_write(self):
         from unittest.mock import Mock
         class Freehand:

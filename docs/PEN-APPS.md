@@ -182,10 +182,10 @@ the same reported brush bases and measured **41 ms median / 81 ms p95** over
 4,724 samples. Pen delivery stayed fresh (58 ms p95), stroke callbacks were
 short (2.035 ms p95), and 204 canvas draw callbacks completed during that run.
 
-The exact-package adapter now sets only `FreehandMode.MOTION_QUEUE_PRIORITY`
+The first exact-package adapter set only `FreehandMode.MOTION_QUEUE_PRIORITY`
 to GLib high-idle 100 before the application starts. GTK documents its resize
-and redraw work at 110 and 120, so this drains stroke work before redraws without
-changing normal input priority. The adapter verifies all three expected values
+and redraw work at 110 and 120, so this drained stroke work before redraws without
+changing normal input priority. The adapter verifies the expected values
 and refuses changed contracts. Diagnostics set a private process flag so they
 retain explicit control over their own baselines. The previous adapter is kept
 beside the installed helper as an exact rollback copy; neither MyPaint package
@@ -194,16 +194,29 @@ priority active after metrics stopped; it has since been closed, and future
 normal launches receive the setting from the adapter. The owner then reported
 pressure was much better and only a little lag remained.
 
-That residual feel was brush-specific: the restored selection was
+The owner separately confirmed Xournal++ had no perceptible S Pen lag, isolating
+the remaining delay to MyPaint. Its restored selection was
 `classic/short_grass`, whose stock preset intentionally sets `slow_tracking`
 to 2.0. It is not an appropriate latency control. After the app's corner close
 button failed, the exact guarded MyPaint process was stopped and its settings
-were backed up as `settings-before-responsive-brush-*.json`. The selected brush
-alone was changed to the stock pressure-aware `deevad/ballpen`; that preset has
-both `slow_tracking` and `slow_tracking_per_dab` at zero. MyPaint reopened with
-the responsive queue adapter and a blank canvas. This does not modify either
-stock brush or force zero tracking on artistic presets. Subjective zero-tracking
-feel and a longer session remain pending.
+were backed up as `settings-before-responsive-brush-*.json`. A general selected-
+brush preference change was insufficient because MyPaint restores a separate
+brush clone for each pen device. The first clone UUID was a look-alike and never
+replaced the actual stylus clone; that failed target remained isolated. The
+actual `xwayland-tablet stylus:14` clone was then backed up and replaced with a
+clone of stock pressure-aware `deevad/ballpen`, whose `slow_tracking` and
+`slow_tracking_per_dab` are both zero. Neither stock preset was modified.
+
+With that exact device brush, high-idle 100 measured **28 ms median / 49 ms p95**
+queue age over 3,209 samples; stroke callbacks were 0.232/0.593 ms and redraws
+1.426/3.783 ms median/p95. A separate bounded priority-0 run measured **26/43
+ms** over 5,623 samples, with callbacks and redraws essentially unchanged. The
+normal adapter now uses priority 0 after checking GLib 0/100/200 and the original
+MyPaint value 200. Installed SHA-256 is
+`959ea629374210f2f4bd5ce4532ad054ac7ca5834a6f0f5dfe9ce6642a00b270`;
+the priority-100 helper and original helper remain beside it as exact rollback
+copies. This does not change global GTK/input scheduling or force zero tracking
+on artistic presets. Subjective final feel and a longer session remain pending.
 
 Standard owner folders are now initialized with `xdg-user-dirs-update` without
 replacing chosen paths. Before the restart, the existing Xournal++ autosave was

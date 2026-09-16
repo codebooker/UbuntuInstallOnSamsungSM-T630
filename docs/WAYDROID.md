@@ -58,11 +58,11 @@ Build and install this repository's integration package:
 
 ```sh
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_waydroid_runtime_deb.py
-sudo apt install ./output/t630-waydroid-runtime_0.1.5_all.deb
+sudo apt install ./output/t630-waydroid-runtime_0.1.6_all.deb
 ```
 
 That exact reproducible build has SHA-256
-`be26ed7cad0e96d2d4e1281099ccedc2a7ff764c94ca63356b1ba4a772f0b693`.
+`a592c95ad5d4627eceac05868e4dd3a25833c0b20f81156be2ba09ca037959ba`.
 
 Initialize the official ARM64 GAPPS image. The download is large and requires a
 working network connection:
@@ -153,6 +153,42 @@ service for this Waydroid identity; it does not make the tablet pass every Play
 Integrity level, and banking, DRM, or hardware-attestation-dependent apps may
 still refuse to run.
 
+## Software-rendering performance profile
+
+The downstream Samsung display stack exposes an `msm_drm` render node, but it
+does not implement the upstream MSM interface expected by Mesa Freedreno.
+Waydroid therefore selects Mesa llvmpipe and renders Android on the CPU. The
+stock DZE3 Adreno libraries can open from the container, but their EGL display
+initialization is incompatible with Waydroid's GBM allocator. Turnip Vulkan
+also finds no compatible GPU. Both hardware trials are rejected and are not
+part of the installed profile.
+
+The accepted reversible software profile reduces Android's physical render
+target from 1920×1168 to 1024×623 and disables Android window, transition, and
+animator delays:
+
+```sh
+sudo t630-waydroid-software-profile apply
+waydroid session stop
+waydroid show-full-ui
+```
+
+On the physical tablet's repeated Settings-scroll test, the 90th-percentile
+frame time fell from 73 ms at 1280×779 to 53 ms at 1024×623, and the reported
+janky-frame share fell from 43.54% to 31.76%. Touch and S Pen use the matching
+1024×623 input viewport. This improves responsiveness but cannot make a
+CPU-rendered Android desktop behave like native Adreno rendering.
+
+The first `apply` saves only the previous numeric display and animation values
+in a root-only file. It does not read accounts or application data. Restore the
+saved values with:
+
+```sh
+sudo t630-waydroid-software-profile restore
+waydroid session stop
+waydroid show-full-ui
+```
+
 ## Validation
 
 After launching Android, these checks should all pass:
@@ -194,6 +230,9 @@ and refuses the host unmount if any Android mount remains busy.
   are not automated or recorded by this project.
 - Play Integrity, DRM, banking, and hardware-attested applications are not
   guaranteed by device registration.
+- Android currently uses llvmpipe CPU rendering. The accepted reduced render
+  target improves interaction latency but sacrifices sharpness and remains
+  slower than native GPU rendering.
 - Host/Android clipboard sharing is not enabled. A preliminary bridge could
   not access the locked GNOME clipboard reliably and was removed.
 - Android applications still need longer rotation, suspend/resume, camera,

@@ -1,0 +1,121 @@
+#!/bin/sh
+# Apply or restore the accepted SM-T630 Waydroid software-rendering profile.
+set -eu
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
+state=/var/lib/waydroid/t630-software-profile.before
+action=${1:-status}
+
+test "$(id -u)" = 0
+test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
+test -x /usr/bin/waydroid
+
+android() {
+    /usr/bin/waydroid shell -- "$@"
+}
+
+read_property() {
+    android getprop "$1" | tr -d '\r\n'
+}
+
+read_setting() {
+    android settings get global "$1" | tr -d '\r\n'
+}
+
+validate_value() {
+    case "$1" in
+        ''|null) return 0 ;;
+        *[!0-9.]*) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
+show_status() {
+    printf 'display=%sx%s\n' \
+        "$(read_property persist.waydroid.width)" \
+        "$(read_property persist.waydroid.height)"
+    for key in \
+        window_animation_scale \
+        transition_animation_scale \
+        animator_duration_scale
+    do
+        printf '%s=%s\n' "$key" "$(read_setting "$key")"
+    done
+}
+
+case "$action" in
+    apply)
+        if [ ! -e "$state" ]; then
+            width=$(read_property persist.waydroid.width)
+            height=$(read_property persist.waydroid.height)
+            window=$(read_setting window_animation_scale)
+            transition=$(read_setting transition_animation_scale)
+            animator=$(read_setting animator_duration_scale)
+            for value in "$width" "$height" "$window" "$transition" "$animator"; do
+                validate_value "$value" || {
+                    echo "Refusing to save an unexpected Waydroid value." >&2
+                    exit 1
+                }
+            done
+            temporary=$(mktemp /var/lib/waydroid/.t630-software-profile.XXXXXX)
+            chmod 0600 "$temporary"
+            {
+                printf 'WIDTH=%s\n' "$width"
+                printf 'HEIGHT=%s\n' "$height"
+                printf 'WINDOW=%s\n' "$window"
+                printf 'TRANSITION=%s\n' "$transition"
+                printf 'ANIMATOR=%s\n' "$animator"
+            } >"$temporary"
+            mv "$temporary" "$state"
+        fi
+        android setprop persist.waydroid.width 1024
+        android setprop persist.waydroid.height 623
+        android settings put global window_animation_scale 0.0
+        android settings put global transition_animation_scale 0.0
+        android settings put global animator_duration_scale 0.0
+        echo "Applied the 1024x623 zero-animation profile. Restart the Waydroid session."
+        ;;
+    restore)
+        test -f "$state" || {
+            echo "No saved pre-profile state exists." >&2
+            exit 1
+        }
+        # The file is root-created, mode 0600, and contains only validated
+        # numeric values, an empty property, or Android's literal null marker.
+        . "$state"
+        for value in "$WIDTH" "$HEIGHT" "$WINDOW" "$TRANSITION" "$ANIMATOR"; do
+            validate_value "$value" || {
+                echo "Refusing an invalid saved Waydroid value." >&2
+                exit 1
+            }
+        done
+        android setprop persist.waydroid.width "$WIDTH"
+        android setprop persist.waydroid.height "$HEIGHT"
+        if [ "$WINDOW" = null ]; then
+            android settings delete global window_animation_scale >/dev/null
+        else
+            android settings put global window_animation_scale "$WINDOW"
+        fi
+        if [ "$TRANSITION" = null ]; then
+            android settings delete global transition_animation_scale >/dev/null
+        else
+            android settings put global transition_animation_scale "$TRANSITION"
+        fi
+        if [ "$ANIMATOR" = null ]; then
+            android settings delete global animator_duration_scale >/dev/null
+        else
+            android settings put global animator_duration_scale "$ANIMATOR"
+        fi
+        rm -f "$state"
+        echo "Restored the pre-profile values. Restart the Waydroid session."
+        ;;
+    status)
+        show_status
+        ;;
+    *)
+        echo "Usage: t630-waydroid-software-profile {apply|restore|status}" >&2
+        exit 2
+        ;;
+esac

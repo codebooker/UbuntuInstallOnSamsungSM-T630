@@ -34,8 +34,8 @@ part of this repository.
 The repository does not redistribute either image.
 
 The read-only acceptance checker is packaged in
-`t630-waydroid-runtime_0.1.5_all.deb`. The reproducible package SHA-256 is
-`be26ed7cad0e96d2d4e1281099ccedc2a7ff764c94ca63356b1ba4a772f0b693`.
+`t630-waydroid-runtime_0.1.6_all.deb`. The reproducible package SHA-256 is
+`a592c95ad5d4627eceac05868e4dd3a25833c0b20f81156be2ba09ca037959ba`.
 That package was installed on the physical tablet and its packaged checker
 passed after installation.
 

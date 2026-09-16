@@ -85,6 +85,10 @@ class WaydroidRuntimeTests(unittest.TestCase):
                     "./usr/local/sbin/t630-check-waydroid-gapps"
                 )
                 self.assertEqual(checker.mode, 0o755)
+                profile = archive.getmember(
+                    "./usr/local/sbin/t630-waydroid-software-profile"
+                )
+                self.assertEqual(profile.mode, 0o755)
 
 
 if __name__ == "__main__":

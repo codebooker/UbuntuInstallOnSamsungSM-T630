@@ -232,8 +232,10 @@ and any required uncertified-device registration remain owner-only steps.
 
 The remaining Android work is release engineering rather than basic bring-up:
 bundle or fetch Waydroid's external Ubuntu packages and official images in the
-installer, exercise longer suspend/rotation/input sessions, and decide whether
-clipboard sharing can be added without weakening the locked-session boundary.
+installer, pursue a compatible KGSL/Waydroid graphics bridge beyond the
+accepted llvmpipe fallback, exercise longer suspend/rotation/input sessions,
+and decide whether clipboard sharing can be added without weakening the
+locked-session boundary.
 Until those dependencies are sealed, `t630-waydroid-runtime` remains an
 optional post-install package rather than a dependency of the offline native
 base. See [WAYDROID.md](WAYDROID.md).

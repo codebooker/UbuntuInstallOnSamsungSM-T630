@@ -13,7 +13,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-waydroid-runtime"
-VERSION = "0.1.5"
+VERSION = "0.1.6"
 
 FILES = {
     "usr/local/bin/lxc-start": ("ubuntu/t630-waydroid-lxc-start", 0o755),
@@ -22,6 +22,8 @@ FILES = {
         "ubuntu/t630-waydroid-prepare", 0o755),
     "usr/local/sbin/t630-check-waydroid-gapps": (
         "tools/check_waydroid_gapps.py", 0o755),
+    "usr/local/sbin/t630-waydroid-software-profile": (
+        "ubuntu/t630-waydroid-software-profile", 0o755),
     "usr/share/doc/t630-waydroid-runtime/copyright": ("LICENSE", 0o644),
 }
 
@@ -50,7 +52,8 @@ Description: Waydroid integration for the Samsung SM-T630 Ubuntu port
  Adds deterministic cgroup-v1 and binderfs preparation, the outer-root LXC
  launcher required by the recovery-hosted Ubuntu filesystem, and the nested
  GNOME compositor environment used by Android application launchers. Includes
- a read-only GAPPS acceptance checker that suppresses account identifiers.
+ a read-only GAPPS acceptance checker that suppresses account identifiers and
+ a reversible profile for the accepted CPU-rendered display configuration.
 """.encode()
     control_archive = tar_bytes({
         "control": (control, 0o644),

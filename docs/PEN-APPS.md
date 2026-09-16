@@ -191,8 +191,19 @@ retain explicit control over their own baselines. The previous adapter is kept
 beside the installed helper as an exact rollback copy; neither MyPaint package
 files nor preferences were replaced. The attended test kept the accepted
 priority active after metrics stopped; it has since been closed, and future
-normal launches receive the setting from the adapter. Subjective feel and
-longer-session acceptance remain pending.
+normal launches receive the setting from the adapter. The owner then reported
+pressure was much better and only a little lag remained.
+
+That residual feel was brush-specific: the restored selection was
+`classic/short_grass`, whose stock preset intentionally sets `slow_tracking`
+to 2.0. It is not an appropriate latency control. After the app's corner close
+button failed, the exact guarded MyPaint process was stopped and its settings
+were backed up as `settings-before-responsive-brush-*.json`. The selected brush
+alone was changed to the stock pressure-aware `deevad/ballpen`; that preset has
+both `slow_tracking` and `slow_tracking_per_dab` at zero. MyPaint reopened with
+the responsive queue adapter and a blank canvas. This does not modify either
+stock brush or force zero tracking on artistic presets. Subjective zero-tracking
+feel and a longer session remain pending.
 
 Standard owner folders are now initialized with `xdg-user-dirs-update` without
 replacing chosen paths. Before the restart, the existing Xournal++ autosave was

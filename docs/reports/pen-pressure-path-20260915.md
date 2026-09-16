@@ -365,6 +365,19 @@ The steady test exercised the same priority and has since been closed. A normal
 relaunch gets the setting from the installed adapter. Subjective feel and an
 extended session remain separate acceptance gates.
 
+On the next normal launch the owner reported pressure was much better, with
+only slight remaining lag. The recorded brush bases mapped exactly to the stock
+`classic/short_grass` preset, including deliberate `slow_tracking=2.0`.
+Therefore that observation cannot be treated as residual system latency. After
+the app's own corner close button failed, its exact PID, UID and command line
+were verified before sending `SIGTERM`. A one-shot owner process preserved the
+complete settings file as `settings-before-responsive-brush-*.json`, changed
+only `brushmanager.selected_brush` from `classic/short_grass` to stock
+`deevad/ballpen`, and relaunched through the normal helper. The selected control
+preset is pressure-aware and sets both slow-tracking values to zero. The stock
+preset files, global pressure curve, queue fix and user documents were not
+changed. Physical comparison of that control remains pending.
+
 ## Hover-out source boundary
 
 The exact installed Ubuntu Xwayland source `2:23.2.6-1ubuntu0.8` was downloaded

@@ -31,10 +31,12 @@
    clean installation while an abnormal boot still falls back to the lab root.
    The next unattended orderly restart also passed automatic owner-only SSH and
    screen-feed startup. Standard owner document folders are now initialized
-   without resetting chosen paths. Remove the 70-second CNSS startup wait by
-   testing the driver's normal filesystem-ready/calibration ordering; a guarded
-   probe is prepared, not yet integrated. Full Power Off remains a separate
-   clean-root acceptance test.
+   without resetting chosen paths. The exact-device filesystem-ready helper is
+   now integrated between `cnss2` and `wlan`: physical boot accepted it at 3.77
+   seconds, completed calibration at 19.55 seconds, returned from WLAN module
+   loading at 20.83 seconds, associated around 25.6 seconds, and completed DHCP
+   around 27.7 seconds without the former 70-second timeout. Full Power Off
+   remains a separate clean-root acceptance test.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
    stack, ARM64 compatibility packages, isolated GDM/elogind password-login

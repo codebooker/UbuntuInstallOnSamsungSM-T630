@@ -119,12 +119,22 @@ service clock /usr/sbin/chronyd -d -f /etc/chrony/t630.conf
 ) >/run/remote-start.log 2>&1 &
 # Qualcomm firmware init can take time. It must not block the desktop/fallback.
 (
-    for name in cnss_prealloc cnss_nl cnss_utils device_management_service_v01 wlan_firmware_service_v01 cnss2 qca_cld3_wlan; do
-        loaded=$name
-        [ "$name" != qca_cld3_wlan ] || loaded=wlan
-        [ -d "/sys/module/$loaded" ] || insmod "$root/opt/t630/vendor/lib/modules/$name.ko"
+    for name in cnss_prealloc cnss_nl cnss_utils device_management_service_v01 wlan_firmware_service_v01 cnss2; do
+        [ -d "/sys/module/$name" ] || insmod "$root/opt/t630/vendor/lib/modules/$name.ko"
     done
+    # Samsung's CNSS cold-boot calibration expects the normal filesystem-ready
+    # event after cnss2 probes and before qcacld registers. The helper pins the
+    # exact device, kernel, selected root, firmware, and unloaded wlan state. If
+    # any gate refuses, retain the known-working (but 70-second slower) path.
+    if /bin/signal-wifi-filesystem-ready --signal-ready; then
+        echo "CNSS_FILESYSTEM_READY_ACCEPTED uptime=$(cut -d ' ' -f 1 /proc/uptime)"
+    else
+        echo "CNSS_FILESYSTEM_READY_REFUSED; retaining timeout fallback"
+    fi
+    [ -d /sys/module/wlan ] ||
+        insmod "$root/opt/t630/vendor/lib/modules/qca_cld3_wlan.ko"
     mdev -s
+    echo "WLAN_MODULE_LOAD_RETURNED uptime=$(cut -d ' ' -f 1 /proc/uptime)"
 ) >/run/wifi-load.log 2>&1 &
 attempt=0
 while [ ! -S "$root/run/seatd.sock" ] && [ "$attempt" -lt 20 ]; do

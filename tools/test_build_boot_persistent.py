@@ -29,6 +29,7 @@ class PersistentBootTests(unittest.TestCase):
         self.assertEqual(hashes_one, hashes_two)
         self.assertIn(b"wifi:connected", cpio_one)
         self.assertIn(b"t630-stock-vendor", cpio_one)
+        self.assertIn(b"WIFI_FILESYSTEM_READY_SIGNALED", cpio_one)
         self.assertIn(b'/bin/busybox "$action" -f', cpio_one)
         self.assertIn(b".t630-next-root", cpio_one)
         self.assertIn(b"/run/t630-selected-root", cpio_one)
@@ -43,6 +44,14 @@ class PersistentBootTests(unittest.TestCase):
             startup.index('root=$candidate'))
         self.assertIn("SM-T630 OFFLINE RELEASE ROOT", startup)
         self.assertIn("test ! -L \"$candidate\"", startup)
+
+    def test_wifi_filesystem_ready_precedes_wlan_with_slow_fallback(self):
+        startup = (builder.ROOT / "persistent/start-ubuntu").read_text()
+        signal = startup.index("/bin/signal-wifi-filesystem-ready --signal-ready")
+        wlan = startup.index("qca_cld3_wlan.ko")
+        self.assertLess(signal, wlan)
+        self.assertIn("CNSS_FILESYSTEM_READY_REFUSED; retaining timeout fallback", startup)
+        self.assertIn("[ -d /sys/module/wlan ] ||", startup)
 
     def test_visible_terminal_is_recovery_only(self):
         startup = (builder.ROOT / "persistent/start-ubuntu").read_text()
@@ -125,6 +134,16 @@ class PersistentBootTests(unittest.TestCase):
         text = writer.read_text()
         self.assertIn("old_hash=d1f475dc", text)
         self.assertIn("new_hash=ca7caa12", text)
+        self.assertIn('dd if="$image" of=/dev/sda19', text)
+        for partition in ("/dev/sda20", "/dev/sda21", "/dev/sda22", "/dev/sde19"):
+            self.assertIn(partition, text)
+
+    def test_v7_writer_accepts_only_v6_and_pins_cnss_ready_candidate(self):
+        writer = SOURCE.with_name("write_release_boot_v7.sh")
+        subprocess.run(["sh", "-n", writer], check=True)
+        text = writer.read_text()
+        self.assertIn("old_hash=ca7caa12", text)
+        self.assertIn("new_hash=83a3eb1e", text)
         self.assertIn('dd if="$image" of=/dev/sda19', text)
         for partition in ("/dev/sda20", "/dev/sda21", "/dev/sda22", "/dev/sde19"):
             self.assertIn(partition, text)

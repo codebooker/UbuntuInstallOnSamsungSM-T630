@@ -29,6 +29,7 @@ RAMDISK_FILES = {
     "init": ROOT / "persistent/init",
     "bin/usb-shell": ROOT / "persistent/usb-shell",
     "bin/start-ubuntu": ROOT / "persistent/start-ubuntu",
+    "bin/signal-wifi-filesystem-ready": ROOT / "tools/signal_wifi_filesystem_ready.sh",
     # Safe cleanup cannot depend on Wi-Fi having updated the outer helper.
     "bin/stop-ubuntu": ROOT / "ubuntu/stop-ubuntu-remote",
     "etc/mdev.conf": ROOT / "ubuntu/mdev.conf",

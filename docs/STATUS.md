@@ -1,6 +1,6 @@
 # Hardware and integration status
 
-Last updated: 2026-09-15. Unless stated otherwise, results are from one physical
+Last updated: 2026-09-16. Unless stated otherwise, results are from one physical
 SM-T630 on the exact `T630XXSBDZE3` baseline.
 
 ## Diagnostic safety
@@ -25,7 +25,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Everyday apps | Working | Clean-root provisioning installs GNOME Software/PackageKit, native Mozilla Firefox, Files, Terminal, Text Editor, LibreOffice, Contacts, media codecs, and the standard GNOME utilities; Snap remains absent because the stock kernel lacks its namespace requirements |
 | Physical keys | Working | Volume, Power, Home, Back, Recents, and red Active button mapped |
 | Desktop system controls | Working | Settings is packaged and available from the app grid, favorites, and Quick Settings; GNOME's standard Restart and Power Off confirmations reach the guarded orderly-shutdown path. The default Utilities folder is now flattened before Shell starts using an invisible empty-folder sentinel; the live grid passes, with new-fix restart acceptance pending |
-| Wi-Fi / remote access | Working, slow startup | Wi-Fi reconnects automatically around 80 seconds after restart; a missing pre-wlan filesystem-ready event leaves the stock CNSS calibration wait to time out after 70 seconds. Opt-in owner-only SSH and the loopback screen feed start automatically on the personalized clean root; host trust and same-boot isolation checks pass |
+| Wi-Fi / remote access | Working | The normal pre-wlan filesystem-ready event now starts stock CNSS cold-boot calibration at 3.77 seconds; calibration completed at 19.55 seconds, WLAN module loading returned at 20.83 seconds, association began around 25.6 seconds, and DHCP completed around 27.7 seconds with no 70-second timeout. Owner-only SSH, real HTTPS, and the loopback screen feed start automatically on the personalized clean root; host trust and same-boot isolation checks pass |
 | Bluetooth | Working | WCN6850 startup retry, firmware handoff, idle wake, BlueZ discovery, synchronized teardown, and supervised recovery physically tested; WirePlumber Bluetooth audio policy is enabled, pending a paired-headset playback test |
 | Speakers | Working | Stock calibration and guarded amplifier sequencing; GNOME volume control works |
 | Microphone | Working | Built-in microphone exposed as the normal PipeWire source through a demand-driven bridge |
@@ -56,9 +56,10 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
   automatic SSH/screen startup, preserved wallpaper and owner folders. Full
   Power Off acceptance remains separate; this restart does not prove shutdown
   on every path. See the [restart report](reports/clean-root-restart-folders-20260915.md).
-- Wi-Fi startup currently includes a 70-second calibration wait. A guarded
-  filesystem-ready probe is prepared but **not integrated or physically tested**;
-  it refuses a loading/running wlan module and does not bypass calibration.
+- Wi-Fi cold-boot calibration now follows the stock driver's required ordering
+  and physically passes. If any exact model/kernel/root/firmware/order gate
+  refuses, startup deliberately falls back to the older slow path instead of
+  leaving Wi-Fi unavailable.
 - The stable nested GNOME path currently disables its internal Xwayland server;
   the packaged default applications are Wayland-native, but legacy X11-only
   applications will not run until the Qualcomm/Mesa crash path is resolved.

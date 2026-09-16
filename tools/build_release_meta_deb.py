@@ -14,21 +14,21 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-release-base"
-VERSION = "0.1.12"
+VERSION = "0.1.14"
 DEPENDENCIES = (
     "t630-first-boot (= 0.1.1)",
-    "t630-desktop-runtime (= 0.1.4)",
-    "t630-hardware-runtime (= 0.1.5)",
-    "t630-boot-runtime (= 0.1.0)",
+    "t630-desktop-runtime (= 0.1.5)",
+    "t630-hardware-runtime (= 0.1.6)",
+    "t630-boot-runtime (= 0.1.1)",
     "t630-polkit-runtime (= 0.1.0)",
-    "t630-login-runtime (= 0.1.0)",
-    "t630-camera-runtime (= 0.1.4)",
+    "t630-login-runtime (= 0.1.2)",
+    "t630-camera-runtime (= 0.1.5)",
     "t630-native-userspace (= 0.1.0)",
     "t630-pd-mapper (= 0.1.0)",
     "libssc (= 0.4.4-t6303)",
     "hexagonrpcd (= 0.4.0-t6303)",
     "iio-sensor-proxy (= 3.9-t6303)",
-    "t630-stock-assets (= 1.0.1+dze3)",
+    "t630-stock-assets (= 1.0.2+dze3)",
 )
 
 

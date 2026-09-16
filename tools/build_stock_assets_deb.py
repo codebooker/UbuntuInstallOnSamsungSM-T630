@@ -21,7 +21,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-stock-assets"
-VERSION = "1.0.1+dze3"
+VERSION = "1.0.2+dze3"
 BASELINE = "SM-T630 T630XXSBDZE3"
 
 # Static, locally extracted inputs only. Mutable SSC registry/socinfo state,
@@ -259,7 +259,7 @@ def build(source_root: Path, output: Path, epoch: int,
 Version: {VERSION}
 Architecture: arm64
 Maintainer: local SM-T630 owner
-Depends: t630-hardware-runtime (= 0.1.2)
+Depends: t630-hardware-runtime (>= 0.1.6)
 Section: non-free/admin
 Priority: optional
 Description: private exact-stock assets for Samsung SM-T630 DZE3

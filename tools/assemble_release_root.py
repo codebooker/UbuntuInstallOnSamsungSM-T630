@@ -20,24 +20,24 @@ EXPECTED = {
     "t630-first-boot_0.1.1_all.deb": (
         "t630-first-boot", "0.1.1",
         "3b3adf74477f0402e30d3d443dcd49068eb2bf139afa83a2f4c4e346bb18a14e"),
-    "t630-desktop-runtime_0.1.4_all.deb": (
-        "t630-desktop-runtime", "0.1.4",
-        "daddaa1a4a661b359a391aa119c2ca5a8278445d41972350b2f8622fc87482f8"),
-    "t630-hardware-runtime_0.1.5_all.deb": (
-        "t630-hardware-runtime", "0.1.5",
-        "01dc907cd4f3879032f70c6ccc702e731bba57cdb3d1d208642ee07d3ffbd8fd"),
-    "t630-boot-runtime_0.1.0_all.deb": (
-        "t630-boot-runtime", "0.1.0",
-        "70c75d8b0e68c48fbc8366bbe0432df0e4a1acde99cde096ae05902f51bdde9e"),
+    "t630-desktop-runtime_0.1.5_all.deb": (
+        "t630-desktop-runtime", "0.1.5",
+        "d78c7934aa120f407a84db30b545128f1080a7f1c50ccb4a986fdf42428ec8c4"),
+    "t630-hardware-runtime_0.1.6_all.deb": (
+        "t630-hardware-runtime", "0.1.6",
+        "a0864399a0211e474128f1b84529e1dd2a47a0417b526193bbb2bd77bb59c02b"),
+    "t630-boot-runtime_0.1.1_all.deb": (
+        "t630-boot-runtime", "0.1.1",
+        "1aee3360ebcfd4bbb014d69f04a4d4381538fadc3b3c10346c1e0bdd9e2aba90"),
     "t630-polkit-runtime_0.1.0_arm64.deb": (
         "t630-polkit-runtime", "0.1.0",
         "baa7fbcd300895bd6754eac6dec95061f9f99a8a56c8f5a4d5ac059193f886da"),
-    "t630-login-runtime_0.1.0_arm64.deb": (
-        "t630-login-runtime", "0.1.0",
-        "edfc0b58325acc95c1e4dd25befd53bdaec30faf795dfb8a37d06fb4de6aa23e"),
-    "t630-camera-runtime_0.1.4_arm64.deb": (
-        "t630-camera-runtime", "0.1.4",
-        "71d8544ec48575919a0f079a67da89b1b3ca92abdbd1db0fc967f60089bc5bcb"),
+    "t630-login-runtime_0.1.2_arm64.deb": (
+        "t630-login-runtime", "0.1.2",
+        "173be4723fc419c6a87f1d9e922831c87cae6b168c2fbe8ee62672deec98dd20"),
+    "t630-camera-runtime_0.1.5_arm64.deb": (
+        "t630-camera-runtime", "0.1.5",
+        "23693c00b83b4a3b5edef9c4d47c108d48065d7868a0065a70555db102a8c585"),
     "t630-native-userspace_0.1.0_arm64.deb": (
         "t630-native-userspace", "0.1.0",
         "b6e9dffc3ce27278084a0fbc9022189e289eaf3c06fdcc5db1e9877a6dfed6ff"),
@@ -53,15 +53,15 @@ EXPECTED = {
     "iio-sensor-proxy_3.9-t6303_arm64.deb": (
         "iio-sensor-proxy", "3.9-t6303",
         "1ffcc6881cf458e400d2efac744ba38564415a1f416e4c2ed9ef37fa0354bd29"),
-    "t630-stock-assets_1.0.1+dze3_arm64.deb": (
-        "t630-stock-assets", "1.0.1+dze3",
-        "934f3c361fedc806eef90b4b92a6f93c906492b6b29339cb4e2cf85c0c7b461e"),
-    "t630-release-base_0.1.12_arm64.deb": (
-        "t630-release-base", "0.1.12",
-        "d230d7c43c7c1cb50d5a3dca384971d029b946c3295bca81b2891d558e2e5362"),
+    "t630-stock-assets_1.0.2+dze3_arm64.deb": (
+        "t630-stock-assets", "1.0.2+dze3",
+        "7bfa16d266592116bddae1c2a23c607585802a1e9b2c05905bc97e25210f0efe"),
+    "t630-release-base_0.1.14_arm64.deb": (
+        "t630-release-base", "0.1.14",
+        "7ae9ee1cd6ebaaa207fe4f71afa8d925b2a9f809be00aa641f75f015a2349d3f"),
 }
 INSTALL_ORDER = tuple(name for name in EXPECTED if not name.startswith("t630-release-base_"))
-META_PACKAGE = "t630-release-base_0.1.12_arm64.deb"
+META_PACKAGE = "t630-release-base_0.1.14_arm64.deb"
 
 
 def digest(path: Path) -> str:
@@ -97,7 +97,7 @@ def validate_packages(directory: Path) -> dict:
             raise ValueError(f"release package version mismatch: {filename}")
         records.append({"file": filename, "package": package,
                         "version": version, "sha256": actual})
-    private = directory / "t630-stock-assets_1.0.1+dze3_arm64.deb"
+    private = directory / "t630-stock-assets_1.0.2+dze3_arm64.deb"
     if stat.S_IMODE(private.stat().st_mode) & 0o077:
         raise ValueError("private stock package must not be group/world accessible")
     return {"device": "Samsung SM-T630", "baseline": "T630XXSBDZE3",

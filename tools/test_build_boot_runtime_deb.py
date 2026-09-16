@@ -46,6 +46,7 @@ class BootRuntimePackageTests(unittest.TestCase):
                 postinst = archive.extractfile("./postinst").read().decode()
                 postrm = archive.extractfile("./postrm").read().decode()
             self.assertIn("weston (= 13.0.0-4build3)", control)
+            self.assertIn("t630-hardware-runtime (>= 0.1.6)", control)
             self.assertIn("maliit-keyboard (= 2.3.1-5build2)", control)
             self.assertIn("librsvg2-common", control)
             self.assertIn("dpkg-divert", preinst)

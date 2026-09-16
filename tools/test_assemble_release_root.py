@@ -66,12 +66,12 @@ class ReleaseAssemblyTests(unittest.TestCase):
             self.assertTrue(filename.endswith(".deb"))
             self.assertTrue(package and version)
             self.assertEqual(len(digest), 64)
-        private = assembly.EXPECTED["t630-stock-assets_1.0.1+dze3_arm64.deb"]
-        self.assertEqual(private[1], "1.0.1+dze3")
-        self.assertIn("t630-boot-runtime_0.1.0_all.deb", assembly.EXPECTED)
+        private = assembly.EXPECTED["t630-stock-assets_1.0.2+dze3_arm64.deb"]
+        self.assertEqual(private[1], "1.0.2+dze3")
+        self.assertIn("t630-boot-runtime_0.1.1_all.deb", assembly.EXPECTED)
         self.assertIn("t630-polkit-runtime_0.1.0_arm64.deb", assembly.EXPECTED)
-        self.assertIn("t630-login-runtime_0.1.0_arm64.deb", assembly.EXPECTED)
-        self.assertIn("t630-camera-runtime_0.1.4_arm64.deb", assembly.EXPECTED)
+        self.assertIn("t630-login-runtime_0.1.2_arm64.deb", assembly.EXPECTED)
+        self.assertIn("t630-camera-runtime_0.1.5_arm64.deb", assembly.EXPECTED)
 
     def test_missing_packages_fail_closed(self):
         with tempfile.TemporaryDirectory() as directory:

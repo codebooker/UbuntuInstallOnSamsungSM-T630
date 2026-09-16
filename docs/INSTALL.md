@@ -222,7 +222,7 @@ separately:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_desktop_runtime_deb.py
 ```
 
-This creates `output/t630-desktop-runtime_0.1.1_all.deb`. It depends on the
+This creates `output/t630-desktop-runtime_0.1.5_all.deb`. It depends on the
 matching first-boot package and contains the desktop launcher, login/session
 glue, input mappings, rotation, display controls, guarded suspend, and Tablet
 Controls extension source. It also depends on GNOME Settings, supplies the
@@ -239,7 +239,7 @@ The redistributable hardware orchestration is a separate source-only package:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_hardware_runtime_deb.py
 ```
 
-This creates `output/t630-hardware-runtime_0.1.2_all.deb`. It contains the text
+This creates `output/t630-hardware-runtime_0.1.6_all.deb`. It contains the text
 scripts and policy that coordinate Wi-Fi, Bluetooth, audio, microphone,
 sensors, and IPA, plus the system copy of the owner-neutral WirePlumber policy.
 It owns the exact `SM-T630-T630XXSBDZE3-Ubuntu-v1` installation marker checked
@@ -271,7 +271,7 @@ SOURCE_DATE_EPOCH=1700000000 python3 tools/build_stock_assets_deb.py SOURCE_ROOT
 
 On the development tablet, `SOURCE_ROOT` is `/` because its static stock copies
 have already been validated and staged. The output is
-`output/private/t630-stock-assets_1.0.1+dze3_arm64.deb`. It contains proprietary
+`output/private/t630-stock-assets_1.0.2+dze3_arm64.deb`. It contains proprietary
 Samsung/Qualcomm files and must never be shared, uploaded, or committed. The
 builder verifies critical DZE3 inputs, records every selected file's size and
 SHA256 in an internal manifest, and rejects mutable/device-identity sources.
@@ -352,7 +352,7 @@ Build the account-neutral host compositor runtime:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_boot_runtime_deb.py
 ```
 
-This creates `output/t630-boot-runtime_0.1.0_all.deb`. It owns the tested
+This creates `output/t630-boot-runtime_0.1.1_all.deb`. It owns the tested
 Weston configuration, Maliit touch keyboard customization, launcher icons,
 GNOME lock-screen guards, and chrony policy. It uses managed diversions for the
 two modified distro files and restores their originals when removed.
@@ -374,12 +374,15 @@ Build the isolated password-login runtime natively on Ubuntu ARM64:
 SOURCE_DATE_EPOCH=1700000000 tools/build_t630_login_runtime.sh
 ```
 
-This creates `output/t630-login-runtime_0.1.0_arm64.deb` from pinned elogind
+This creates `output/t630-login-runtime_0.1.2_arm64.deb` from pinned elogind
 255.27 and Ubuntu GDM 46.2 sources. It installs both under private `/opt/t630`
 prefixes, disables GDM's local greeter and all remote login paths, enables the
 standard GNOME password lock after first boot, and reversibly diverts the one
 PAM session file needed to keep root recovery SSH out of the physical desktop
-session. It does not create a human account or embed a password.
+session. It does not create a human account or embed a password. Downloads are
+hash-checked and cached below `build/login-download-cache`; build-only pkg-config
+metadata points into staging while the packaged metadata retains the final
+private prefix.
 
 Build the redistributable camera layer after compiling its five ARM64 helpers:
 
@@ -390,7 +393,7 @@ SOURCE_DATE_EPOCH=1700000000 python3 tools/build_camera_runtime_deb.py \
   build/camera
 ```
 
-This creates `output/t630-camera-runtime_0.1.4_arm64.deb`. It contains the
+This creates `output/t630-camera-runtime_0.1.5_arm64.deb`. It contains the
 launchers, GNOME integration, safety controls, templates, and independently
 built helpers. It contains no stock Android libraries, firmware image,
 calibration, mutable camera state, or photograph. Those non-redistributable
@@ -404,7 +407,7 @@ release-set metapackage:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_release_meta_deb.py
 ```
 
-This creates `output/t630-release-base_0.1.9_arm64.deb`. It contains no device
+This creates `output/t630-release-base_0.1.14_arm64.deb`. It contains no device
 payload; its exact-version dependencies prevent a fresh root from mixing
 incompatible first-boot, desktop, hardware, login, native, sensor, pd-mapper,
 camera, or DZE3 stock-asset revisions. The camera package's redistributable

@@ -41,7 +41,7 @@ sysfs paths instead. See the [second reproduced panic report](reports/sysfs-name
 | Flashlight | Working | Rear LED current and PMIC switch mapped; GNOME Quick Settings provides a brightness slider and a leased toggle that fails off after 15 seconds if its controller disappears |
 | Optional I/O | Characterized | Kernel support exists for microSD, USB host/role switch, Samsung NFC, GNSS framework, and USB-C DisplayPort. The exact NFC I2C path and the proprietary NFC/GNSS service boundaries are documented; physical accessory and bounded-service tests remain |
 | User setup | Working | The physical ownerless-root walkthrough completed with the normal GNOME keyboard, Wi-Fi connection, user-selected account/password, unique post-install machine identity, owner-neutral asset migration, and transition to the new owner's GNOME password lock; the installer frontend now defaults to dark mode |
-| Release packaging | In progress | Thirteen exact-version component packages and a release metapackage build reproducibly; the identity-safe Ubuntu 24.04.5 ARM64 root completed first boot and repeated personalized cold boots. Boot v6 keeps that root selected after orderly system actions while preserving crash fallback; its exact write/readback, protected-neighbor checks, clean-root restart, managed GNOME startup, and wallpaper-persistence check pass. Return-to-stock acceptance remains |
+| Release packaging | In progress | The thirteen-component set is now dependency-consistent under `t630-release-base` 0.1.14. A package refresh repaired stale exact internal dependencies, the native login builder is byte-reproducible and survives the root's documentation-exclusion policy, and the installed tablet passes both `dpkg --audit` and `apt-get check` after a clean reboot. The identity-safe Ubuntu 24.04.5 ARM64 root completed first boot and repeated personalized cold boots. Boot v7 keeps that root selected after orderly system actions while preserving crash fallback; exact write/readback, protected-neighbor checks, managed GNOME startup, Wi-Fi filesystem-ready startup, and wallpaper persistence pass. Return-to-stock acceptance remains |
 | Security | Lab configuration | GNOME password lock works and normal owner boots no longer expose the recovery terminal, but the retained parent compositor and USB root console mean this is not a hardened full-device login boundary |
 
 ## Known limitations
@@ -98,6 +98,9 @@ The pinned audio protection-domain service is recorded in the
 [pd-mapper package report](reports/pd-mapper-package-20260914.md).
 The exact-version dependency closure is recorded in the
 [release package-set report](reports/release-package-set-20260914.md).
+The live package dependency repair, reproducibility check, and clean-reboot
+acceptance are recorded in the
+[package consistency report](reports/package-dependency-repair-20260916.md).
 The packaged host compositor boundary is recorded in the
 [boot runtime report](reports/boot-runtime-package-20260914.md).
 The source-built app-store authentication boundary is recorded in the

@@ -52,10 +52,10 @@ class ReleaseMetaPackageTests(unittest.TestCase):
                             for item in builder.DEPENDENCIES))
         self.assertTrue(any(item.startswith("t630-pd-mapper")
                             for item in builder.DEPENDENCIES))
-        self.assertIn("t630-boot-runtime (= 0.1.0)", builder.DEPENDENCIES)
+        self.assertIn("t630-boot-runtime (= 0.1.1)", builder.DEPENDENCIES)
         self.assertIn("t630-polkit-runtime (= 0.1.0)", builder.DEPENDENCIES)
-        self.assertIn("t630-login-runtime (= 0.1.0)", builder.DEPENDENCIES)
-        self.assertIn("t630-camera-runtime (= 0.1.4)", builder.DEPENDENCIES)
+        self.assertIn("t630-login-runtime (= 0.1.2)", builder.DEPENDENCIES)
+        self.assertIn("t630-camera-runtime (= 0.1.5)", builder.DEPENDENCIES)
 
 
 if __name__ == "__main__":

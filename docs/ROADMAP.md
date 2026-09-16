@@ -63,6 +63,13 @@
    reconstructed locally with complete input/output hashes directly from the
    tablet's read-only stock `super`; they matched the working runtime
    byte-for-byte. Writable camera state regenerates without a seed.
+   The 2026-09-16 package refresh also removed stale exact dependencies left by
+   incremental development. Component packages use compatible minimum versions,
+   while `t630-release-base` 0.1.14 remains the single exact-version lock for a
+   release. The live personalized root now passes `dpkg --audit` and
+   `apt-get check` after a clean reboot; the login runtime rebuild is
+   byte-identical. See the
+   [package consistency report](reports/package-dependency-repair-20260916.md).
 3. Pen-friendly handwritten notes and drawing. Xournal++ and MyPaint are now
    installed as native ARM64 apps on the personalized clean root; both launch
    inside GNOME, and an Xournal++ page shows continuous physical handwriting.

@@ -13,7 +13,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-boot-runtime"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 WESTON_KEYBOARD = "/usr/libexec/weston-keyboard"
 MALIIT_QML = "/usr/lib/aarch64-linux-gnu/maliit/keyboard2/qml/Keyboard.qml"
 FILES = {
@@ -97,7 +97,7 @@ def build(output: Path, epoch: int) -> str:
 Version: {VERSION}
 Architecture: all
 Maintainer: SM-T630 Ubuntu Port contributors
-Depends: t630-hardware-runtime (= 0.1.2), weston (= 13.0.0-4build3), seatd, chrony, maliit-keyboard (= 2.3.1-5build2), maliit-framework (= 2.3.0-4build5), qtwayland5, breeze-icon-theme, libqt5svg5, librsvg2-common, gnome-shell (= 46.0-0ubuntu6~24.04.14), python3-gi, gir1.2-gtk-3.0, libglib2.0-bin
+Depends: t630-hardware-runtime (>= 0.1.6), weston (= 13.0.0-4build3), seatd, chrony, maliit-keyboard (= 2.3.1-5build2), maliit-framework (= 2.3.0-4build5), qtwayland5, breeze-icon-theme, libqt5svg5, librsvg2-common, gnome-shell (= 46.0-0ubuntu6~24.04.14), python3-gi, gir1.2-gtk-3.0, libglib2.0-bin
 Section: admin
 Priority: optional
 Description: host compositor and keyboard runtime for Samsung SM-T630

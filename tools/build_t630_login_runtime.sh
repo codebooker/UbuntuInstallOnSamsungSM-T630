@@ -5,7 +5,8 @@ set -eu
 # sources and package it without installing over the running tablet.
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 build=${T630_LOGIN_BUILD_ROOT:-/tmp/t630-login-runtime-build}
-out=${T630_LOGIN_OUTPUT:-$repo/output/t630-login-runtime_0.1.0_arm64.deb}
+out=${T630_LOGIN_OUTPUT:-$repo/output/t630-login-runtime_0.1.2_arm64.deb}
+cache=${T630_LOGIN_DOWNLOAD_CACHE:-$repo/build/login-download-cache}
 epoch=${SOURCE_DATE_EPOCH:-1700000000}
 
 elogind_url=https://github.com/elogind/elogind/archive/refs/tags/v255.27.tar.gz
@@ -16,9 +17,9 @@ gdm_debian=gdm3_46.2-1ubuntu1~24.04.9.debian.tar.xz
 gdm_orig_sha=4ee345422a16537150cd842450cda52b2ca86984bc51ee20cdc025dcf4bd268b
 gdm_debian_sha=0a4bfa56afc053f257f56a7918c679fe3edce1048817811de359f80ef0fff653
 
-case "$build" in
-  /|/tmp|/var/tmp|"$repo")
-    echo "Refusing unsafe T630_LOGIN_BUILD_ROOT: $build" >&2
+case "$build:$cache" in
+  /:*|/tmp:*|/var/tmp:*|"$repo":*|*:/|*:/tmp|*:/var/tmp|*:"$repo")
+    echo "Refusing unsafe login build/cache path: $build / $cache" >&2
     exit 2
     ;;
 esac
@@ -37,7 +38,7 @@ export LC_ALL=C TZ=UTC SOURCE_DATE_EPOCH=$epoch DEBIAN_FRONTEND=noninteractive
 if [ "${T630_SKIP_BUILD_DEPS:-0}" != 1 ]; then
   apt-get update -qq
   apt-get install -y -qq --no-install-recommends \
-    build-essential ca-certificates curl gettext gperf itstool meson ninja-build \
+    build-essential ca-certificates curl dconf-cli gettext gperf itstool meson ninja-build \
     patch pkg-config python3-jinja2 \
     libaccountsservice-dev libacl1-dev libaudit-dev libcanberra-gtk3-dev \
     libcap-dev libdbus-1-dev libglib2.0-dev libgtk-3-dev libgudev-1.0-dev \
@@ -54,15 +55,24 @@ for command in cc curl dpkg-deb meson ninja patch pkg-config sha256sum tar; do
 done
 
 rm -rf -- "$build"
-mkdir -p "$build/downloads" "$build/src" "$build/stage" "$(dirname -- "$out")"
-curl -fL --retry 3 "$elogind_url" -o "$build/downloads/elogind.tar.gz"
-curl -fL --retry 3 "$gdm_base/$gdm_orig" -o "$build/downloads/$gdm_orig"
-curl -fL --retry 3 "$gdm_base/$gdm_debian" -o "$build/downloads/$gdm_debian"
-echo "$elogind_sha  $build/downloads/elogind.tar.gz" | sha256sum -c -
-echo "$gdm_orig_sha  $build/downloads/$gdm_orig" | sha256sum -c -
-echo "$gdm_debian_sha  $build/downloads/$gdm_debian" | sha256sum -c -
+mkdir -p "$cache" "$build/src" "$build/stage" "$(dirname -- "$out")"
+fetch() {
+  url=$1 destination=$2 wanted=$3
+  if [ -f "$destination" ] &&
+     echo "$wanted  $destination" | sha256sum -c - >/dev/null 2>&1; then
+    return
+  fi
+  temporary=$destination.partial
+  rm -f -- "$temporary"
+  curl -fL --retry 3 "$url" -o "$temporary"
+  echo "$wanted  $temporary" | sha256sum -c -
+  mv "$temporary" "$destination"
+}
+fetch "$elogind_url" "$cache/elogind.tar.gz" "$elogind_sha"
+fetch "$gdm_base/$gdm_orig" "$cache/$gdm_orig" "$gdm_orig_sha"
+fetch "$gdm_base/$gdm_debian" "$cache/$gdm_debian" "$gdm_debian_sha"
 
-tar -C "$build/src" -xf "$build/downloads/elogind.tar.gz"
+tar -C "$build/src" -xf "$cache/elogind.tar.gz"
 elogind=$build/src/elogind-255.27
 meson setup "$elogind/build-t630" "$elogind" \
   --prefix=/opt/t630/elogind-255.27 --libdir=lib \
@@ -82,16 +92,24 @@ install -m 644 "$repo/ubuntu/t630-elogind-lab.conf" \
 install -m 644 "$repo/ubuntu/t630-elogind-sleep.conf" \
   "$build/stage/opt/t630/elogind-255.27/etc/elogind/sleep.conf"
 
-tar -C "$build/src" -xf "$build/downloads/$gdm_orig"
+tar -C "$build/src" -xf "$cache/$gdm_orig"
 gdm=$build/src/gdm-46.2
-tar -C "$gdm" -xf "$build/downloads/$gdm_debian"
+tar -C "$gdm" -xf "$cache/$gdm_debian"
 while IFS= read -r name; do
   case "$name" in ''|'#'*) continue ;; esac
   patch -d "$gdm" -p1 < "$gdm/debian/patches/$name"
 done < "$gdm/debian/patches/series"
 patch -d "$gdm" -p1 < "$repo/ubuntu/gdm-auth-only-greeter.patch"
 
-export PKG_CONFIG_PATH="$build/stage/opt/t630/elogind-255.27/lib/pkgconfig"
+mkdir -p "$build/pkgconfig"
+sed "s|/opt/t630/elogind-255.27|$build/stage/opt/t630/elogind-255.27|g" \
+  "$build/stage/opt/t630/elogind-255.27/lib/pkgconfig/libelogind.pc" \
+  > "$build/pkgconfig/libelogind.pc"
+grep -qx "prefix=$build/stage/opt/t630/elogind-255.27" \
+  "$build/pkgconfig/libelogind.pc"
+grep -qx "libdir=$build/stage/opt/t630/elogind-255.27/lib" \
+  "$build/pkgconfig/libelogind.pc"
+export PKG_CONFIG_PATH="$build/pkgconfig"
 export LD_LIBRARY_PATH="$build/stage/opt/t630/elogind-255.27/lib"
 meson setup "$gdm/build-t630" "$gdm" \
   --prefix=/opt/t630/gdm-46.2-auth --libdir=lib --sysconfdir=/etc/t630 \
@@ -116,18 +134,23 @@ install -m 644 "$repo/ubuntu/t630-gdm-auth-only.conf" \
 install -m 644 "$repo/ubuntu/t630-common-session" "$pkg/etc/pam.d/common-session"
 : > "$pkg/etc/t630/login.enabled"
 : > "$pkg/etc/t630/lock-on-start"
-install -m 644 "$elogind/LICENSE.GPL2" \
-  "$pkg/usr/share/doc/t630-login-runtime/elogind-LICENSE.GPL2"
-install -m 644 "$elogind/LICENSE.LGPL2.1" \
-  "$pkg/usr/share/doc/t630-login-runtime/elogind-LICENSE.LGPL2.1"
-install -m 644 "$gdm/COPYING" \
-  "$pkg/usr/share/doc/t630-login-runtime/gdm-COPYING"
+{
+  printf '%s\n' \
+    'This package contains source-built elogind 255.27 and GDM 46.2.' \
+    'The complete elogind GPL-2.0 and LGPL-2.1 license texts are also at:' \
+    ' /opt/t630/elogind-255.27/share/doc/elogind/LICENSE.GPL2' \
+    ' /opt/t630/elogind-255.27/share/doc/elogind/LICENSE.LGPL2.1' \
+    '' \
+    'The following is the upstream GDM license text:' \
+    ''
+  cat "$gdm/COPYING"
+} > "$pkg/usr/share/doc/t630-login-runtime/copyright"
 printf '%s\n' \
   'Package: t630-login-runtime' \
-  'Version: 0.1.0' \
+  'Version: 0.1.2' \
   'Architecture: arm64' \
   'Maintainer: SM-T630 Ubuntu Port contributors' \
-  'Depends: t630-desktop-runtime (= 0.1.1), gdm3 (= 46.2-1ubuntu1~24.04.9), libpam-systemd, libpam0g, libglib2.0-0t64, libgudev-1.0-0, libgtk-3-0t64, libjson-glib-1.0-0, libcanberra-gtk3-0t64, libaccountsservice0, libaudit1, libcap2, libdbus-1-3, libmount1, libpolkit-gobject-1-0, libselinux1, libudev1, libx11-6, libxau6, libxcb1' \
+  'Depends: t630-desktop-runtime (>= 0.1.5), gdm3 (= 46.2-1ubuntu1~24.04.9), libpam-systemd, libpam0g, libglib2.0-0t64, libgudev-1.0-0, libgtk-3-0t64, libjson-glib-1.0-0, libcanberra-gtk3-0t64, libaccountsservice0, libaudit1, libcap2, libdbus-1-3, libmount1, libpolkit-gobject-1-0, libselinux1, libudev1, libx11-6, libxau6, libxcb1' \
   'Section: admin' \
   'Priority: optional' \
   'Description: isolated GDM authentication runtime for Samsung SM-T630 Ubuntu' \

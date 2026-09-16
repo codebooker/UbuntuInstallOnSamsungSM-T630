@@ -48,6 +48,12 @@ class StockAssetsPackageTests(unittest.TestCase):
             self.assertEqual(first, second)
             self.assertEqual(one.read_bytes(), two.read_bytes())
             members = self.ar_members(one.read_bytes())
+            control_path = root / "control.tar.xz"
+            control_path.write_bytes(members["control.tar.xz"])
+            with tarfile.open(control_path, "r:xz") as archive:
+                control = archive.extractfile("./control").read().decode()
+            self.assertIn("Version: 1.0.2+dze3", control)
+            self.assertIn("t630-hardware-runtime (>= 0.1.6)", control)
             data = root / "data.tar.xz"
             data.write_bytes(members["data.tar.xz"])
             with tarfile.open(data, "r:xz") as archive:

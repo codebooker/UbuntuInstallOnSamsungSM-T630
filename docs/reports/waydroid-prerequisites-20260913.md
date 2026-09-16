@@ -123,7 +123,7 @@ Android networking and orderly container teardown pass. F-Droid 1.23.2 was
 installed from its canonical site, persisted across a clean session restart,
 and launches through its generated GNOME app-grid entry. No Google services or
 Google account were installed. The reproducible device integration is packaged
-as `t630-waydroid-runtime` 0.1.4; external Waydroid packages and Android images
+as `t630-waydroid-runtime` 0.1.5; external Waydroid packages and Android images
 remain an optional post-install boundary documented in [WAYDROID.md](../WAYDROID.md).
 
 Primary references:

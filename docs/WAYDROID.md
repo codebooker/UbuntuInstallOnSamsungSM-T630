@@ -1,10 +1,12 @@
 # Android applications with Waydroid
 
 Waydroid is experimentally working on the physical SM-T630. The verified
-combination is Waydroid 1.6.2, LXC 5.0.3, and the official ARM64 VANILLA
-LineageOS 20 / Android 13 images on the v13 kernel/module payload. Android
-reaches `sys.boot_completed=1`, networking works, and F-Droid launches from the
-GNOME app grid and survives a clean Android restart.
+combination is Waydroid 1.6.2, LXC 5.0.3, and the official ARM64 GAPPS
+LineageOS 20 / Android 13 system with the official MAINLINE vendor image on the
+v13 kernel/module payload. Android reaches `sys.boot_completed=1`, Google Play
+services and the Play Store run, networking works, and the previously installed
+F-Droid data survives both the VANILLA-to-GAPPS migration and a clean Android
+restart.
 
 This is an optional post-install feature. It is not yet in the sealed offline
 native base because the Waydroid Ubuntu packages come from Waydroid's external
@@ -56,19 +58,35 @@ Build and install this repository's integration package:
 
 ```sh
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_waydroid_runtime_deb.py
-sudo apt install ./output/t630-waydroid-runtime_0.1.4_all.deb
+sudo apt install ./output/t630-waydroid-runtime_0.1.5_all.deb
 ```
 
 That exact reproducible build has SHA-256
-`03159705fd8eb221ccaed67c1d1e8d6a36eb248b7ec07dd5e926ac6695ed4bdd`.
+`be26ed7cad0e96d2d4e1281099ccedc2a7ff764c94ca63356b1ba4a772f0b693`.
 
-Initialize the official ARM64 VANILLA image. This downloads roughly 2.4 GB of
-system and vendor image data and does not include Google services:
+Initialize the official ARM64 GAPPS image. The download is large and requires a
+working network connection:
 
 ```sh
-sudo waydroid init -s VANILLA
+sudo waydroid init -s GAPPS
 sudo t630-waydroid-prepare
 ```
+
+To migrate an existing VANILLA installation while preserving its owner data,
+first stop Waydroid and make a private backup of both
+`/var/lib/waydroid/images` and the owner's
+`~/.local/share/waydroid/data`. Then run:
+
+```sh
+sudo waydroid init -s GAPPS -f
+sudo t630-waydroid-prepare
+```
+
+The accepted migration preserved the Android data directory, including the
+existing F-Droid installation. It replaced `system.img` and recreated
+Waydroid's writable overlays. Keep the backup until Play Store acceptance and a
+clean restart have passed. Never publish that backup: it can contain app data
+and account material.
 
 The normal desktop startup runs the preparation helper on later boots. It can
 be disabled without removing data by creating `/etc/t630/waydroid.disabled`.
@@ -99,6 +117,42 @@ Install a verified APK as the desktop owner:
 waydroid app install /absolute/path/to/F-Droid.apk
 ```
 
+## Google Play
+
+The physical acceptance run verified `com.android.vending`,
+`com.google.android.gms`, and `com.google.android.gsf`; Google check-in
+completed, DNS and HTTPS worked from Android's network namespace, and the Play
+Store opened its unauthenticated sign-in activity after a clean restart.
+
+Google account sign-in is deliberately a user-owned step. Enter credentials
+only into the Play Store on the tablet. Do not put a password, two-factor code,
+Android registration ID, or account backup in an issue or diagnostic bundle.
+
+Waydroid devices may initially be reported as not Play Protect certified. If
+the Play Store shows that message, retrieve the local Google Services Framework
+ID on the tablet:
+
+```sh
+sudo waydroid shell sqlite3 \
+  /data/data/com.google.android.gsf/databases/gservices.db \
+  'select value from main where name = "android_id";'
+```
+
+While signed into the intended Google account in a browser, submit that decimal
+value at Google's
+[uncertified-device registration page](https://www.google.com/android/uncertified/).
+Then stop and relaunch the owner session:
+
+```sh
+waydroid session stop
+waydroid show-full-ui
+```
+
+Registration can take several minutes to propagate. It authorizes Google's
+service for this Waydroid identity; it does not make the tablet pass every Play
+Integrity level, and banking, DRM, or hardware-attestation-dependent apps may
+still refuse to run.
+
 ## Validation
 
 After launching Android, these checks should all pass:
@@ -116,6 +170,18 @@ confirm that the LXC monitor's root is `/` and that every `system_server`
 trace-marker descriptor resolves below `/sys/kernel/tracing`, never
 `/run/ubuntu`.
 
+The repository also includes a read-only GAPPS acceptance check. Install or run
+it on the tablet as root after opening Android:
+
+```sh
+sudo t630-check-waydroid-gapps
+sudo t630-check-waydroid-gapps --verify-images
+```
+
+The second form additionally hashes more than 3 GB of image data against the
+accepted build and therefore takes longer. The checker reports only whether a
+registration ID exists; it never prints the value.
+
 Clean Restart and Power Off are part of the integration test. Do not unmount
 the Ubuntu root while Waydroid's container is running. The packaged guarded
 shutdown requests a normal container stop, waits for LXC to report `STOPPED`,
@@ -123,8 +189,11 @@ and refuses the host unmount if any Android mount remains busy.
 
 ## Current limitations
 
-- This uses the VANILLA image. Google Play services and account setup were not
-  installed or tested.
+- The GAPPS runtime and unauthenticated Play Store are verified. Google account
+  authentication and a Play Store application install require the owner and
+  are not automated or recorded by this project.
+- Play Integrity, DRM, banking, and hardware-attested applications are not
+  guaranteed by device registration.
 - Host/Android clipboard sharing is not enabled. A preliminary bridge could
   not access the locked GNOME clipboard reliably and was removed.
 - Android applications still need longer rotation, suspend/resume, camera,
@@ -134,5 +203,7 @@ and refuses the host unmount if any Android mount remains busy.
 
 Primary references are Waydroid's
 [Ubuntu installation guide](https://docs.waydro.id/usage/install-on-desktops),
-the [Waydroid documentation](https://docs.waydro.id/), and the
+the [command-line image guide](https://docs.waydro.id/usage/waydroid-command-line-options),
+the [Google Play certification guide](https://docs.waydro.id/faq/google-play-certification),
+and the
 [Tab S9 Ultra project that inspired this work](https://github.com/agcarbajo/ubuntu-galaxy-tab-s9-ultra/blob/bb55ceb87b61db7629c0820101ce7884ff8d987b/docs/waydroid.md).

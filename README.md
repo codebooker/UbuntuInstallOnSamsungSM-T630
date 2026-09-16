@@ -36,7 +36,7 @@ full-screen GNOME desktop from internal storage.
 | Browser video acceleration | WebKit hardware selection verified; safe launcher blocked by the stock kernel's missing user-namespace support |
 | Cameras | Front and rear GNOME previews work at 720×480; rear exposure, autofocus, tone, and live color adjustment work; HD Snapshot and flash remain |
 | First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow and packaged GDM password login implemented; full private bundle and unmounted read-only device gate passed, destructive clean-install acceptance remains |
-| Android applications | Working experimentally through Waydroid 1.6.2 / Android 13; F-Droid and Android networking verified |
+| Android applications | Working experimentally through Waydroid 1.6.2 / Android 13; Google Play services, Play Store, F-Droid, and Android networking verified |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).
 

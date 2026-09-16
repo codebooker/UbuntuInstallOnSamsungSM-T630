@@ -210,8 +210,8 @@ terminal from the normal path.
 
 ## Android applications
 
-Waydroid 1.6.2 now runs an official ARM64-only LineageOS 20 / Android 13
-VANILLA image on the physical tablet. The coherent v13 kernel/module payload
+Waydroid 1.6.2 now runs an official ARM64 LineageOS 20 / Android 13 GAPPS image
+on the physical tablet. The coherent v13 kernel/module payload
 keeps the stock release string and matches all 13,709 audited symbol CRCs. It
 passed native boot, Wi-Fi, touch, S Pen, display, sound, sensors, camera,
 charging, suspend, reboot, and orderly-unmount regressions before Android was
@@ -224,8 +224,11 @@ launcher creates a private outer-root mount namespace, recursively exposes the
 Ubuntu runtime there, and lets unmodified LXC perform its normal pivot. Android
 then sees canonical `/sys/kernel/tracing/trace_marker` descriptors and reaches
 `sys.boot_completed=1`. The nested GNOME socket is selected per owner, Android
-networking works, and F-Droid 1.23.2 installs, persists across restarts, and
-launches from the GNOME app grid.
+networking works, and F-Droid 1.23.2 installs, persists across both the GAPPS
+migration and restarts, and launches from the GNOME app grid. Google Play
+services runs, Google check-in succeeds, and Play Store reaches its
+unauthenticated sign-in UI with working Android DNS and HTTPS. Account sign-in
+and any required uncertified-device registration remain owner-only steps.
 
 The remaining Android work is release engineering rather than basic bring-up:
 bundle or fetch Waydroid's external Ubuntu packages and official images in the

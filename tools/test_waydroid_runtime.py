@@ -77,6 +77,14 @@ class WaydroidRuntimeTests(unittest.TestCase):
             self.assertIn("Package: t630-waydroid-runtime\n", control)
             self.assertIn("waydroid (= 1.6.2)", control)
             self.assertIn("lxc (= 1:5.0.3-2ubuntu7.2)", control)
+            self.assertIn("python3", control)
+            with tarfile.open(
+                fileobj=io.BytesIO(members["data.tar.xz"]), mode="r:xz"
+            ) as archive:
+                checker = archive.getmember(
+                    "./usr/local/sbin/t630-check-waydroid-gapps"
+                )
+                self.assertEqual(checker.mode, 0o755)
 
 
 if __name__ == "__main__":

@@ -66,16 +66,30 @@
    inside GNOME, and an Xournal++ page shows continuous physical handwriting.
    Krita 5.2.2 explicitly rejects native Wayland and is deferred alongside the
    legacy-X11 issue. The physical pen sensor and the corrected GTK test before
-   GNOME now confirm varying pressure. Native GTK inside GNOME receives finger
-   events but still has no accepted pen samples. The manual metadata/proximity
-   trials were removed after failing acceptance and causing a hover regression.
+   GNOME now confirm varying pressure. Native GTK inside GNOME subsequently
+   received 310 physical pen samples (normalized pressure 0–0.800534) and 147
+   finger events in the explicitly enabled real-event/source-axis trial.
+   The earlier proximity preloads were removed after failing acceptance and
+   causing a hover regression.
    A matching-source, isolated diagnostic Mutter build now starts safely to
    inspect tool registration and focus without injecting events. See the
-   [pressure-path report](reports/pen-pressure-path-20260915.md); genuine native
-   GNOME pressure and safe persistence are not yet accepted.
+   [pressure-path report](reports/pen-pressure-path-20260915.md). Native GTK pen
+   delivery is measured and the owner confirms MyPaint pressure response, but
+   excessive force and multi-second drawing lag remain. A mathematically
+   verified 2× app curve worsened perceived force and was reverted to identity.
+   Simple GTK event delivery measured 4 ms median/58 ms maximum; headless
+   stock-brush rendering and single-layer composites were fast, not full GUI
+   latency acceptance. Investigate the live queue/redraw path before tuning
+   sensitivity further. Physical hover-out,
+   restart/rotation/lock regressions and safe persistence remain unaccepted.
    MyPaint's first-stroke GUI crash was reproduced in an isolated headless test:
    four rendering workers segfault, one worker passes. Its optional launcher now
-   serializes only MyPaint; corrected physical drawing remains to verify. The
+   serializes only MyPaint; responsive physical drawing remains to verify. The
+   isolated upstream-GIL-fix extension subsequently passed both thread settings
+   in bounded headless tests, without a small-workload speedup or GUI promotion.
+   Live timing caught up to 5.572 seconds of queued stroke delay despite fresh
+   pen delivery and short callbacks; an app-only idle-priority comparison is
+   staged but not accepted or added to the ordinary launcher. The
    drawing app is no longer automatically pinned because GNOME hides favorites
    from the app drawer.
    A separate MyPaint Wayland popup-grab freeze is under investigation. Its

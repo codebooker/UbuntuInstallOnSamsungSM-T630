@@ -49,7 +49,14 @@ headless render test with four workers; the same 384-point test passed with one.
 launch. This serializes rendering and may reduce performance; no system-wide
 thread setting, driver change, or library bypass is used. Close/reopen any
 already running copy to pick up the workaround. Physical drawing acceptance
-of the corrected launcher remains pending.
+of continuous strokes/pickers passed, but responsive pressure drawing remains pending.
+
+A later isolated exact-version source build with the upstream GIL fix passed
+both one- and four-worker headless tests. It was loaded only in private
+normal-owner test processes with pinned RAM-artifact hashes, not installed over
+the distro app. The small workload did not establish a performance improvement;
+physical GUI acceptance and safe packaging remain pending. The ordinary
+launcher still uses one worker. See the [measured follow-up](reports/pen-pressure-path-20260915.md).
 
 `tools/probe_mypaint_strokes.py --threads 1` tests the native drawing engine on
 an in-memory surface, not the display or physical pen. Its four-worker comparison
@@ -108,11 +115,64 @@ Use `--window` for a bounded 30-second physical proximity/pressure check; it
 records only tool capabilities and aggregate pressure, not handwriting or
 coordinates. The corrected September 15 probe confirmed varying pressure in
 the parent X11 session, but the native GNOME test still received no usable pen
-samples even though finger events arrived. Pressure inside GNOME is **not
-accepted**. The manual metadata/proximity experiments were removed from the
-live session; no pressure experiment is enabled at normal startup. See the
+samples even though finger events arrived. A subsequent opt-in Mutter source
+handoff trial received **310 physical native-GNOME pen samples**, normalized
+pressure **0–0.800534**, and **147 finger events**. This confirms pressure in
+the native GTK test, not a safe
+persistent driver. The older proximity preloads remain removed, and no pressure
+experiment is enabled at normal startup. See the
 [pressure-path report](reports/pen-pressure-path-20260915.md) for the measured
 boundary and rejected trials.
+
+In that attended source trial the owner also confirmed MyPaint responds to
+pressure, but required excessive force and had multi-second drawing lag.
+A 2×, capped app-local pressure curve was verified mathematically, but the
+owner reported needing **more** force. After normal app closure, its original
+identity curve was restored with an exact preferences backup. Do not recommend
+that failed sensitivity trial or press harder to compensate. Drawing latency
+must be resolved before further comfort tuning; neither trial makes the
+experimental GNOME handoff persistent.
+
+For optional sensitivity adjustment after pressure delivery works, close
+MyPaint normally first, then run as the existing desktop owner:
+
+```sh
+t630-gnome-run python3 tools/configure_mypaint_pressure.py --full-pressure 1.0
+```
+
+Use an absolute path to the tool if the repository is not in the owner's
+home directory. Smaller thresholds mathematically amplify pressure, but the
+0.5 trial worsened the owner's experience on this desktop. `1.0` restores the
+identity pressure curve. The helper supports 0.2–1.0, keeps other preferences,
+backs up the old settings alongside `settings.json`, and refuses live app
+changes. You can also adjust MyPaint's normal pressure curve in Preferences.
+This tool is not an installer default and does not configure Xournal++ or
+alter the physical pressure axis. Do not compensate by pressing unusually hard.
+
+The event-age extension to `tools/probe_gdk_pen.py` received 695 physical pen
+events with median delivery age 4 ms, p95 42 ms, and maximum 58 ms. This is
+event delivery to a simple GTK client, **not pen-to-pixel latency in MyPaint**.
+The headless engine rendered 384 points with the selected stock
+`classic/impressionism` brush in 0.155 seconds; eight 1920×1200 single-layer
+composites took 0.096 seconds total. These small generated workloads do not
+measure the live document, GUI stroke queue, or nested desktop presentation.
+`tools/probe_mypaint_latency.py` is an attended, version-guarded app-local
+diagnostic of delivery age, queued stroke age, and callback durations. It
+stores only bounded numeric aggregates, restores its wrappers after 90 seconds,
+and leaves the app open. It changes no scheduling priority, pressure curve,
+package, input event, or document **by default**. Empty samples are inconclusive.
+Its optional `--profile-strokes` captures function-call aggregates for the
+first 1,000 stroke callbacks (with added profiling overhead), not call arguments
+or handwriting. The probe also reports only selected numeric brush base values
+to separate the live brush configuration from the stock-preset benchmark.
+The explicit `--queue-priority-trial` instead tests unchanged scheduling for
+35 seconds, then temporarily gives only MyPaint's stroke idle callbacks priority
+100 rather than 200. It reschedules owned callbacks without dropping queue
+data, compares phase-specific metrics, and restores at 90 seconds. Do not use
+it together with profiling or treat this pending comparison as an installer
+default. A follow-up caught 5.572 seconds of queued stroke delay despite fresh
+pen delivery and short individual callbacks; scheduling is a hypothesis, not
+yet an accepted fix.
 
 Standard owner folders are now initialized with `xdg-user-dirs-update` without
 replacing chosen paths. Before the restart, the existing Xournal++ autosave was

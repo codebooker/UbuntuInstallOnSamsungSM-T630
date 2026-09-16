@@ -7,7 +7,11 @@ Pressure-capable device enumeration is not physical pen acceptance.
 """
 import gi
 import argparse
+import time
+import statistics
+import math
 from gdk_pressure_value import pressure_value
+from gdk_event_latency import event_age_ms
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
@@ -57,6 +61,7 @@ if args.window:
     seen = set()
     samples = []
     event_counts = {}
+    pen_ages = []
     def inspect(_window, event):
         device = event.get_source_device()
         if device is None:
@@ -73,6 +78,9 @@ if args.window:
         pressure = pressure_value(event.get_axis(Gdk.AxisUse.PRESSURE))
         if pressure is not None and source in ('pen', 'eraser'):
             samples.append(pressure)
+            age = event_age_ms(event.get_time(), time.monotonic() * 1000)
+            if age is not None:
+                pen_ages.append(age)
         label.set_text(f'S Pen capability check\n\nDevice: {device.get_name()}\n'
                        f'Source: {source}; tool: {tool_type}\n'
                        f'Axes: {", ".join(axes)}\nPressure: {pressure if pressure is not None else "not reported"}\n\n'
@@ -89,3 +97,11 @@ if args.window:
           f'pressure_min={min(samples) if samples else None} '
           f'pressure_max={max(samples) if samples else None} '
           f'event_counts={event_counts}', flush=True)
+    if pen_ages:
+        ordered = sorted(pen_ages)
+        print(f'GTK_EVENT_AGE_MS: samples={len(ordered)} '
+              f'median={statistics.median(ordered)} '
+              f'p95={ordered[math.ceil(len(ordered) * .95) - 1]} max={max(ordered)}; '
+              'delivery age only, not pen-to-pixel latency', flush=True)
+    else:
+        print('GTK_EVENT_AGE_MS: no validated pen timestamps; not a latency result', flush=True)

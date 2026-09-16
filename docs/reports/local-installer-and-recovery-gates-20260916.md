@@ -67,3 +67,35 @@ archive, verifies its manifest and SHA256 before formatting, targets only the
 exact validated userdata partition, extracts ownership/ACLs/xattrs, validates
 the resulting root, and writes BOOT only after root installation succeeds.
 That destructive stage is not implied by the new build command.
+
+## RAM-only transport implementation
+
+The follow-up transport boundary adds `tools/stage_installer_bundle.py` and a
+constant-memory file uploader to the existing framed recovery serial link. The
+host revalidates the sealed bundle before connecting. The tablet setup then
+requires the exact model/kernel/userdata geometry, at least 30% battery, enough
+available RAM plus a 512 MiB reserve, and a previously absent staging path. It
+mounts a bounded `nosuid,nodev,noexec` tmpfs below `/run` and never opens the
+userdata or BOOT block devices.
+
+The checksum file covers the rootfs, its manifest, BOOT, its manifest, and the
+bundle manifest. The tablet requires that exact five-line shape, verifies every
+SHA256, pins BOOT to the physically accepted v12 hash and size, bounds the
+rootfs size, and checks the model/build/private status markers. A success result
+is `INSTALLER_BUNDLE_VERIFIED_IN_RAM_NO_DEVICE_WRITE`; a reboot discards all
+staged data. Four additional unit tests cover seal tampering, RAM-only device
+guards, Python syntax, and streaming rather than whole-file host reads.
+
+This implementation has not yet transported a real multi-gigabyte bundle on
+the physical tablet. It intentionally stops before filesystem formatting or
+BOOT writes.
+
+The streaming primitive was physically exercised with the accepted v12 BOOT
+image as a 100,663,296-byte RAM-only payload. It transferred over the existing
+USB ACM recovery console in 5.6 seconds, the uploader's incremental SHA256 and
+the tablet's `sha256sum` both matched
+`a7bde8259ab09b8238e0a1c8871e94422c3a6eb29e95ff8218e2de1746cd2e28`,
+and the temporary `/run/t630-transfer-test-v12.img` was removed. No block device
+was opened by the test. The live personalized root then still reported GNOME,
+Wi-Fi, Bluetooth audio roles, speaker/microphone defaults, permissions,
+accelerometer, and battery healthy with zero precise kernel-fault markers.

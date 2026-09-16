@@ -493,11 +493,34 @@ physically accepted v12 image and seals the four inputs in
 `installer-bundle.json` plus a BusyBox-compatible `SHA256SUMS`. All six files
 remain mode 0600.
 
-This completes the reproducible host-side assembly boundary. It does not yet
-authorize flashing: a recovery-hosted USB transport must still verify the
-whole archive before formatting exact `userdata`, extract it with ownership,
-ACLs and xattrs intact, validate the installed root, and only then write the
-accepted BOOT image.
+The sealed bundle can be checked again on the host and staged into a dedicated
+tablet **RAM-only** tmpfs over the existing USB recovery console:
+
+```sh
+python3 tools/finalize_installer_bundle.py --verify \
+  /absolute/path/to/new-work-directory
+python3 tools/stage_installer_bundle.py \
+  /absolute/path/to/new-work-directory
+```
+
+The stager revalidates the seal locally, requires the exact model, kernel,
+userdata geometry, battery level, and enough available memory, then creates a
+bounded `nosuid,nodev,noexec` tmpfs. Files are streamed at constant host memory
+use; each transfer is hashed by the tablet. The tablet finally validates the
+fixed checksum-file shape, all five covered files, the accepted v12 BOOT hash,
+and the private/baseline manifest markers. Its success message explicitly says
+that no device was written. Restarting clears the staged data. This transport
+is implemented and unit-tested but has not yet been exercised with a complete
+multi-gigabyte release archive on the physical tablet. The constant-memory
+stream itself physically transferred the accepted 100,663,296-byte v12 BOOT
+image into `/run` in 5.6 seconds, matched its SHA256 on the tablet, and removed
+the RAM copy afterward.
+
+This completes the host-side assembly and RAM-staging boundaries. It does not
+authorize flashing: the recovery environment must still format exact
+`userdata`, extract the already verified archive with ownership, ACLs and
+xattrs intact, validate the installed root, and only then write the accepted
+BOOT image.
 
 Do not overwrite a mapped live library merely to test the package. Extract it
 to a temporary directory and run the dependency/symbol probes described in the

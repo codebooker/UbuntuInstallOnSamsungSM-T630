@@ -51,6 +51,9 @@ class InstallerBundleTests(unittest.TestCase):
             self.assertEqual((root / "installer-bundle.json").stat().st_mode & 0o777, 0o600)
             self.assertEqual((root / "SHA256SUMS").stat().st_mode & 0o777, 0o600)
             with self.accepted(root):
+                verified = subject.verify_sealed(root)
+            self.assertEqual(verified["files"], record["files"])
+            with self.accepted(root):
                 with self.assertRaisesRegex(ValueError, "overwrite a sealed bundle"):
                     subject.finalize(root)
 
@@ -69,6 +72,17 @@ class InstallerBundleTests(unittest.TestCase):
             self.bundle(root)
             with self.assertRaisesRegex(ValueError, "physically accepted v12"):
                 subject.validate(root)
+
+    def test_changed_checksum_seal_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.bundle(root)
+            with self.accepted(root):
+                subject.finalize(root)
+            (root / "SHA256SUMS").write_text("invalid\n", encoding="ascii")
+            with self.accepted(root):
+                with self.assertRaisesRegex(ValueError, "SHA256SUMS differs"):
+                    subject.verify_sealed(root)
 
 
 if __name__ == "__main__":

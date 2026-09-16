@@ -55,8 +55,11 @@
    input without opening any device. A separate recovery verifier requires the
    exact DZE3/XAR BL/AP/CSC/HOME_CSC set and can stream-check every ZIP CRC and
    Samsung tar MD5 without extracting the 6.4 GB factory package. The remaining
-   installer gap is the fail-closed recovery-hosted USB transport and exact
-   userdata extraction, followed by a physical stock-return rehearsal. Boot v3
+   RAM-only USB-serial stager now verifies the sealed bundle locally, streams
+   files at constant host memory cost, and rechecks all hashes on the exact
+   tablet without any block-device write; its full-size physical run remains.
+   The destructive installer gap is exact userdata extraction with preserved
+   ownership/ACLs/xattrs, followed by a physical stock-return rehearsal. Boot v3
    makes an incomplete ownerless setup cleanly recoverable; boot v4 retains
    that terminal only for ownerless or explicitly requested recovery boots. The
    account-neutral Weston/Maliit host runtime is now packaged with reversible distro-file

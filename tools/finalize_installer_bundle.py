@@ -123,10 +123,11 @@ def finalize(work: Path) -> dict:
         raise ValueError("refusing to overwrite a sealed bundle")
     record = validate(work)
     rendered = json.dumps(record, indent=2, sort_keys=True) + "\n"
-    lines = "".join(f"{entry['sha256']}  {entry['path']}\n"
-                    for entry in record["files"])
     try:
         private_write(bundle, rendered)
+        lines = "".join(f"{entry['sha256']}  {entry['path']}\n"
+                        for entry in record["files"])
+        lines += f"{digest(bundle)}  {bundle.name}\n"
         private_write(sums, lines)
     except Exception:
         bundle.unlink(missing_ok=True)
@@ -143,11 +144,30 @@ def finalize(work: Path) -> dict:
     return record
 
 
+def verify_sealed(work: Path) -> dict:
+    work = work.expanduser().resolve(strict=True)
+    bundle = safe_file(work, "installer-bundle.json")
+    sums = safe_file(work, "SHA256SUMS")
+    record = validate(work)
+    sealed_record = read_manifest(bundle)
+    if sealed_record != record:
+        raise ValueError("sealed bundle manifest differs from current inputs")
+    wanted = "".join(f"{entry['sha256']}  {entry['path']}\n"
+                     for entry in record["files"])
+    wanted += f"{digest(bundle)}  {bundle.name}\n"
+    if sums.read_text(encoding="ascii") != wanted:
+        raise ValueError("sealed SHA256SUMS differs from current inputs")
+    return record
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("work_directory", type=Path)
+    parser.add_argument("--verify", action="store_true",
+                        help="verify an existing seal instead of creating it")
     args = parser.parse_args()
-    print(json.dumps(finalize(args.work_directory), indent=2, sort_keys=True))
+    action = verify_sealed if args.verify else finalize
+    print(json.dumps(action(args.work_directory), indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":

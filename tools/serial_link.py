@@ -6,6 +6,7 @@ import uuid
 import serial
 import hashlib
 import shlex
+from pathlib import Path
 
 class Link:
     def __enter__(self):
@@ -93,6 +94,74 @@ class Link:
         if 'UPLOAD_RC=0' not in response or expected not in response:
             raise RuntimeError(f'Upload verification failed: {response}')
         print(f'{len(data)} bytes uploaded and SHA256 verified in {time.monotonic()-start:.1f}s', flush=True)
+        return response
+
+    def upload_file_ram(self, source, remote):
+        """Stream one regular host file into /run without loading it into RAM."""
+        source = Path(source)
+        if source.is_symlink() or not source.is_file():
+            raise ValueError('Host upload source must be a regular file')
+        size = source.stat().st_size
+        if size <= 0 or size > 4 * 1024 * 1024 * 1024:
+            raise ValueError('Host upload source size is outside the 4 GiB staging limit')
+        if not remote.startswith('/run/') or '..' in remote.split('/'):
+            raise ValueError('RAM uploads must target /run without traversal')
+        quoted = shlex.quote(remote)
+        check = self.run(f'test ! -e {quoted}')
+        if 'REMOTE_EXIT=0' not in check:
+            raise ValueError(f'Refusing to overwrite {remote}')
+        digest = hashlib.sha256()
+        with source.open('rb') as stream:
+            while chunk := stream.read(1024 * 1024):
+                digest.update(chunk)
+        expected = digest.hexdigest()
+        timeout_seconds = min(1800, max(120, size // (1024 * 1024) * 3 + 120))
+        token = uuid.uuid4().hex[:12]
+        ready, done = f'UPLOAD_READY_{token}', f'UPLOAD_DONE_{token}'
+        command = (f"stty raw -echo; printf '\n{ready}\n'; "
+                   f'timeout {timeout_seconds} head -c {size} > {quoted}; result=$?; '
+                   f"stty sane; echo UPLOAD_RC=$result; sha256sum {quoted}; "
+                   f'echo {done}\n')
+        self.s.write(command.encode())
+        self.s.flush()
+        received = bytearray()
+        deadline = time.monotonic() + 10
+        marker = b'\n' + ready.encode() + b'\n'
+        while time.monotonic() < deadline:
+            received.extend(self.s.read(65536))
+            if marker in received:
+                break
+        else:
+            raise TimeoutError('Receiver not ready; sent no file payload')
+        start = time.monotonic()
+        sent = 0
+        next_report = 64 * 1024 * 1024
+        with source.open('rb') as stream:
+            while chunk := stream.read(65536):
+                if time.monotonic() - start > timeout_seconds - 20:
+                    raise TimeoutError('File upload too slow; receiver timeout is near')
+                self.s.write(chunk)
+                sent += len(chunk)
+                if self.s.in_waiting:
+                    received.extend(self.s.read(self.s.in_waiting))
+                    if done.encode() in received:
+                        raise RuntimeError('Remote receiver stopped early; upload aborted')
+                if sent >= next_report:
+                    print(f'Uploaded {sent // (1024*1024)} MiB', flush=True)
+                    next_report += 64 * 1024 * 1024
+        self.s.flush()
+        deadline = start + timeout_seconds
+        while time.monotonic() < deadline:
+            received.extend(self.s.read(65536))
+            if b'\n' + done.encode() + b'\r\n' in received:
+                break
+        else:
+            raise TimeoutError('No file-transfer completion marker')
+        response = received.decode(errors='replace')
+        if sent != size or 'UPLOAD_RC=0' not in response or expected not in response:
+            raise RuntimeError(f'File upload verification failed: {response}')
+        print(f'{sent} bytes uploaded and SHA256 verified in '
+              f'{time.monotonic()-start:.1f}s', flush=True)
         return response
 
     def download_ram(self, remote, target):

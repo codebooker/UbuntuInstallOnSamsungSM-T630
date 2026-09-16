@@ -70,6 +70,10 @@ class DesktopRuntimePackageTests(unittest.TestCase):
             self.assertIn('/usr/bin/xdg-user-dirs-update', owner_session)
             self.assertIn("XF86HomePage", owner_session)
             self.assertIn("XF86Launch6", owner_session)
+            self.assertIn(
+                "org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'",
+                owner_session,
+            )
             self.assertIn('/usr/local/libexec/t630-app-grid', owner_session)
             self.assertLess(owner_session.index('/usr/local/libexec/t630-app-grid'),
                             owner_session.index('/usr/bin/gnome-shell --nested'))

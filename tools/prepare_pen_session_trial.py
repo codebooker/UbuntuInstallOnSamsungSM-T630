@@ -4,7 +4,8 @@ import argparse
 import hashlib
 from pathlib import Path
 
-BASE_SHA = '6e121b1647f5c19e4941b836eb86b8104497c1ff15d0b06722bde3d8c624f912'
+# Reviewed after adding the conventional GNOME minimize/maximize button layout.
+BASE_SHA = '25a89a397281ed396f8b365535eb02a5f297cb4ae34cb07168e83d8ff5e8cadc'
 PREPARE = '''if [ "${T630_PEN_METADATA_TRIAL:-0}" = 1 ]; then
     /usr/bin/python3 /usr/local/libexec/t630-pen-x11-metadata --prepare
 fi

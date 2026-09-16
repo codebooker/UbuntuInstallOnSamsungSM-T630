@@ -54,6 +54,7 @@ FILES = {
     "usr/local/sbin/t630-desktop-autostart": ("ubuntu/t630-desktop-autostart", 0o755),
     "usr/local/sbin/t630-login-start": ("ubuntu/t630-login-start", 0o755),
     "usr/local/sbin/t630-power-button": ("ubuntu/t630-power-button.py", 0o755),
+    "usr/local/sbin/t630-pen-touch-guard": ("ubuntu/t630-pen-touch-guard.py", 0o755),
     "usr/local/sbin/t630-red-button": ("ubuntu/t630-red-button.py", 0o755),
     "usr/local/sbin/t630-suspend": ("ubuntu/t630-suspend.py", 0o755),
     "usr/local/share/t630/gnome-tablet-tools/extension.js": (

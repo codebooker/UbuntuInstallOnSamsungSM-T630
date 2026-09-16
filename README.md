@@ -28,7 +28,7 @@ full-screen GNOME desktop from internal storage.
 | Password lock and on-screen keyboard | Working |
 | Settings and standard Restart / Power Off menus | Working |
 | App store, native Firefox, LibreOffice, and everyday apps | Included in the clean release-root recipe |
-| S Pen notes and drawing apps | Xournal++ and MyPaint installed for evaluation; genuine pressure/palm rejection acceptance pending |
+| S Pen notes and drawing apps | Xournal++ and MyPaint installed; pressure and full-proximity palm rejection physically work, with longer-session app acceptance remaining |
 | Charging and manual shallow suspend/wake | Working |
 | Accelerometer, light, proximity, magnetometer | Working |
 | GPU rendering | Experimental; software fallback retained |

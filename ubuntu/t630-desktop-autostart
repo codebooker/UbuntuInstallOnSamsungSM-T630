@@ -69,6 +69,12 @@ fi
 if [ -x /usr/local/sbin/t630-red-button ]; then
     /usr/local/sbin/t630-red-button || echo 'Active-key mapping failed; continuing desktop startup.'
 fi
+if [ -x /usr/local/sbin/t630-pen-touch-guard ] && [ ! -e /etc/t630/pen-touch-guard.disabled ]; then
+    if ! pgrep -x t630-pen-guard >/dev/null; then
+        nohup /usr/local/sbin/t630-pen-touch-guard </dev/null \
+            >>/var/log/t630-pen-touch-guard.log 2>&1 &
+    fi
+fi
 if [ -x /usr/local/sbin/t630-audio-start ] && [ ! -e /etc/t630/audio.disabled ]; then
     nohup /usr/local/sbin/t630-audio-start </dev/null >>/var/log/t630-audio-start.log 2>&1 &
 fi

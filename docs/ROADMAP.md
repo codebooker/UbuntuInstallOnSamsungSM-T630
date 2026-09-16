@@ -110,9 +110,12 @@
    recognition was enabled by a one-time, choice-preserving seeder, but the
    owner confirmed that this app-level trial still moved the paper. Udev had
    assigned the integrated touch and pen separate libinput device groups. The
-   exact devices now share `t630-integrated-pen-touch` after restart so libinput
-   can arbitrate on pen proximity before the app. Physical palm-plus-pen and
-   post-proximity finger-scroll acceptance remain pending.
+   exact devices now share `t630-integrated-pen-touch`, but libinput's partial
+   rejection region still let the page move. A guarded root helper now reads
+   only the exact pen's tool-presence key and disables only the exact touchscreen
+   for the full proximity interval, without grabbing or logging input. The owner
+   confirms palm rejection works before and after an orderly restart; the guard
+   and normal enabled-touch state returned automatically.
    A separate MyPaint Wayland popup-grab freeze is under investigation. Its
    autosave cache was preserved before closing the stuck app; an experimental
    app-only adapter replaces quick chooser popups with existing dockable panels.

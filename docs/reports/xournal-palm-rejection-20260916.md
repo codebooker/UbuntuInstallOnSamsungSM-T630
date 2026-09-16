@@ -93,9 +93,48 @@ both nodes; Weston, nested GNOME, and Xournal++ restarted normally. This changes
 association metadata only: it does not grab, inject, or record input and does
 not disable the touchscreen permanently.
 
+## Second physical result: partial arbitration failed
+
+With the shared group active, the owner started writing with the pen while a
+palm touched the screen. The page still tried to scroll and behaved erratically.
+The group remains correct association metadata, but libinput 1.25 selects a
+tilt-dependent partial rejection rectangle for this pen. That region is not a
+safe full-screen palm boundary for the tablet's orientations and transformed
+coordinates.
+
+## Full-proximity guard: accepted
+
+The exact touchscreen control at
+`/sys/class/input/event5/device/enabled` passed a guarded `1` → `0` → `1`
+round-trip. `t630-pen-touch-guard` therefore implements full arbitration for
+this device:
+
+- it refuses non-root use, a different install ID, or unexpected event-node
+  names;
+- it opens only `/dev/input/event7` and takes no exclusive input grab;
+- it queries and follows only `BTN_TOOL_PEN` and `BTN_TOOL_RUBBER` state;
+- it discards all other packets without logging coordinates, pressure, strokes,
+  or touch activity;
+- it writes `0` only to the exact validated touchscreen `enabled` control while
+  a tool is in proximity; and
+- it writes `1` on proximity-out and in its ordinary-exit cleanup path.
+
+The startup script uses a lock/process-name guard to avoid duplicate instances.
+An administrator can opt out with `/etc/t630/pen-touch-guard.disabled`.
+
+The owner then repeated the pen-plus-palm check and confirmed: **palm rejection
+is working**. At the subsequent state check the pen was away, the guard remained
+running, and touch was enabled (`1`).
+
+An orderly restart then verified automatic startup of the guard alongside
+Weston and nested GNOME. Both udev records retained the shared device group, the
+touchscreen started enabled while the pen was away, tracked/live helper hashes
+matched, and Xournal++ reopened normally. The owner repeated the physical test
+in that restarted session and confirmed palm rejection still works.
+
 ## Remaining physical gate
 
-Bring the pen into proximity first, then rest and move the palm while drawing;
-the page must remain fixed. After moving the pen out of proximity, deliberate
-finger scrolling must work again. This report does not mark that gate passed
-until the owner confirms both.
+Palm movement during pen input now passes before and after restart. Deliberate
+finger scrolling after the pen leaves proximity remains a bounded acceptance
+check. Extended rotation, suspend/resume, and long-session behavior remain
+separate gates.

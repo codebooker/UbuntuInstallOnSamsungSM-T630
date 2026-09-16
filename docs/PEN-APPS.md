@@ -66,12 +66,22 @@ optional X11-wide device disabler is not. The tablet default is therefore:
 The live owner profile has this setting and Xournal++ was reopened with it on
 2026-09-16. The owner then confirmed that a palm could still move the page.
 
-The hardware-level cause is that udev gave `sec_touchscreen` and `sec_e-pen`
-different `LIBINPUT_DEVICE_GROUP` values. Libinput uses that group to associate
-the integrated touch surface with its pen and suppress touch while the tool is
-in proximity. `99-t630-input.rules` now assigns both exact SM-T630 devices the
-shared group `t630-integrated-pen-touch`. After an orderly restart, both udev
-records report that group and Xournal++ is open for a second physical trial.
+Udev initially gave `sec_touchscreen` and `sec_e-pen` different
+`LIBINPUT_DEVICE_GROUP` values. `99-t630-input.rules` now assigns both exact
+SM-T630 devices the shared group `t630-integrated-pen-touch`. That enables
+libinput arbitration, but its partial palm-side region was still wrong for this
+tablet: the owner reported that writing with a resting palm made the page scroll
+and behave erratically.
+
+The accepted path is `/usr/local/sbin/t630-pen-touch-guard`. It reads only the
+tool-in-proximity key state from the exact `sec_e-pen` event node, without an
+exclusive input grab. While the S Pen is in range it changes the exact
+`sec_touchscreen` input device's `enabled` control to `0`; on proximity-out and
+every ordinary exit it restores `1`. Coordinates, pressure, handwriting, and
+touch events are neither logged nor retained. The owner confirms palm rejection
+works, including after an orderly restart. The root guard, Weston, GNOME, and
+Xournal++ all started automatically; the touchscreen was enabled while the pen
+was away.
 See the [palm-rejection report](reports/xournal-palm-rejection-20260916.md).
 
 ## Ubuntu 24.04 first-stroke crash workaround

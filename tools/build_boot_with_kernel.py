@@ -11,7 +11,12 @@ from pathlib import Path
 
 from build_boot_test import PARTITION_SIZE, ROOT, TOOLS, run, sha
 
-SOURCE_BOOT_SHA256 = "297cf31e5914ff6a17d1e1d6499d2af2a493022c56336978b76e61e14b9c910a"
+ACCEPTED_SOURCE_BOOTS = {
+    "output/persistent-v1/boot.img":
+        "297cf31e5914ff6a17d1e1d6499d2af2a493022c56336978b76e61e14b9c910a",
+    "output/release-boot-v12-charger-guard/boot.img":
+        "a7bde8259ab09b8238e0a1c8871e94422c3a6eb29e95ff8218e2de1746cd2e28",
+}
 KERNEL_RELEASE = b"5.4.274-qgki-31225846-abT630XXSBDZE3"
 
 
@@ -23,15 +28,24 @@ def main() -> int:
         "--purpose",
         default="Enable the H4 and Qualcomm IBS-aware Bluetooth UART transports",
     )
+    parser.add_argument(
+        "--module-manifest", type=Path,
+        help="audited coherent-module manifest to bind to this boot artifact",
+    )
+    parser.add_argument(
+        "--source-boot", choices=sorted(ACCEPTED_SOURCE_BOOTS),
+        default="output/persistent-v1/boot.img",
+        help="pinned, previously accepted ramdisk/boot metadata source",
+    )
     args = parser.parse_args()
 
     kernel = args.kernel.resolve()
-    source_boot = ROOT / "output/persistent-v1/boot.img"
+    source_boot = ROOT / args.source_boot
     output = ROOT / "output" / args.name
     if output.exists():
         raise SystemExit(f"refusing to overwrite existing output: {output}")
 
-    if sha(source_boot.read_bytes()) != SOURCE_BOOT_SHA256:
+    if sha(source_boot.read_bytes()) != ACCEPTED_SOURCE_BOOTS[args.source_boot]:
         raise ValueError("the proven persistent boot image does not match its pinned hash")
 
     kernel_bytes = kernel.read_bytes()
@@ -41,6 +55,17 @@ def main() -> int:
         raise ValueError("kernel is not an uncompressed arm64 Image")
     if KERNEL_RELEASE not in kernel_bytes:
         raise ValueError("kernel does not contain the exact SM-T630 release string")
+
+    module_manifest = None
+    module_manifest_bytes = None
+    if args.module_manifest:
+        module_manifest_bytes = args.module_manifest.read_bytes()
+        module_manifest = json.loads(module_manifest_bytes)
+        if (module_manifest.get("device") != "SM-T630"
+                or module_manifest.get("firmware") != "T630XXSBDZE3"
+                or module_manifest.get("kernel_release") != KERNEL_RELEASE.decode()
+                or module_manifest.get("coherent_module_count", 0) < 50):
+            raise ValueError("module manifest does not match this boot artifact")
 
     output.mkdir(parents=True)
 
@@ -113,6 +138,15 @@ def main() -> int:
         "avb_verification": verification.strip(),
         "device_writes": "none; this builder only creates local artifacts",
     }
+    if module_manifest_bytes is not None:
+        copied_manifest = output / "module-payload-manifest.json"
+        copied_manifest.write_bytes(module_manifest_bytes)
+        manifest.update({
+            "module_payload_manifest_sha256": sha(module_manifest_bytes),
+            "module_symvers_sha256": module_manifest["module_symvers_sha256"],
+            "coherent_module_count": module_manifest["coherent_module_count"],
+            "omitted_unused_modules": module_manifest["omitted_unused_modules"],
+        })
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(json.dumps(manifest, indent=2))
     return 0

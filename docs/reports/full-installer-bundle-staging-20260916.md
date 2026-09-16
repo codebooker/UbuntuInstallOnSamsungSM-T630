@@ -66,3 +66,26 @@ than requiring a later manual app install.
 The separate typed authorization path has not been invoked. A full userdata
 format, archive extraction, normal end-user first boot, and stock-return
 rehearsal remain intentionally distinct destructive acceptance gates.
+
+## Release-base 0.1.16 refresh
+
+After the Waydroid host integration was packaged, the native base lock advanced
+to 0.1.16 and desktop runtime 0.1.7. The previously booted rehearsal directory
+correctly failed the identity audit because it now contains the physical test
+owner. It was not reused. Instead, the prior sealed ownerless archive was
+extracted into a new isolated root, upgraded with the two exact packages, and
+passed the complete identity, `dpkg`, application, native-linkage, and
+mount-leak checks again.
+
+The refreshed private root archive has 84,589 members, is 1,230,162,607 bytes,
+and has SHA-256
+`a1dfc6512c637ca5c206f628d10d10a0f94d90ab5ce83a6ab386ec15307d432c`.
+Its manifest records release-base 0.1.16 and desktop runtime 0.1.7. The recovery
+runtime remained byte-identical at SHA-256
+`7218e2b2e87b9e55119e128e8ac68d492e223feef9710b1ed3da76aecdeb17f7`.
+The complete bundle was resealed and independently verified, then the local
+tablet stager copied it into bounded recovery RAM and reverified every covered
+file. The staging tmpfs was cleanly unmounted and removed afterward. Because
+the development tablet now runs the v13 Waydroid kernel while the clean native
+installer deliberately retains the module-compatible accepted v12 pair, the
+0.1.16 unmounted device gate was not conflated with that separate kernel trial.

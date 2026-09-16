@@ -1,0 +1,49 @@
+#!/bin/sh
+# Start Waydroid's LXC monitor from the outer boot mount namespace.
+#
+# Ubuntu itself is a chroot below /run/ubuntu.  Starting LXC from that chroot
+# leaves Android's inherited file descriptors visible as /run/ubuntu/... even
+# after pivot_root, and Android 13's zygote correctly rejects those paths.  The
+# outer namespace has a real / root, so expose the Ubuntu runtime there in a
+# private mount namespace and let unmodified LXC perform its normal pivot.
+set -eu
+
+is_waydroid=0
+previous=
+for argument in "$@"; do
+    if [ "$previous" = -n ] && [ "$argument" = waydroid ]; then
+        is_waydroid=1
+    fi
+    previous=$argument
+done
+
+if [ "$is_waydroid" != 1 ]; then
+    exec /usr/bin/lxc-start "$@"
+fi
+
+test "$(id -u)" = 0
+test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
+test "$(tr '\0' ' ' </proc/1/cmdline)" = '/bin/busybox sh /init nohyp_uart '
+test -x /proc/1/root/bin/busybox
+test -d /proc/1/root/run/ubuntu
+
+outer_script='
+set -eu
+test -x /bin/busybox
+test -d /run/ubuntu
+mount --make-rslave /
+mkdir -p /ubuntu /usr /var /home /opt
+# This must be recursive: /proc, /dev, /sys and /run are mounts nested below
+# the Ubuntu root.  A plain bind exposes only their empty backing directories,
+# which makes LXC unable to inspect /proc/self/fd or /proc/self/task.
+mount --rbind /run/ubuntu /ubuntu
+for path in usr var home opt etc lib dev proc sys; do
+    mount --rbind "/ubuntu/$path" "/$path"
+done
+# Keep /run until last because it contains the stable /ubuntu source mount.
+mount --rbind /ubuntu/run /run
+exec /usr/bin/lxc-start "$@"
+'
+
+exec /usr/bin/nsenter --target 1 --mount --root=/proc/1/root --wd=/ \
+    /bin/unshare -m /bin/sh -c "$outer_script" t630-waydroid-lxc-start "$@"

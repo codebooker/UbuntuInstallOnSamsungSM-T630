@@ -87,7 +87,7 @@
    byte-for-byte. Writable camera state regenerates without a seed.
    The 2026-09-16 package refresh also removed stale exact dependencies left by
    incremental development. Component packages use compatible minimum versions,
-   while `t630-release-base` 0.1.15 remains the single exact-version lock for a
+   while `t630-release-base` 0.1.16 remains the single exact-version lock for a
    release. The live personalized root now passes `dpkg --audit` and
    `apt-get check` after a clean reboot; the login runtime rebuild is
    byte-identical. See the
@@ -210,15 +210,27 @@ terminal from the normal path.
 
 ## Android applications
 
-The reference Tab S9 Ultra project uses Waydroid with an ARM64-only LineageOS
-image. The SM-T630 already exposes binderfs, binder/hwbinder/vndbinder, ashmem,
-overlayfs, cgroups, veth, bridge, and built-in IPv4 Netfilter/NAT support. Its
-current Samsung 5.4 configuration lacks PID, IPC, and user namespaces, two cgroup
-controllers, the Xtables CHECKSUM target, and the System V IPC dependency.
+Waydroid 1.6.2 now runs an official ARM64-only LineageOS 20 / Android 13
+VANILLA image on the physical tablet. The coherent v13 kernel/module payload
+keeps the stock release string and matches all 13,709 audited symbol CRCs. It
+passed native boot, Wi-Fi, touch, S Pen, display, sound, sensors, camera,
+charging, suspend, reboot, and orderly-unmount regressions before Android was
+enabled.
 
-An isolation build proved that enabling the missing namespace and cgroup
-features changes the module-version ABI. All 235 audited stock modules are
-affected, so a boot-image-only Waydroid kernel is not a viable release path.
-Android work is deferred until the native Ubuntu installation is complete and
-the project can build and validate a coherent kernel plus matching module
-payload. No Android image should be installed before that gate passes.
+This port's Ubuntu filesystem is a chroot below the recovery-hosted root. A
+normal Waydroid launch therefore exposed inherited trace descriptors as
+`/run/ubuntu/sys/...`, which Android 13 correctly rejected. The packaged
+launcher creates a private outer-root mount namespace, recursively exposes the
+Ubuntu runtime there, and lets unmodified LXC perform its normal pivot. Android
+then sees canonical `/sys/kernel/tracing/trace_marker` descriptors and reaches
+`sys.boot_completed=1`. The nested GNOME socket is selected per owner, Android
+networking works, and F-Droid 1.23.2 installs, persists across restarts, and
+launches from the GNOME app grid.
+
+The remaining Android work is release engineering rather than basic bring-up:
+bundle or fetch Waydroid's external Ubuntu packages and official images in the
+installer, exercise longer suspend/rotation/input sessions, and decide whether
+clipboard sharing can be added without weakening the locked-session boundary.
+Until those dependencies are sealed, `t630-waydroid-runtime` remains an
+optional post-install package rather than a dependency of the offline native
+base. See [WAYDROID.md](WAYDROID.md).

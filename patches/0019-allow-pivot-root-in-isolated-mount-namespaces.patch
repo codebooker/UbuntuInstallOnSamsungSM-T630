@@ -1,0 +1,21 @@
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 1ef1f17a5..1d8ef4077 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -4142,7 +4142,15 @@ SYSCALL_DEFINE2(pivot_root, const char __user *, new_root,
+ 	if (!check_mnt(root_mnt) || !check_mnt(new_mnt))
+ 		goto out4;
+ #ifdef CONFIG_KDP_NS
+-	if (((struct kdp_mount *)new_mnt)->mnt->mnt_flags & MNT_LOCKED)
++	/*
++	 * Samsung KDP marks mounts locked even after CLONE_NEWNS.  Keep the
++	 * initial namespace protected, but permit a privileged container runtime
++	 * to pivot a root that exists only in its isolated mount namespace.
++	 * Without this, LXC falls back to chroot and Android's zygote observes
++	 * host-prefixed /proc/self/fd paths, which its FD allowlist rejects.
++	 */
++	if ((((struct kdp_mount *)new_mnt)->mnt->mnt_flags & MNT_LOCKED) &&
++	    current->nsproxy->mnt_ns == init_task.nsproxy->mnt_ns)
+ #else
+ 	if (new_mnt->mnt.mnt_flags & MNT_LOCKED)
+ #endif

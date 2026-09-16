@@ -1,0 +1,26 @@
+#!/bin/sh
+# Give Waydroid commands launched by GNOME the nested compositor environment.
+set -eu
+
+real=/usr/bin/waydroid
+test -x "$real"
+
+# Root-side container management must retain its deliberately sparse boot
+# environment.  Only owner applications need the nested GNOME socket fixup.
+if [ "$(id -u)" = 0 ]; then
+    exec "$real" "$@"
+fi
+
+test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
+owner=$(cat /etc/t630/owner)
+test -n "$owner"
+test "$(id -un)" = "$owner"
+owner_uid=$(id -u "$owner")
+test "$owner_uid" -ge 1000
+runtime=/run/user/$owner_uid
+test -S "$runtime/t630-gnome-0"
+export XDG_RUNTIME_DIR=$runtime
+export XDG_SESSION_TYPE=wayland
+export WAYLAND_DISPLAY=t630-gnome-0
+
+exec "$real" "$@"

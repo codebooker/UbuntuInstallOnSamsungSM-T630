@@ -50,6 +50,33 @@ else
     test "$root" = /run/ubuntu/opt/t630/rehearsal/release-root
     test "$(cat "$root/.t630-offline-root")" = 'SM-T630 OFFLINE RELEASE ROOT'
 fi
+# Waydroid's LXC monitor enters the outer root in a private mount namespace,
+# so it is intentionally not caught by the ordinary "process rooted in
+# Ubuntu" sweep below. Ask both Waydroid coordinators to exit first, then
+# require LXC to reach STOPPED; never leave Android alive across an Ubuntu
+# unmount.
+for proc in /proc/[0-9]*; do
+    [ "$(readlink "$proc/root" 2>/dev/null || true)" = "$root" ] || continue
+    command=$(tr '\0' ' ' <"$proc/cmdline" 2>/dev/null || true)
+    case "$command" in
+        '/usr/bin/python3 /usr/bin/waydroid --details-to-stdout container start '|\
+        '/usr/bin/python3 /usr/bin/waydroid --details-to-stdout session start ')
+            kill -TERM "${proc##*/}" 2>/dev/null || true
+            ;;
+    esac
+done
+if [ -x "$root/usr/bin/lxc-info" ]; then
+    attempt=0
+    while [ "$(chroot "$root" /usr/bin/lxc-info -P /var/lib/waydroid/lxc -n waydroid -sH 2>/dev/null || true)" = RUNNING ]; do
+        attempt=$((attempt + 1))
+        if [ "$attempt" -ge 20 ]; then
+            chroot "$root" /usr/bin/lxc-stop -P /var/lib/waydroid/lxc -n waydroid -t 20
+            break
+        fi
+        sleep 1
+    done
+    test "$(chroot "$root" /usr/bin/lxc-info -P /var/lib/waydroid/lxc -n waydroid -sH 2>/dev/null || true)" != RUNNING
+fi
 for name in sshd t630-screen gdm gdm3 elogind weston-terminal weston weston-keyboard NetworkManager wpa_supplicant chronyd seatd systemd-udevd dbus-daemon; do
     chroot "$root" /usr/bin/pkill -TERM -x "$name" || true
 done
@@ -77,6 +104,24 @@ while :; do
     sleep 1
 done
 sync
+# Waydroid normally removes these when its container coordinator exits. The
+# explicit loops make shutdown deterministic after an interrupted or failed
+# Android launch as well.
+for suffix in /var/lib/waydroid/rootfs/vendor/waydroid.prop \
+              /var/lib/waydroid/rootfs/vendor \
+              /var/lib/waydroid/rootfs; do
+    target=$root$suffix
+    attempt=0
+    while grep -q " $target " /proc/mounts; do
+        if umount "$target"; then continue; fi
+        attempt=$((attempt + 1))
+        if [ "$attempt" -ge 10 ]; then
+            echo "Waydroid mount still busy: $target; refusing forced restart."
+            exit 1
+        fi
+        sleep 1
+    done
+done
 # Camera development adds read-only Android compatibility mounts inside the
 # Ubuntu root. Tear those down from deepest to shallowest before unmounting
 # Ubuntu itself; never use lazy or forced unmounts here.
@@ -101,7 +146,11 @@ done
 for suffix in "/run/user/$owner_uid/doc" "/run/user/$owner_uid/gvfs" \
               /run/user/105/doc /run/user/105/gvfs \
               "/run/user/$owner_uid" /run/user/105 \
-              /sys/fs/cgroup/elogind /sys/fs/cgroup \
+              /sys/fs/cgroup/pids /sys/fs/cgroup/freezer \
+              /sys/fs/cgroup/devices /sys/fs/cgroup/memory \
+              /sys/fs/cgroup/blkio /sys/fs/cgroup/cpu_cpuacct \
+              /sys/fs/cgroup/cpuset /sys/fs/cgroup/elogind \
+              /sys/fs/cgroup /dev/binderfs \
               /dev/shm /dev/pts /dev /proc /sys /run; do
     target=$root$suffix
     attempt=0

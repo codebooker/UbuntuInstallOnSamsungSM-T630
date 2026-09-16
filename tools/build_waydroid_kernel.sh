@@ -56,7 +56,7 @@ printf '%s  %s\n' \
     eaac1d30d0f595a9cc160a8555d7b8ec7c9d3dc376eb8e6d29ecc3271ac029a2 \
     "$source_tree/include/uapi/linux/netfilter/xt_mark.h" | sha256sum -c -
 
-for patch in "$repo"/patches/00{01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18}-*.patch; do
+for patch in "$repo"/patches/00{01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19}-*.patch; do
     test -f "$patch"
     patch -d "$source_tree" -p1 --forward --batch --dry-run < "$patch"
     patch -d "$source_tree" -p1 --forward --batch < "$patch"

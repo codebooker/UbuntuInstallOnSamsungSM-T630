@@ -62,6 +62,13 @@ class RemoteAccessTests(unittest.TestCase):
         self.assertIn('journal=/run/ubuntu/.t630-last-system-action', helper)
         self.assertIn('system_action_stage starting', helper)
         self.assertIn('system_action_stage ready-to-unmount', helper)
+        self.assertIn("/usr/bin/lxc-info", helper)
+        self.assertIn("/usr/bin/lxc-stop", helper)
+        self.assertIn("/var/lib/waydroid/rootfs/vendor/waydroid.prop", helper)
+        self.assertIn("/sys/fs/cgroup/cpu_cpuacct", helper)
+        self.assertIn("/dev/binderfs", helper)
+        self.assertLess(helper.index("/var/lib/waydroid/rootfs/vendor/waydroid.prop"),
+                        helper.index("/mnt/stock-vendor-full/lib64/hw"))
         self.assertIn('system_action_stage() {\n    stage=$1\n    (', helper)
         self.assertLess(helper.index('system_action_stage ready-to-unmount'),
                         helper.index('umount /run/ubuntu'))

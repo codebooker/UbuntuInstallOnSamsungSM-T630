@@ -224,7 +224,7 @@ separately:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_desktop_runtime_deb.py
 ```
 
-This creates `output/t630-desktop-runtime_0.1.6_all.deb`. It depends on the
+This creates `output/t630-desktop-runtime_0.1.7_all.deb`. It depends on the
 matching first-boot package and contains the desktop launcher, login/session
 glue, input mappings, rotation, display controls, guarded suspend, and Tablet
 Controls extension source. It also depends on GNOME Settings, supplies the
@@ -409,7 +409,7 @@ release-set metapackage:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_release_meta_deb.py
 ```
 
-This creates `output/t630-release-base_0.1.15_arm64.deb`. It contains no device
+This creates `output/t630-release-base_0.1.16_arm64.deb`. It contains no device
 payload; its exact-version dependencies prevent a fresh root from mixing
 incompatible first-boot, desktop, hardware, login, native, sensor, pd-mapper,
 camera, or DZE3 stock-asset revisions. The camera package's redistributable
@@ -554,6 +554,15 @@ rootfs archive. After the normal session was stopped and userdata was genuinely
 unmounted, `install_staged_release.sh --check` also passed its protected-
 partition and isolated-runtime checks without formatting or writing storage.
 
+Release-base 0.1.16 was subsequently refreshed from that identity-clean seal,
+not from the now-personalized rehearsal root. The refreshed root passed the
+complete audit/checker, produced a 1,230,162,607-byte archive with SHA-256
+`a1dfc6512c637ca5c206f628d10d10a0f94d90ab5ce83a6ab386ec15307d432c`,
+and was sealed with the same accepted v12 BOOT. The tablet-local stager copied
+that exact bundle to bounded RAM and reverified every checksum, then the RAM
+copy was unmounted and removed. Its unmounted read-only device check remains a
+separate gate before destructive acceptance.
+
 The destructive command exists for the eventual physical clean-install
 rehearsal, but that rehearsal has **not** happened yet:
 
@@ -565,7 +574,7 @@ It first repeats the tablet-side read-only check, then requires the operator to
 type `ERASE SM-T630 USERDATA` exactly. Only then does it create a one-time RAM
 token and invoke `--apply`. Apply formats only validated `sda34`, extracts with
 numeric ownership, ACLs, and xattrs, rejects identity/account/network leakage,
-requires `t630-release-base` 0.1.15, unmounts, and runs read-only `e2fsck`.
+requires `t630-release-base` 0.1.16, unmounts, and runs read-only `e2fsck`.
 Failures after format stay in recovery with the bundle available for diagnosis;
 the same boot cannot silently retry. Success still requires an explicit reboot.
 It never writes BOOT or another partition.

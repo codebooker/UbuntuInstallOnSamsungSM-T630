@@ -1,0 +1,67 @@
+#!/bin/sh
+# Prepare the non-systemd SM-T630 host for an on-demand Waydroid session.
+set -eu
+
+# This helper is started by the recovery-hosted Weston process, whose minimal
+# PATH is intentionally /bin:/sbin. Waydroid invokes `lxc-start` by name, so
+# put the guarded /usr/local launcher ahead of Ubuntu's stock binary.
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+test "$(id -u)" = 0
+test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
+test "$(uname -r)" = 5.4.274-qgki-31225846-abT630XXSBDZE3
+test -x /usr/bin/waydroid
+test -x /usr/bin/lxc-start
+test -x /usr/local/bin/lxc-start
+test "$(command -v lxc-start)" = /usr/local/bin/lxc-start
+
+is_mounted() {
+    awk -v target="$1" '$2 == target { found=1 } END { exit !found }' /proc/mounts
+}
+
+# elogind owns its named hierarchy.  Waydroid/LXC additionally needs these
+# legacy v1 controllers on this 5.4 Android kernel.  Each fixed mount is easy
+# to audit and can be torn down deterministically by stop-ubuntu.
+for specification in \
+    cpuset:cpuset \
+    cpu_cpuacct:cpu,cpuacct \
+    blkio:blkio \
+    memory:memory \
+    devices:devices \
+    freezer:freezer \
+    pids:pids
+do
+    directory=${specification%%:*}
+    controllers=${specification#*:}
+    target=/sys/fs/cgroup/$directory
+    mkdir -p "$target"
+    if ! is_mounted "$target"; then
+        mount -t cgroup -o "$controllers" cgroup "$target"
+    fi
+done
+
+mkdir -p /dev/binderfs
+if ! is_mounted /dev/binderfs; then
+    mount -t binder binder /dev/binderfs
+fi
+test -c /dev/binderfs/binder-control
+for name in binder hwbinder vndbinder; do
+    if [ ! -c "/dev/binderfs/$name" ]; then
+        printf '%s\n' "$name" >/dev/binderfs/binder-control
+    fi
+    test -c "/dev/binderfs/$name"
+    chmod 0666 "/dev/binderfs/$name"
+    if [ -e "/dev/$name" ] || [ -L "/dev/$name" ]; then
+        test -L "/dev/$name"
+        test "$(readlink "/dev/$name")" = "/dev/binderfs/$name"
+    else
+        ln -s "/dev/binderfs/$name" "/dev/$name"
+    fi
+done
+
+# The root service is only a lightweight D-Bus coordinator until the owner
+# selects Waydroid.  Android and its memory footprint remain off by default.
+if ! pgrep -u root -f '^/usr/bin/python3 /usr/bin/waydroid --details-to-stdout container start$' >/dev/null; then
+    nohup /usr/bin/waydroid --details-to-stdout container start \
+        </dev/null >/var/log/t630-waydroid-container.log 2>&1 &
+fi

@@ -56,14 +56,81 @@ modules with the modified kernel; major drivers also contain many additional
 symbol mismatches.
 
 The stock module payload must never be force-loaded and its CRCs must never be
-patched. The historical v9 writer now fails closed. Android support is deferred
-until the project can produce one coherent Image and matching module payload,
-including the external Qualcomm WLAN/CNSS stack, then pass the complete native
-Ubuntu hardware regression suite. No Waydroid image or Google account has been
-installed.
+patched. The historical v9 writer now fails closed.
+
+## Exact Qualcomm WLAN source and first coherent external build
+
+The public manifest for Qualcomm release
+`LA.UM.9.14.r1-19400-LAHAINA.QSSI13.0` identifies the same
+`2.0.8.28B` WLAN driver family found in the DZE3 stock module. It pins three
+CodeLinaro repositories:
+
+- `qcacld-3.0` at `4e15799e1f443577a9a102bc0c9564259e502b03`;
+- `qca-wifi-host-cmn` at `0904701ee8ae065bbc920c7d5a2a11c0c645ebaa`;
+- `fw-api` at `2b58351f875928929af63aa548fa0b84f3050587`.
+
+The initial checkout had accidentally used the qcacld revision for
+`qca-wifi-host-cmn`; using the manifest's independent host-common revision
+restored the expected QDF headers. The exact source then compiled and linked
+with Clang LTO against the full Waydroid-capable kernel configuration.
+
+An additional Android-kernel build trap was found during the ABI audit. This
+5.4 build's external-module `modpost` reads both `Module.symvers` and any
+`vmlinux` left in the output directory. A stale diagnostic `vmlinux` silently
+overrode the correct full-build CRCs despite an exact `vermagic`. The new WLAN
+builder temporarily hides that file, treats the completed `Module.symvers` as
+the sole ABI authority, restores `vmlinux` on every exit, and then runs a
+read-only ELF audit. The audit tool parses `.ko` sections directly; unlike
+`objcopy --dump-section` without an output path, it cannot rewrite the input
+module while inspecting it.
+
+The resulting stripped private module is 14,755,144 bytes with SHA-256
+`ed4f8bbe62a83e8b3935fe330e5588fdc34a5c63008dc2686e49b22757432060`.
+It reports the exact release
+`5.4.274-qgki-31225846-abT630XXSBDZE3`, the same four CNSS dependencies as the
+stock module, and 477 imported symbols. All 477 exist in the full Waydroid
+kernel's `Module.symvers`, and all 477 CRCs match. Relative to the original
+stock WLAN module, 477 imports are common, 229 retain the same CRC, 248 differ
+as expected for the new kernel ABI, and the stock module alone imports
+`cnss_sysfs_get_pm_info`, `cnss_sysfs_update_driver_status`, and `kmemdup`.
+
+At this point this was an offline feasibility artifact, not a module installed
+on the tablet. The remaining gate was a complete coherent replacement payload
+for every module required at boot, followed by a guarded native Ubuntu
+regression boot.
+
+## Physical v13 and Android acceptance (2026-09-16)
+
+The closure work subsequently produced 99 required external modules. The final
+v13 image preserves the exact stock release string, and the audit matched all
+13,709 imported symbol CRCs. The staged BOOT image has SHA-256
+`1403afb30d584418ea6bfc011317f33bf8073294eae355d0c05d8d61c7355e76`;
+its kernel payload has SHA-256
+`49b648801a751be9761bd8b2b24e9833964acbb06741d87f7db384dd2d36845d`.
+It completed the guarded native regression sequence before Android userspace
+was installed.
+
+Waydroid 1.6.2 now boots the official ARM64 VANILLA LineageOS 20 / Android 13
+images to `sys.boot_completed=1`. Because Ubuntu itself is a chroot below the
+recovery-hosted root, the first ordinary LXC start leaked inherited trace
+descriptors named below `/run/ubuntu`; Android's zygote rejected them. The
+packaged outer-root/private-mount-namespace launcher fixes that boundary while
+leaving LXC's own pivot unchanged. The stable `system_server` trace descriptors
+resolve to `/sys/kernel/tracing/trace_marker`, the LXC monitor root is `/`, and
+the nested GNOME session uses `t630-gnome-0`.
+
+Android networking and orderly container teardown pass. F-Droid 1.23.2 was
+installed from its canonical site, persisted across a clean session restart,
+and launches through its generated GNOME app-grid entry. No Google services or
+Google account were installed. The reproducible device integration is packaged
+as `t630-waydroid-runtime` 0.1.4; external Waydroid packages and Android images
+remain an optional post-install boundary documented in [WAYDROID.md](../WAYDROID.md).
 
 Primary references:
 
 - [Waydroid overview and namespace model](https://docs.waydro.id/)
 - [Waydroid Ubuntu installation](https://docs.waydro.id/usage/install-on-desktops)
 - [Tab S9 Ultra Waydroid validation](https://github.com/agcarbajo/ubuntu-galaxy-tab-s9-ultra/blob/bb55ceb87b61db7629c0820101ce7884ff8d987b/docs/waydroid.md)
+- [CodeLinaro qcacld-3.0 source](https://git.codelinaro.org/clo/la/platform/vendor/qcom-opensource/wlan/qcacld-3.0)
+- [CodeLinaro qca-wifi-host-cmn source](https://git.codelinaro.org/clo/la/platform/vendor/qcom-opensource/wlan/qca-wifi-host-cmn)
+- [CodeLinaro fw-api source](https://git.codelinaro.org/clo/la/platform/vendor/qcom-opensource/wlan/fw-api)

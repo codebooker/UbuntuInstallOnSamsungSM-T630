@@ -36,7 +36,7 @@ full-screen GNOME desktop from internal storage.
 | Browser video acceleration | WebKit hardware selection verified; safe launcher blocked by the stock kernel's missing user-namespace support |
 | Cameras | Front and rear GNOME previews work at 720×480; rear exposure, autofocus, tone, and live color adjustment work; HD Snapshot and flash remain |
 | First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow and packaged GDM password login implemented; full private bundle and unmounted read-only device gate passed, destructive clean-install acceptance remains |
-| Android applications | Deferred until all native Ubuntu and installer work is complete; current kernel-only approach is ABI-incompatible with Samsung modules |
+| Android applications | Working experimentally through Waydroid 1.6.2 / Android 13; F-Droid and Android networking verified |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).
 
@@ -63,10 +63,12 @@ be treated as a porting task, not as a reason to remove those checks.
 4. Read the current [camera bring-up notes](docs/CAMERA.md) for that experimental stack.
 5. Use the chronological [bring-up reports](docs/reports/) for measurements,
    regressions, and recovery details.
-6. See the [completion roadmap](docs/ROADMAP.md) for the end-user installer and
-   the deliberately deferred Android-app work.
+6. See the [completion roadmap](docs/ROADMAP.md) for the remaining end-user
+   installer work.
 7. See [pen apps](docs/PEN-APPS.md) and [opt-in remote access](docs/REMOTE-ACCESS.md)
    for the clean installation's current application and network-access recipes.
+8. See [Waydroid](docs/WAYDROID.md) for the verified Android 13 integration and
+   its intentionally separate, optional installation step.
 
 The repository can reproduce the conservative diagnostic image, the physically
 accepted persistent boot image, and a private identity-clean release-root

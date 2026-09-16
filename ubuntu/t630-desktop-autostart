@@ -92,6 +92,10 @@ fi
 if [ -x /usr/local/sbin/t630-sensors-start ] && [ ! -e /etc/t630/sensors.disabled ]; then
     nohup /usr/local/sbin/t630-sensors-start </dev/null >>/var/log/t630-sensors-start.log 2>&1 &
 fi
+if [ -x /usr/local/sbin/t630-waydroid-prepare ] && [ ! -e /etc/t630/waydroid.disabled ]; then
+    nohup /usr/local/sbin/t630-waydroid-prepare </dev/null \
+        >>/var/log/t630-waydroid-prepare.log 2>&1 &
+fi
 gpu_renderer=0
 if [ -f /etc/t630/gpu.enabled ]; then
     gpu_renderer=1

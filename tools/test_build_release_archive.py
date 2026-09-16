@@ -43,7 +43,7 @@ class ReleaseArchiveTests(unittest.TestCase):
         temporary, root = self.root()
         try:
             status = root / "var/lib/dpkg/status"
-            status.write_text(status.read_text().replace("Version: 0.1.15", "Version: 0.1.14"))
+            status.write_text(status.read_text().replace("Version: 0.1.16", "Version: 0.1.15"))
             with self.assertRaisesRegex(ValueError, "version mismatch"):
                 subject.validate_installed_root(root)
         finally:

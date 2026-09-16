@@ -322,6 +322,49 @@ priority unchanged, and restores scheduling afterward. Metrics are reset at
 the phase boundary. This is not a normal-launcher change or an accepted fix;
 physical comparison remains pending.
 
+The initial timed comparison was inconclusive: the baseline received strokes,
+but the owner paused before the high-idle phase, which received zero pen or
+stroke samples. Its priority restored to 200 and no conclusion was drawn. The
+harness was corrected to wait for the first positive-pressure painting event,
+and the owner's preferences/autosaves were preserved before replacing only the
+verified diagnostic client.
+
+That corrected control run measured:
+
+| Default-idle measurement | Samples | Median | p95 | Maximum |
+| --- | ---: | ---: | ---: | ---: |
+| Pen delivery age | 5,282 | 31 ms | 68 ms | 467 ms |
+| Positive-pressure queued stroke age | 5,253 | 7,405 ms | 11,404 ms | 11,685 ms |
+| Stroke callback | 5,289 | 1.248 ms | 12.342 ms | 102.344 ms |
+| Canvas draw callback | 339 | 25.042 ms | 31.995 ms | 84.235 ms |
+
+The next client held priority 100 for its entire process lifetime, removing the
+timing-window problem. It reported identical selected brush base values and:
+
+| High-idle measurement | Samples | Median | p95 | Maximum |
+| --- | ---: | ---: | ---: | ---: |
+| Pen delivery age | 5,399 | 26 ms | 58 ms | 160 ms |
+| Positive-pressure queued stroke age | 4,724 | 41 ms | 81 ms | 180 ms |
+| Stroke callback | 5,434 | 0.262 ms | 2.035 ms | 21.111 ms |
+| Canvas draw callback | 204 | 23.949 ms | 28.577 ms | 92.208 ms |
+
+This confirms that continuous GTK redraw work was starving MyPaint's
+default-idle stroke processor on this desktop. `ubuntu/t630-mypaint.py` now
+sets only the exact-version app's stroke class to GLib high-idle before startup.
+It verifies the original value 200 and GLib values 200/100, changes no input
+priority, and refuses an unexpected contract. Diagnostics opt out so control
+runs remain controls. Unit/integration tests and the full 315-test suite pass.
+
+The adapter was installed atomically with SHA-256
+`5a5b1836b37e4e62ad24307347177b4641282c46f2043851507543ce84f4e13d`.
+The original helper is retained beside it with SHA-256
+`e1d09ee8d3fb3c2404b532479c4b27c12a50929c86ec4f8f0192a09bfb078f0c`.
+MyPaint package files, the global GTK scheduler, the input stack, pressure
+curve, documents and normal startup for other applications were unchanged.
+The steady test exercised the same priority and has since been closed. A normal
+relaunch gets the setting from the installed adapter. Subjective feel and an
+extended session remain separate acceptance gates.
+
 ## Hover-out source boundary
 
 The exact installed Ubuntu Xwayland source `2:23.2.6-1ubuntu0.8` was downloaded

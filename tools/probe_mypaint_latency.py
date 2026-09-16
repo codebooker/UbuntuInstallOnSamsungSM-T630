@@ -2,9 +2,12 @@
 """Attended MyPaint timing probe: aggregate timings, never handwriting.
 
 Wraps only this process's handlers, preserving arguments/results/exceptions.
-After 90 seconds restores the handlers without closing or saving the app.
+Starts on the first painting event. After 90 seconds restores the handlers
+without closing or saving the app; waiting times out after five minutes.
 No package edits, input injection, or pressure adjustment. An explicit queue
 trial temporarily changes only this app's idle scheduling, then restores it.
+The separate high-idle-only trial keeps it active until this process closes;
+it never changes the normal launcher or installed package.
 """
 import os
 import argparse
@@ -54,9 +57,11 @@ def main():
                         help='Also profile the first 1000 stroke callbacks; changes timing overhead')
     parser.add_argument('--queue-priority-trial', action='store_true',
                         help='35s baseline, then high-idle queue scheduling until 90s; restores afterward')
+    parser.add_argument('--high-idle-only', action='store_true',
+                        help='Keep high-idle scheduling in this process until it closes; no normal-launcher change')
     args = parser.parse_args()
-    if args.profile_strokes and args.queue_priority_trial:
-        parser.error('Run profiling and the queue-priority comparison separately.')
+    if sum((args.profile_strokes, args.queue_priority_trial, args.high_idle_only)) > 1:
+        parser.error('Run profiling and each scheduling trial separately.')
     if os.getuid() == 0 or os.environ.get('WAYLAND_DISPLAY') != 't630-gnome-0':
         raise SystemExit('Use the normal-owner tablet GNOME launcher.')
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
@@ -65,26 +70,33 @@ def main():
     if version != '2.0.1-10build2':
         raise SystemExit('This handler probe requires MyPaint 2.0.1-10build2.')
     os.environ['OMP_NUM_THREADS'] = '1'
+    # If the ordinary adapter later adopts responsive scheduling, this
+    # diagnostic alone owns its scheduling so a baseline stays a baseline.
+    os.environ['T630_MYPAINT_QUEUE_DIAGNOSTIC'] = '1'
     sys.path.insert(0, '/usr/lib/mypaint')
     from gui.freehand import FreehandMode
     from gui.tileddrawwidget import CanvasRenderer
     from lib.gibindings import GLib
     original_priority = FreehandMode.MOTION_QUEUE_PRIORITY
-    if args.queue_priority_trial and original_priority != GLib.PRIORITY_DEFAULT_IDLE:
+    if (args.queue_priority_trial or args.high_idle_only) and original_priority != GLib.PRIORITY_DEFAULT_IDLE:
         raise SystemExit('Unexpected queue priority; comparison refused.')
+    if args.high_idle_only:
+        FreehandMode.MOTION_QUEUE_PRIORITY = GLib.PRIORITY_HIGH_IDLE
+        print(f'QUEUE_PRIORITY_HIGH_IDLE_ONLY: priority={GLib.PRIORITY_HIGH_IDLE}; '
+              'active until this test process closes, normal launcher unchanged.', flush=True)
 
     metrics = {key: deque(maxlen=20000) for key in
                ('pen_delivery_age_ms', 'queued_stroke_age_ms',
                 'stroke_callback_ms', 'canvas_draw_callback_ms')}
-    deadline = time.monotonic() + 90
+    deadline = None
     originals = []
     profile = cProfile.Profile() if args.profile_strokes else None
     profile_calls = 0
     modes = weakref.WeakSet()
-    phase = 'baseline-default-idle'
+    phase = 'waiting-for-canvas-stroke'
 
     def active():
-        return time.monotonic() < deadline
+        return deadline is None or time.monotonic() < deadline
 
     def wrap(cls, name, before=None, duration=None):
         original = getattr(cls, name)
@@ -99,7 +111,7 @@ def main():
             if collect and before:
                 before(args)
             start = time.monotonic()
-            profiling = profile is not None and duration == 'stroke_callback_ms' and profile_calls < 1000
+            profiling = profile is not None and deadline is not None and duration == 'stroke_callback_ms' and profile_calls < 1000
             if profiling:
                 profile_calls += 1
                 profile.enable()
@@ -129,6 +141,8 @@ def main():
             if isinstance(stamp, (int, float)) and stamp > 0:
                 age = event_age_ms(int(stamp), time.monotonic()*1000)
                 if age is not None:
+                    if deadline is None:
+                        begin_window()
                     metrics['queued_stroke_age_ms'].append(age)
 
     wrap(FreehandMode, 'motion_notify_cb', before=delivery)
@@ -137,6 +151,7 @@ def main():
     wrap(CanvasRenderer, '_draw_cb', duration='canvas_draw_callback_ms')
 
     def report(final=False):
+        nonlocal deadline
         print('MYPAINT_TIMING ' + ('FINAL' if final else 'LIVE') + f' phase={phase}', flush=True)
         for name, values in metrics.items():
             print(f'{name}: {describe(values)}', flush=True)
@@ -149,10 +164,14 @@ def main():
             print('BRUSH_BASE_VALUES: ' + ' '.join(
                 f'{key}={app.brush.get_base_value(key):.6f}' for key in keys), flush=True)
         if final:
+            deadline = 0
             if args.queue_priority_trial:
                 FreehandMode.MOTION_QUEUE_PRIORITY = original_priority
                 count = reschedule_queues(modes, GLib, original_priority)
                 print(f'QUEUE_PRIORITY_RESTORED: priority={original_priority} pending_sources={count}', flush=True)
+            elif args.high_idle_only:
+                print(f'QUEUE_PRIORITY_TEST_STILL_ACTIVE: priority={FreehandMode.MOTION_QUEUE_PRIORITY}; '
+                      'normal launcher unchanged.', flush=True)
             for cls, name, original in originals:
                 setattr(cls, name, original)
             if profile is not None:
@@ -178,11 +197,27 @@ def main():
               'stroke data retained, input priority unchanged', flush=True)
         return False
 
-    GLib.timeout_add_seconds(15, lambda: report() if active() else False)
-    GLib.timeout_add_seconds(90, lambda: report(final=True))
-    if args.queue_priority_trial:
-        GLib.timeout_add_seconds(35, trial_phase)
-    print('T630 attended MyPaint timing: 90 seconds; app stays open afterward.', flush=True)
+    def begin_window():
+        nonlocal deadline, phase
+        deadline = time.monotonic() + 90
+        phase = 'high-idle-only' if args.high_idle_only else 'baseline-default-idle'
+        for values in metrics.values():
+            values.clear()
+        GLib.timeout_add_seconds(15, lambda: report() if active() else False)
+        GLib.timeout_add_seconds(90, lambda: report(final=True))
+        if args.queue_priority_trial:
+            GLib.timeout_add_seconds(35, trial_phase)
+        print('MEASUREMENT_STARTED: first painting event; 90-second window.', flush=True)
+
+    def waiting_timeout():
+        if deadline is None:
+            print('WAITING_TIMEOUT: no painting event; comparison inconclusive.', flush=True)
+            report(final=True)
+        return False
+
+    GLib.timeout_add_seconds(300, waiting_timeout)
+    print('T630 attended MyPaint timing: waiting for first stroke, then 90 seconds; '
+          'app stays open afterward.', flush=True)
     # Do not pass this probe's diagnostic arguments to the normal app.
     sys.argv = ['/usr/local/libexec/t630-mypaint']
     runpy.run_path('/usr/local/libexec/t630-mypaint', run_name='__main__')

@@ -87,9 +87,12 @@
    serializes only MyPaint; responsive physical drawing remains to verify. The
    isolated upstream-GIL-fix extension subsequently passed both thread settings
    in bounded headless tests, without a small-workload speedup or GUI promotion.
-   Live timing caught up to 5.572 seconds of queued stroke delay despite fresh
-   pen delivery and short callbacks; an app-only idle-priority comparison is
-   staged but not accepted or added to the ordinary launcher. The
+   Live timing caught up to 11.685 seconds of queued stroke delay despite fresh
+   pen delivery and short callbacks. A steady app-only high-idle run with the
+   same reported brush bases reduced queue age from 7.405 s median/11.404 s p95
+   to 41/81 ms while canvas redraws continued. The exact-version normal adapter
+   now applies that priority before MyPaint starts; it does not change ordinary
+   input priority, GTK globally, or the normal launcher for other apps. The
    drawing app is no longer automatically pinned because GNOME hides favorites
    from the app drawer.
    A separate MyPaint Wayland popup-grab freeze is under investigation. Its

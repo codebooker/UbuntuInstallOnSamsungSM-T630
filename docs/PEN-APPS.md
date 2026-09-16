@@ -174,6 +174,26 @@ default. A follow-up caught 5.572 seconds of queued stroke delay despite fresh
 pen delivery and short individual callbacks; scheduling is a hypothesis, not
 yet an accepted fix.
 
+The first timed comparison did not receive strokes in its high-idle phase and
+was discarded. A corrected first-stroke-triggered control run then measured
+**7,405 ms median / 11,404 ms p95** queued-stroke age over 5,253 samples under
+MyPaint's default-idle priority 200. A separate steady high-idle process used
+the same reported brush bases and measured **41 ms median / 81 ms p95** over
+4,724 samples. Pen delivery stayed fresh (58 ms p95), stroke callbacks were
+short (2.035 ms p95), and 204 canvas draw callbacks completed during that run.
+
+The exact-package adapter now sets only `FreehandMode.MOTION_QUEUE_PRIORITY`
+to GLib high-idle 100 before the application starts. GTK documents its resize
+and redraw work at 110 and 120, so this drains stroke work before redraws without
+changing normal input priority. The adapter verifies all three expected values
+and refuses changed contracts. Diagnostics set a private process flag so they
+retain explicit control over their own baselines. The previous adapter is kept
+beside the installed helper as an exact rollback copy; neither MyPaint package
+files nor preferences were replaced. The attended test kept the accepted
+priority active after metrics stopped; it has since been closed, and future
+normal launches receive the setting from the adapter. Subjective feel and
+longer-session acceptance remain pending.
+
 Standard owner folders are now initialized with `xdg-user-dirs-update` without
 replacing chosen paths. Before the restart, the existing Xournal++ autosave was
 preserved as `Documents/T630-pen-test-before-restart.xopp`; its compressed data

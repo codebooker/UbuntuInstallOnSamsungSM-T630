@@ -55,6 +55,15 @@ class RuntimeHealthTests(unittest.TestCase):
         self.assertIn("'b true') echo available=yes", text)
         self.assertIn("'b false') echo available=no", text)
 
+    def test_audio_health_resolves_the_installer_selected_owner(self):
+        text = (ROOT / 'tools/check_runtime_health.sh').read_text()
+        self.assertIn('t630_account.py env', text)
+        self.assertIn('runuser -u "$T630_OWNER"', text)
+        self.assertIn('XDG_RUNTIME_DIR="$owner_runtime"', text)
+        self.assertIn('PULSE_SERVER="$owner_pulse"', text)
+        self.assertNotIn('runuser -u tablet', text)
+        self.assertNotIn('/run/user/1000', text)
+
 
 if __name__ == '__main__':
     unittest.main()

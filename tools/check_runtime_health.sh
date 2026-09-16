@@ -15,6 +15,15 @@ pgrep -x weston >/dev/null && echo running || echo stopped
 printf 'gnome_shell: '
 pgrep -x gnome-shell >/dev/null && echo running || echo stopped
 
+owner_ready=false
+if owner_environment=$(python3 /usr/local/share/t630/t630_account.py env \
+    2>/dev/null); then
+    eval "$owner_environment"
+    owner_runtime=/run/user/$T630_OWNER_UID
+    owner_pulse=unix:$owner_runtime/pulse/native
+    owner_ready=true
+fi
+
 printf 'wifi: '
 nmcli -t -f DEVICE,TYPE,STATE device status 2>/dev/null |
     awk -F: '$2 == "wifi" && $3 == "connected" {
@@ -39,18 +48,30 @@ else
 fi
 
 printf 'audio: '
-timeout 5 runuser -u tablet -- env XDG_RUNTIME_DIR=/run/user/1000 \
-    PULSE_SERVER=unix:/run/user/1000/pulse/native \
-    pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null |
-    head -1 || echo unavailable
+volume=
+if [ "$owner_ready" = true ]; then
+    volume=$(timeout 5 runuser -u "$T630_OWNER" -- \
+        env XDG_RUNTIME_DIR="$owner_runtime" PULSE_SERVER="$owner_pulse" \
+        pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null |
+        head -1 || true)
+fi
+if [ -n "$volume" ]; then
+    printf '%s\n' "$volume"
+else
+    echo unavailable
+fi
 
 printf 'audio_defaults: '
-sink=$(timeout 5 runuser -u tablet -- env XDG_RUNTIME_DIR=/run/user/1000 \
-    PULSE_SERVER=unix:/run/user/1000/pulse/native \
-    pactl get-default-sink 2>/dev/null || true)
-source=$(timeout 5 runuser -u tablet -- env XDG_RUNTIME_DIR=/run/user/1000 \
-    PULSE_SERVER=unix:/run/user/1000/pulse/native \
-    pactl get-default-source 2>/dev/null || true)
+sink=
+source=
+if [ "$owner_ready" = true ]; then
+    sink=$(timeout 5 runuser -u "$T630_OWNER" -- \
+        env XDG_RUNTIME_DIR="$owner_runtime" PULSE_SERVER="$owner_pulse" \
+        pactl get-default-sink 2>/dev/null || true)
+    source=$(timeout 5 runuser -u "$T630_OWNER" -- \
+        env XDG_RUNTIME_DIR="$owner_runtime" PULSE_SERVER="$owner_pulse" \
+        pactl get-default-source 2>/dev/null || true)
+fi
 if [ -n "$sink" ] && [ -n "$source" ]; then
     printf 'sink=%s source=%s\n' "$sink" "$source"
 else

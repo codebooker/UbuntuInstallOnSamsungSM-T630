@@ -464,6 +464,17 @@ to a temporary directory and run the dependency/symbol probes described in the
 [native userspace package report](reports/native-userspace-package-20260914.md),
 or install it as part of a stopped fresh-root assembly.
 
+From a repository checkout on a running, personalized tablet, root can print a
+read-only health summary without exposing the Wi-Fi name, controller address,
+or owner name:
+
+```sh
+sudo tools/check_runtime_health.sh
+```
+
+The check resolves the account selected during first boot; it does not assume a
+development username, UID 1000, or a fixed home directory.
+
 ## Recovery
 
 If the diagnostic boot fails, return to Download Mode and restore the exact

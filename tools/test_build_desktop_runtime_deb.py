@@ -16,6 +16,13 @@ assert SPEC.loader is not None
 SPEC.loader.exec_module(builder)
 
 class DesktopRuntimePackageTests(unittest.TestCase):
+    def test_touchscreen_and_pen_share_libinput_group(self):
+        rules = (builder.ROOT / "ubuntu/99-t630-input.rules").read_text()
+        group = 'ENV{LIBINPUT_DEVICE_GROUP}="t630-integrated-pen-touch"'
+        self.assertEqual(rules.count(group), 2)
+        self.assertIn('ATTRS{name}=="sec_e-pen"', rules)
+        self.assertIn('ATTRS{name}=="sec_touchscreen"', rules)
+
     def ar_members(self, package: bytes):
         self.assertTrue(package.startswith(b"!<arch>\n"))
         offset = 8

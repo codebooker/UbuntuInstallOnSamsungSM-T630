@@ -65,8 +65,37 @@ from opening.
 The live launcher and helper hashes matched the tracked files after installation.
 The full repository suite passed: 319 tests, 5 skipped.
 
+## First physical result: failed
+
+With internal hand recognition loaded, the owner placed a palm on the display
+and confirmed that it still moved the paper. App-level touch suppression is not
+accepted as the solution.
+
+Udev showed why the system-level arbitration path was incomplete:
+
+```text
+sec_touchscreen LIBINPUT_DEVICE_GROUP=18/0/0:sec_touchscreen
+sec_e-pen      LIBINPUT_DEVICE_GROUP=18/0/0:sec_e-pen
+```
+
+[Libinput's tablet-touch arbitration](https://wayland.freedesktop.org/libinput/doc/1.25.0/tablet-support.html)
+associates the integrated touchscreen and digitizer through their device group
+and discards touch while a tool is in proximity. The tracked
+`99-t630-input.rules` now assigns both exact device names:
+
+```text
+LIBINPUT_DEVICE_GROUP=t630-integrated-pen-touch
+```
+
+`udevadm test` resolved that value for `/sys/class/input/event5` and `event7`.
+After an orderly restart, the live udev database reported the shared value for
+both nodes; Weston, nested GNOME, and Xournal++ restarted normally. This changes
+association metadata only: it does not grab, inject, or record input and does
+not disable the touchscreen permanently.
+
 ## Remaining physical gate
 
-With the pen active, resting and moving a palm must leave the page fixed. After
-the pen is inactive for about one second, deliberate finger scrolling must work
-again. This report does not mark that gate passed until the owner confirms both.
+Bring the pen into proximity first, then rest and move the palm while drawing;
+the page must remain fixed. After moving the pen out of proximity, deliberate
+finger scrolling must work again. This report does not mark that gate passed
+until the owner confirms both.

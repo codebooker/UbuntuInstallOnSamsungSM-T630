@@ -28,10 +28,9 @@ administrator privileges before the app starts. `t630-pen-app` selects native
 Wayland and dark GTK controls; it does not reset documents. The Xournal++ paper
 itself retains the person's chosen paper/background settings. On its first
 Xournal++ launch, an account-local helper enables the application's **internal
-hand recognition** only when that setting has no existing value. Xournal++ then
-ignores touch events for one second after pen activity, so a palm cannot pan the
-page while writing; ordinary finger scrolling returns after the pen becomes
-inactive. The helper makes an exact backup before editing an existing file,
+hand recognition** only when that setting has no existing value. This is kept
+as defense in depth, but its first physical trial did not stop the owner's palm
+from panning. The helper makes an exact backup before editing an existing file,
 records a one-time state marker, and never overrides an explicit existing or
 later preference choice.
 MyPaint Drawing is kept in the app drawer by default. GNOME 46 removes pinned
@@ -65,8 +64,15 @@ optional X11-wide device disabler is not. The tablet default is therefore:
 ```
 
 The live owner profile has this setting and Xournal++ was reopened with it on
-2026-09-16. Physical pen-plus-palm and post-timeout finger-scroll acceptance is
-still pending. See the [palm-rejection report](reports/xournal-palm-rejection-20260916.md).
+2026-09-16. The owner then confirmed that a palm could still move the page.
+
+The hardware-level cause is that udev gave `sec_touchscreen` and `sec_e-pen`
+different `LIBINPUT_DEVICE_GROUP` values. Libinput uses that group to associate
+the integrated touch surface with its pen and suppress touch while the tool is
+in proximity. `99-t630-input.rules` now assigns both exact SM-T630 devices the
+shared group `t630-integrated-pen-touch`. After an orderly restart, both udev
+records report that group and Xournal++ is open for a second physical trial.
+See the [palm-rejection report](reports/xournal-palm-rejection-20260916.md).
 
 ## Ubuntu 24.04 first-stroke crash workaround
 

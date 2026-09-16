@@ -48,7 +48,15 @@
    The reproducible AVB-verified persistent boot image uses the current module-
    compatible kernel and initramfs; its guarded write, two cold boots, full
    shutdown, automatic remote startup, and health checks passed. Clean-root
-   installation completion and the return-to-stock rehearsal remain. Boot v3
+   installation completion and the return-to-stock rehearsal remain. The new
+   one-command ARM64 host builder assembles a fresh ownerless root, applies and
+   audits the exact release set, emits a deterministically serialized private rootfs archive
+   with numeric ownership/ACLs/xattrs, and builds the accepted persistent BOOT
+   input without opening any device. A separate recovery verifier requires the
+   exact DZE3/XAR BL/AP/CSC/HOME_CSC set and can stream-check every ZIP CRC and
+   Samsung tar MD5 without extracting the 6.4 GB factory package. The remaining
+   installer gap is the fail-closed recovery-hosted USB transport and exact
+   userdata extraction, followed by a physical stock-return rehearsal. Boot v3
    makes an incomplete ownerless setup cleanly recoverable; boot v4 retains
    that terminal only for ownerless or explicitly requested recovery boots. The
    account-neutral Weston/Maliit host runtime is now packaged with reversible distro-file

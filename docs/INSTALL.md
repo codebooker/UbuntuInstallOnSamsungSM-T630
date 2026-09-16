@@ -151,10 +151,11 @@ filesystem is mounted. The exact expected evidence is documented in
 `docs/reports/first-flash-result.md` and
 `docs/reports/ubuntu-ram-milestone.md`.
 
-The persistent Ubuntu root process currently depends on a development snapshot
-that has not yet been converted into a public, reproducible release artifact.
-Until that packaging work is complete, use the persistent scripts as auditable
-source and do not run the one-time formatter from an abbreviated guide.
+The development snapshot is no longer an acceptable installer input. The
+ownerless release-root build described below replaces it, but the device-side
+USB transfer/format/install stage is still a release gate. Until that guarded
+stage is complete, use the persistent scripts as auditable source and do not
+run the one-time formatter from an abbreviated guide.
 
 ## Release-image and first-boot gates
 
@@ -179,9 +180,10 @@ password separately over stdin. It creates the human account and the narrow
 the selected account through the local password database and do not assume
 `tablet`, UID 1000, a fixed GID, or a fixed home path.
 
-These components are implemented and tested, but the generic Ubuntu root image
-builder and complete end-to-end wipe/install/recovery rehearsal remain release
-gates. Do not redistribute the development tablet's filesystem.
+These components and the generic Ubuntu root archive builder are implemented
+and tested. The device-side transfer/format/install stage and complete
+end-to-end wipe/install/recovery rehearsal remain release gates. Do not
+redistribute the development tablet's filesystem.
 
 The account-neutral portion is also built as a deterministic Debian package:
 
@@ -459,6 +461,44 @@ restoration of diverted files. GNOME Software/PackageKit, native Firefox,
 LibreOffice, Files, Terminal, Text Editor, Contacts, document/media tools, and
 the standard GNOME utilities are present before first boot; Snap is not.
 
+### Build the private local installer inputs
+
+On an ARM64 Ubuntu build host, the complete non-destructive build can now be
+run as one command:
+
+```sh
+sudo tools/build_local_installer.sh \
+  /absolute/path/to/ubuntu-base-24.04.5-base-arm64.tar.gz \
+  /absolute/path/to/complete-package-directory \
+  /absolute/path/to/accepted-module-compatible-Image \
+  /absolute/path/to/new-work-directory
+```
+
+The command requires a new work directory and refuses macOS, non-ARM64 hosts,
+unprivileged execution, incomplete package sets, unclean roots, unexpected
+package versions, and an unaccepted kernel. It performs the preparation,
+public dependency provisioning, exact package apply, complete root check,
+rootfs archive build, persistent BOOT build, and final identity audit. It never
+opens a block device.
+
+The resulting `t630-release-rootfs.tar.gz` is mode 0600 and includes the
+owner's locally reconstructed proprietary stock-assets package contents. It is
+therefore a **private local installer input**, not a GitHub release artifact.
+Its adjacent JSON manifest records the complete release-package versions,
+SHA256, size, member count, identity state, and redistribution warning. The
+archive uses GNU tar with numeric ownership, ACLs, xattrs, deterministic member
+order and timestamps, and gzip without a timestamp. The builder re-runs the
+identity audit after packaging. It then refuses any BOOT other than the exact
+physically accepted v12 image and seals the four inputs in
+`installer-bundle.json` plus a BusyBox-compatible `SHA256SUMS`. All six files
+remain mode 0600.
+
+This completes the reproducible host-side assembly boundary. It does not yet
+authorize flashing: a recovery-hosted USB transport must still verify the
+whole archive before formatting exact `userdata`, extract it with ownership,
+ACLs and xattrs intact, validate the installed root, and only then write the
+accepted BOOT image.
+
 Do not overwrite a mapped live library merely to test the package. Extract it
 to a temporary directory and run the dependency/symbol probes described in the
 [native userspace package report](reports/native-userspace-package-20260914.md),
@@ -481,6 +521,26 @@ If the diagnostic boot fails, return to Download Mode and restore the exact
 matching stock package. The local `stock/` extracts are reference/recovery
 inputs, but a complete Samsung package may contain additional partitions needed
 for a full restore. Reflashing stock does not reset the Knox warranty bit.
+
+Before depending on a downloaded DZE3/XAR factory ZIP, run the read-only deep
+check:
+
+```sh
+python3 tools/verify_factory_firmware.py --deep \
+  --manifest /private/path/t630-recovery-manifest.json \
+  /absolute/path/to/SAMFW.COM_SM-T630_XAR_T630XXSBDZE3_fac.zip
+```
+
+The structural pass requires exactly one matching BL, AP, HOME_CSC, and CSC
+archive and rejects nested, duplicate, missing, wrong-model, wrong-build, or
+wrong-CSC members. `--deep` streams every byte without extraction, which also
+checks each ZIP CRC and each Samsung-appended tar MD5/trailer name. Those
+checks detect corruption; they are not a Samsung authenticity signature. Keep
+the complete original ZIP and its private manifest on storage separate from
+the computer used to install Ubuntu. Odin's `CSC` archive is the clean/wiping
+recovery choice; `HOME_CSC` is intended to preserve compatible Android user
+data and must not be treated as a way to preserve an Ubuntu-formatted userdata
+partition.
 
 Never relock the bootloader until every custom image has been replaced with
 known-matching stock firmware and the device has booted successfully.

@@ -35,7 +35,7 @@ full-screen GNOME desktop from internal storage.
 | Stock hardware video decoding | Working for tested FFmpeg and GStreamer H.264/VP9 playback |
 | Browser video acceleration | WebKit hardware selection verified; safe launcher blocked by the stock kernel's missing user-namespace support |
 | Cameras | Front and rear GNOME previews work at 720×480; rear exposure, autofocus, tone, and live color adjustment work; HD Snapshot and flash remain |
-| First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow and packaged GDM password login implemented; generic release image still pending |
+| First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow and packaged GDM password login implemented; identity-clean host bundle implemented, device-side installer still pending |
 | Android applications | Deferred until all native Ubuntu and installer work is complete; current kernel-only approach is ABI-incompatible with Samsung modules |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).
@@ -68,16 +68,16 @@ be treated as a porting task, not as a reason to remove those checks.
 7. See [pen apps](docs/PEN-APPS.md) and [opt-in remote access](docs/REMOTE-ACCESS.md)
    for the clean installation's current application and network-access recipes.
 
-The repository can reproduce both the conservative diagnostic image and the
-physically accepted persistent boot image from matching stock firmware. Its
+The repository can reproduce the conservative diagnostic image, the physically
+accepted persistent boot image, and a private identity-clean release-root
+archive from matching stock firmware and locally built packages. Its
 guarded BOOT-only writes and repeated cold boots passed on the development
 SM-T630. The latest revision also keeps the personalized clean installation
 selected across orderly restarts, retains wallpaper settings, and preserves the
 old root as an abnormal-boot fallback.
-Packaging and physically installing the identity-clean Ubuntu filesystem as a
-safe public installer is still in progress; do not improvise the one-time
-userdata installation from the lab scripts unless you can recover the tablet
-independently.
+The guarded recovery-hosted USB transfer and userdata installation stage is
+still in progress; do not improvise the one-time userdata installation from the
+lab scripts unless you can recover the tablet independently.
 
 ## Repository layout
 

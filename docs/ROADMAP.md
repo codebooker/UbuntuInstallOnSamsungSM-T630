@@ -79,7 +79,8 @@
    dual-layout partition/BOOT guards passed the same physical RAM-stage and
    unmounted read-only gate on 2026-09-17. The explicitly authorized clean
    install and first boot subsequently passed. The exact factory ZIP's deep
-   stream check, all three switch-refusal drills, and the stock-recovery
+   stream check and 51-member inner recovery inventory, all three
+   switch-refusal drills, and the stock-recovery
    default read-only gate now pass; only a destructive full stock-return
    rehearsal remains in this track. Boot v3
    makes an incomplete ownerless setup cleanly recoverable; boot v4 retains

@@ -35,8 +35,9 @@ full-screen GNOME desktop from internal storage.
 | Stock hardware video decoding | Working for tested FFmpeg and GStreamer H.264/VP9 playback |
 | Browser video acceleration | WebKit hardware selection verified; safe launcher blocked by the stock kernel's missing user-namespace support |
 | Cameras | Front and rear GNOME previews work at 720×480; rear exposure, autofocus, tone, and live color adjustment work; HD Snapshot and flash remain |
-| First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow and packaged GDM password login implemented; full private bundle and unmounted read-only device gate passed, destructive clean-install acceptance remains |
-| Android applications | Native stock Android boots encrypted F2FS with Adreno acceleration beside the 64 GiB Ubuntu root. The button-only Ubuntu-to-Android-to-Ubuntu round trip is physically accepted; rejected Waydroid was removed from Ubuntu |
+| First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow and packaged GDM password login physically accepted after a guarded clean install |
+| Android applications | Native stock Android boots encrypted F2FS with Adreno acceleration beside the 64 GiB Ubuntu root. The corrected button-only round trip and non-destructive refusal drills are physically accepted; rejected Waydroid was removed from Ubuntu |
+| Recovery | Exact DZE3/XAR outer checks, payload hashes, and 51-member inner recovery inventory verified; stock-recovery gate defaults read-only and passed with `misc` plus protected partitions unchanged; destructive full factory restore remains |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).
 
@@ -79,10 +80,11 @@ SM-T630. The latest revision also keeps the personalized clean installation
 selected across orderly restarts, retains wallpaper settings, and preserves the
 old root as an abnormal-boot fallback.
 The guarded recovery-hosted RAM transfer and read-only dual-layout `linuxroot`
-installation gate passed with the complete 1.23 GB private bundle. The destructive
-clean-install/first-boot rehearsal and return-to-stock rehearsal remain; do not
-improvise either operation from the lab scripts unless you can recover the
-tablet independently.
+installation gate passed with the complete private bundle. The explicitly
+authorized clean install and owner-created first boot also passed. A complete
+factory-return rehearsal and an end-user host wrapper remain; do not improvise
+either operation from individual lab scripts unless you can recover the tablet
+independently.
 
 The current private v4 bundle additionally carries the physically accepted
 Chrome on-screen-keyboard bridge. Its identity audit, full offline rehearsal,

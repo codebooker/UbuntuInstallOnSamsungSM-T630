@@ -29,12 +29,18 @@ result was `SWITCH_REFUSAL_GATES_PASSED_NO_PERSISTENT_CHANGES`.
 ## Exact factory package
 
 The existing 6,434,873,419-byte DZE3/XAR factory ZIP passed
-`tools/verify_factory_firmware.py --deep`. It contains exactly one expected BL,
-AP, HOME_CSC, and CSC member. Streaming every member verified all ZIP CRCs,
-Samsung-appended payload MD5 values, and trailer filenames without extracting
-another multi-gigabyte copy. The mode-0600 JSON manifest remains private and
-outside the repository. CRC and MD5 establish corruption resistance, not a
-Samsung authenticity signature.
+`tools/verify_factory_firmware.py --deep --inventory`. It contains exactly one
+expected BL, AP, HOME_CSC, and CSC member. Streaming every member verified all
+ZIP CRCs, Samsung-appended payload MD5 values, and trailer filenames without
+extracting another multi-gigabyte copy.
+
+The inner tar gate then required the exact safe allowlists and rejected path
+traversal, links, device nodes, duplicates, missing payloads, and extras. The
+physical package contains 26 BL, 13 AP, 5 HOME_CSC, and 7 CSC entries, including
+the PIT and the complete BOOT/recovery/vendor_boot/DTBO/super/VBMETA/userdata/
+modem/CSC recovery set. The mode-0600 JSON manifest remains private and outside
+the repository. CRC and MD5 establish corruption resistance, not a Samsung
+authenticity signature.
 
 ## Read-only stock-recovery gate
 

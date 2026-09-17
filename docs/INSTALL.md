@@ -634,7 +634,7 @@ Before depending on a downloaded DZE3/XAR factory ZIP, run the read-only deep
 check:
 
 ```sh
-python3 tools/verify_factory_firmware.py --deep \
+python3 tools/verify_factory_firmware.py --deep --inventory \
   --manifest /private/path/t630-recovery-manifest.json \
   /absolute/path/to/SAMFW.COM_SM-T630_XAR_T630XXSBDZE3_fac.zip
 ```
@@ -642,8 +642,12 @@ python3 tools/verify_factory_firmware.py --deep \
 The structural pass requires exactly one matching BL, AP, HOME_CSC, and CSC
 archive and rejects nested, duplicate, missing, wrong-model, wrong-build, or
 wrong-CSC members. `--deep` streams every byte without extraction, which also
-checks each ZIP CRC and each Samsung-appended tar MD5/trailer name. Those
-checks detect corruption; they are not a Samsung authenticity signature. Keep
+checks each ZIP CRC and each Samsung-appended tar MD5/trailer name.
+`--inventory` additionally requires the exact safe inner BL/AP/HOME_CSC/CSC
+member sets, including PIT, BOOT, recovery, `vendor_boot`, DTBO, `super`,
+VBMETA, `userdata`, modem, and CSC payloads; it rejects traversal, links,
+devices, missing payloads, and extras. Those checks detect corruption and
+packaging mistakes; they are not a Samsung authenticity signature. Keep
 the complete original ZIP and its private manifest on storage separate from
 the computer used to install Ubuntu. Odin's `CSC` archive is the clean/wiping
 recovery choice; `HOME_CSC` is intended to preserve compatible Android user
@@ -651,7 +655,8 @@ data and must not be treated as a way to preserve an Ubuntu-formatted userdata
 partition.
 
 The development tablet's exact 6,434,873,419-byte archive passed this complete
-deep check. The private manifest is mode 0600 and kept outside the repository.
+deep and inner-inventory check: 26 BL, 13 AP, 5 HOME_CSC, and 7 CSC members.
+The private manifest is mode 0600 and kept outside the repository.
 The stock-recovery BCB helper now defaults to a read-only gate:
 
 ```sh

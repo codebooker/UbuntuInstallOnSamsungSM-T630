@@ -691,6 +691,12 @@ partition.
 The development tablet's exact 6,434,873,419-byte archive passed this complete
 deep and inner-inventory check: 26 BL, 13 AP, 5 HOME_CSC, and 7 CSC members.
 The private manifest is mode 0600 and kept outside the repository.
+The complete wiped factory return subsequently passed on the physical tablet.
+Because Heimdall's direct PIT upload was rejected before any partition payload,
+the accepted procedure transactionally restored the exact pre-split GPT in the
+RAM-only maintenance environment and then flashed all 40 available Samsung
+payloads without disabling size checks. See [full factory return](FACTORY-RESTORE.md)
+and its [acceptance report](reports/full-factory-restore-20260917.md).
 The stock-recovery BCB helper now defaults to a read-only gate:
 
 ```sh

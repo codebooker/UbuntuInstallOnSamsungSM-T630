@@ -56,8 +56,9 @@
    The reproducible AVB-verified persistent boot image uses the current module-
    compatible kernel and initramfs; its guarded write, two cold boots, full
    shutdown, automatic remote startup, and health checks passed. Clean-root
-   installation and owner-created first boot pass; a deliberately destructive
-   full factory-return rehearsal remains. The new
+   installation and owner-created first boot pass. The deliberately destructive
+   full factory-return rehearsal also passed with an exact GPT rollback and 40
+   stock payloads. The new
    one-command ARM64 host builder assembles a fresh ownerless root, applies and
    audits the exact release set, emits a deterministically serialized private rootfs archive
    with numeric ownership/ACLs/xattrs, and seals the accepted dual-layout BOOT
@@ -80,9 +81,8 @@
    unmounted read-only gate on 2026-09-17. The explicitly authorized clean
    install and first boot subsequently passed. The exact factory ZIP's deep
    stream check and 51-member inner recovery inventory, all three
-   switch-refusal drills, and the stock-recovery
-   default read-only gate now pass; only a destructive full stock-return
-   rehearsal remains in this track. A single guarded host coordinator now
+   switch-refusal drills, the stock-recovery default read-only gate, and the
+   destructive full stock-return now pass. A single guarded host coordinator now
    sequences bundle verification, RAM staging, optional orderly preparation,
    and the existing typed authorization. A button-driven Tk host window wraps
    those exact actions without a shell; signed standalone host-app packaging

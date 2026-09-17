@@ -37,7 +37,7 @@ full-screen GNOME desktop from internal storage.
 | Cameras | Front and rear GNOME previews work at 720×480; rear exposure, autofocus, tone, and live color adjustment work; HD Snapshot and flash remain |
 | First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow and packaged GDM password login physically accepted after a guarded clean install |
 | Android applications | Native stock Android boots encrypted F2FS with Adreno acceleration beside the 64 GiB Ubuntu root. The corrected button-only round trip and non-destructive refusal drills are physically accepted; rejected Waydroid was removed from Ubuntu |
-| Recovery | Exact DZE3/XAR outer checks, payload hashes, and 51-member inner recovery inventory verified; stock-recovery gate defaults read-only and passed with `misc` plus protected partitions unchanged; destructive full factory restore remains |
+| Recovery | Full DZE3/XAR factory return physically accepted: exact pre-split GPT restored, 40 Samsung payloads flashed, userdata wiped, and normal stock Android USB boot observed |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).
 
@@ -73,6 +73,8 @@ be treated as a porting task, not as a reason to remove those checks.
 8. See [native Android dual boot](docs/DUALBOOT.md) for the accepted Android
    application path. The retired [Waydroid notes](docs/WAYDROID.md) remain only
    as historical engineering evidence.
+9. See [full factory return](docs/FACTORY-RESTORE.md) for the physically accepted
+   rollback from the dual-boot layout to wiped stock DZE3 Android.
 
 The repository can reproduce the conservative diagnostic image, the physically
 accepted persistent boot image, and a private identity-clean release-root
@@ -84,7 +86,8 @@ old root as an abnormal-boot fallback.
 The guarded recovery-hosted RAM transfer and read-only dual-layout `linuxroot`
 installation gate passed with the complete private bundle. The explicitly
 authorized clean install and owner-created first boot also passed. A complete
-factory-return rehearsal and standalone host-app packaging remain. The current
+factory return is now physically accepted; standalone host-app packaging
+remains. The current
 button-driven host window and single-entry coordinator sequence the tested
 verifier, RAM staging, read-only preparation, and typed authorization gates; do
 not improvise those phases from individual lab scripts unless you can recover

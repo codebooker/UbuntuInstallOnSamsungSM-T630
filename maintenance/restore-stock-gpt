@@ -1,0 +1,153 @@
+#!/bin/busybox sh
+# Restore the exact pre-split SM-T630 GPT from RAM-only maintenance mode.
+set -eu
+export PATH=/bin:/sbin:/usr/sbin
+export LC_ALL=C
+umask 077
+
+disk=/dev/sda
+stock=/run/gpt-before-split.bin
+split=/run/gpt-after-split.bin
+stock_marker=/run/HOST-VERIFIED-STOCK-GPT
+split_marker=/run/HOST-VERIFIED-SPLIT-GPT
+authorization=/run/AUTHORIZE-STOCK-GPT-RESTORE
+live=/run/gpt-live-before-stock-restore.bin
+restored=/run/gpt-live-after-stock-restore.bin
+hash_sequence=0
+
+fail() { echo "STOCK_GPT_RESTORE_REFUSED: $*" >&2; exit 1; }
+hash_from_marker() {
+    sed -n 's/^SHA256=//p' "$1"
+}
+check_hash() {
+    expected=$1
+    path=$2
+    label=$3
+    test "${#expected}" = 64 || fail "$label expected hash length"
+    printf '%s  %s\n' "$expected" "$path" | sha256sum -c - >/dev/null ||
+        fail "$label hash mismatch"
+}
+is_mounted() {
+    device=$1
+    major_minor=$(cat "/sys/class/block/$device/dev")
+    awk -v wanted="$major_minor" '$3 == wanted { found=1 } END { exit found ? 0 : 1 }' \
+        /proc/self/mountinfo
+}
+check_partition() {
+    device=$1 name=$2 start=$3 size=$4
+    test -r "/sys/class/block/$device/uevent" || fail "$device is absent"
+    grep -qx "PARTNAME=$name" "/sys/class/block/$device/uevent" ||
+        fail "$device name mismatch"
+    test "$(cat "/sys/class/block/$device/start")" = "$start" ||
+        fail "$device start mismatch"
+    test "$(cat "/sys/class/block/$device/size")" = "$size" ||
+        fail "$device size mismatch"
+}
+check_device_hash() {
+    expected=$1 device=$2 label=$3
+    test -r "/sys/class/block/$device/dev" || fail "$device is absent"
+    numbers=$(cat "/sys/class/block/$device/dev")
+    major=${numbers%%:*}
+    minor=${numbers#*:}
+    hash_sequence=$((hash_sequence + 1))
+    node="/dev/t630-stock-restore-$device-$$-$hash_sequence"
+    test ! -e "$node" || fail "fresh $device node path exists"
+    mknod "$node" b "$major" "$minor"
+    check_hash "$expected" "$node" "$label"
+    rm "$node"
+}
+check_protected() {
+    check_device_hash c45e960fcbc6a30ab98872529d27a157a41409ea7601166330956b7f6e74ea4e sda19 maintenance-boot
+    check_device_hash 2b6901f8341de3b76fbcabc69bf0229683d503f233eafd580b4d602392ff74f5 sda20 recovery
+    check_device_hash fbebd763c17c05bc162776a6e9abd86fc386aa0ef58ccfdaa6cb9b13a6a0c72f sda21 vendor-boot
+    check_device_hash f9111b7a566b0a7342ec4d8f14cee53dc465a272d42596f774c0519d6e89fc57 sda22 dtbo
+    check_device_hash a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225 sde19 vbmeta
+}
+
+test "$(id -u)" = 0 || fail "root is required"
+grep -q 'androidboot.em.model=SM-T630' /proc/cmdline || fail "model mismatch"
+test "$(uname -r)" = 5.4.274-qgki-31225846-abT630XXSBDZE3 ||
+    fail "kernel baseline mismatch"
+test -b "$disk" || fail "internal UFS disk is absent"
+test "$(cat /sys/class/block/sda/size)" = 248799232 || fail "disk size mismatch"
+test "$(cat /sys/class/block/sda/queue/logical_block_size)" = 4096 ||
+    fail "logical block size mismatch"
+check_partition sda34 linuxroot 21880832 134217728
+check_partition sda35 userdata 156098560 92700632
+is_mounted sda34 && fail "linuxroot is mounted"
+is_mounted sda35 && fail "userdata is mounted"
+test -z "$(ls /sys/class/block/sda34/holders)" || fail "linuxroot has holders"
+test -z "$(ls /sys/class/block/sda35/holders)" || fail "userdata has holders"
+test "$(cat /sys/class/power_supply/battery/capacity)" -ge 50 ||
+    fail "battery below 50 percent"
+case "$(cat /sys/class/power_supply/battery/status)" in
+    Charging) ;;
+    Full)
+        ac=$(cat /sys/class/power_supply/ac/online 2>/dev/null || echo 0)
+        usb=$(cat /sys/class/power_supply/usb/online 2>/dev/null || echo 0)
+        test "$ac" = 1 || test "$usb" = 1 || fail "external power required"
+        ;;
+    *) fail "external power required" ;;
+esac
+for path in "$stock" "$split" "$stock_marker" "$split_marker" "$authorization"; do
+    test -f "$path" && test ! -L "$path" || fail "$path is absent or unsafe"
+    test "$(stat -c %u "$path")" = 0 || fail "$path is not root-owned"
+done
+test "$(stat -c %s "$stock")" = 6656 || fail "stock GPT backup size mismatch"
+test "$(stat -c %s "$split")" = 6656 || fail "split GPT backup size mismatch"
+stock_hash=$(hash_from_marker "$stock_marker")
+split_hash=$(hash_from_marker "$split_marker")
+check_hash "$stock_hash" "$stock" stock-gpt-backup
+check_hash "$split_hash" "$split" split-gpt-backup
+test "$(cat "$authorization")" = 'RESTORE ORIGINAL SM-T630 GPT AND ERASE DUALBOOT LAYOUT' ||
+    fail "authorization token invalid"
+check_protected
+test ! -e "$live" || fail "live GPT comparison path exists"
+sgdisk --backup="$live" "$disk" >/dev/null || fail "live GPT export failed"
+check_hash "$split_hash" "$live" live-split-gpt
+cmp "$split" "$live" >/dev/null || fail "live GPT differs from saved split GPT"
+sgdisk --verify "$disk" >/run/gpt-verify-before-stock-restore.txt 2>&1 ||
+    fail "split GPT verification failed"
+grep -q 'No problems found' /run/gpt-verify-before-stock-restore.txt ||
+    fail "split GPT reports problems"
+
+gpt_changed=0
+committed=0
+rollback_on_error() {
+    result=$?
+    trap - EXIT HUP INT TERM
+    if test "$result" -ne 0 && test "$gpt_changed" = 1 && test "$committed" = 0; then
+        echo STOCK_GPT_RESTORE_FAILED_ATTEMPTING_ROLLBACK >&2
+        if sgdisk --load-backup="$live" "$disk" >/dev/null 2>&1; then
+            sync
+            blockdev --rereadpt "$disk" >/dev/null 2>&1 || true
+            mdev -s
+            echo STOCK_GPT_SPLIT_LAYOUT_ROLLBACK_APPLIED >&2
+        else
+            echo STOCK_GPT_ROLLBACK_FAILED_USE_HOST_SPLIT_BACKUP >&2
+            exit 126
+        fi
+    fi
+    exit "$result"
+}
+trap rollback_on_error EXIT HUP INT TERM
+
+gpt_changed=1
+sgdisk --load-backup="$stock" "$disk" >/dev/null || fail "stock GPT load failed"
+sync
+blockdev --rereadpt "$disk" >/dev/null || fail "kernel GPT reread failed"
+mdev -s
+check_partition sda34 userdata 21880832 226918360
+test ! -e /sys/class/block/sda35 || fail "partition 35 survived stock GPT restore"
+sgdisk --verify "$disk" >/run/gpt-verify-after-stock-restore.txt 2>&1 ||
+    fail "restored GPT verification failed"
+grep -q 'No problems found' /run/gpt-verify-after-stock-restore.txt ||
+    fail "restored GPT reports problems"
+test ! -e "$restored" || fail "restored GPT comparison path exists"
+sgdisk --backup="$restored" "$disk" >/dev/null || fail "restored GPT export failed"
+check_hash "$stock_hash" "$restored" live-stock-gpt
+cmp "$stock" "$restored" >/dev/null || fail "restored GPT differs from backup"
+check_protected
+committed=1
+trap - EXIT HUP INT TERM
+echo STOCK_GPT_RESTORE_COMPLETE_ORIGINAL_USERDATA_LAYOUT_VERIFIED

@@ -136,6 +136,11 @@ marker. The accepted image returned GNOME, Wi-Fi, package health, and the
 unchanged full-size root after a cold boot. See the
 [dual-layout boot report](reports/dual-layout-ubuntu-boot-20260916.md).
 
+Maintenance v4 now embeds that accepted dual-layout BOOT as its fail-safe. A
+second physical maintenance cycle passed the unchanged read-only preflight,
+verified the new embedded image, restored it with a full BOOT readback, and
+returned to Ubuntu. This supersedes v3 for any future storage operation.
+
 ## Rejected shortcuts
 
 - More Waydroid resolution reduction: measured improvement did not make the

@@ -19,7 +19,7 @@ STOCK_BOOT_SHA256 = "79a9b1d56763cb6e3c113473eb783f6332fe79b054e3c67494c5094c6c3
 BUSYBOX_SHA256 = "52151e7f322f926b64049cdaa1410dc3ea6485525e0624b05813791c219ae933"
 KERNEL_SHA256 = "49b648801a751be9761bd8b2b24e9833964acbb06741d87f7db384dd2d36845d"
 KERNEL_RELEASE = b"5.4.274-qgki-31225846-abT630XXSBDZE3"
-UBUNTU_BOOT_SHA256 = "1403afb30d584418ea6bfc011317f33bf8073294eae355d0c05d8d61c7355e76"
+UBUNTU_BOOT_SHA256 = "eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb"
 
 MAINTENANCE_HASHES = {
     "usr/sbin/e2fsck": "e08e5d3c172369356a92c5f20f28260bba5b7ae35726144e5bdf83383dee026a",
@@ -99,7 +99,7 @@ def build_ramdisk() -> tuple[bytes, dict[str, str]]:
         ("etc/group", stat.S_IFREG | 0o644, b"root:x:0:\n", 0, 0),
     ])
 
-    ubuntu_boot = ROOT / "output/waydroid-kernel-v13/boot.img"
+    ubuntu_boot = ROOT / "output/dual-layout-ubuntu-v1/boot.img"
     ubuntu_boot_data = ubuntu_boot.read_bytes()
     if sha(ubuntu_boot_data) != UBUNTU_BOOT_SHA256 or len(ubuntu_boot_data) != PARTITION_SIZE:
         raise ValueError("accepted Ubuntu recovery BOOT mismatch")
@@ -190,7 +190,7 @@ def build(kernel: Path, output: Path) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--kernel", type=Path, default=ROOT / "output/waydroid-kernel-v13/Image")
-    parser.add_argument("--output", type=Path, default=ROOT / "output/dualboot-maintenance-v3")
+    parser.add_argument("--output", type=Path, default=ROOT / "output/dualboot-maintenance-v4")
     args = parser.parse_args()
     print(json.dumps(build(args.kernel, args.output), indent=2, sort_keys=True))
 

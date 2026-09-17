@@ -9,7 +9,7 @@ case "$mode" in
     *) echo "usage: restore-ubuntu-boot [--check|--apply]" >&2; exit 2 ;;
 esac
 
-expected=1403afb30d584418ea6bfc011317f33bf8073294eae355d0c05d8d61c7355e76
+expected=eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb
 compressed=/opt/t630-ubuntu-boot.img.gz
 image=/run/t630-ubuntu-boot.img
 authorization=/run/AUTHORIZE-RESTORE-UBUNTU-BOOT

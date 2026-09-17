@@ -81,3 +81,18 @@ rollback remain for recovery and further review.
 This completes only the read-only maintenance gate. Offline shrink/GPT
 rehearsal against a disposable disk image is next; it is not authorization to
 change the tablet's storage.
+
+## Dual-layout fail-safe follow-up
+
+After the backward-compatible Ubuntu BOOT passed its own physical cold boot,
+maintenance v4 replaced v3's embedded restore image with that exact accepted
+dual-layout BOOT. V4 BOOT SHA-256 was
+`f4299f215ec908d1b8117ec364c08baf6125f652e87e47658cd549e55badce4e`.
+
+The v4 BOOT-only staging checks and complete readback passed. Its physical
+preflight again passed without a device write; the later live minimum was
+9,920,357 blocks, still 6,856,859 blocks below the 64 GiB target. The embedded
+restore no-write check passed, then the explicitly authorized helper restored
+the exact dual-layout BOOT, verified the complete BOOT readback, and returned
+to Ubuntu after a manual restart. V4 supersedes v3 as the maintenance image for
+future dual-boot work.

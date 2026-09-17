@@ -48,7 +48,7 @@ class DualbootMaintenanceTest(unittest.TestCase):
         self.assertIn("maintenance input hash mismatch", text)
 
     def test_stager_is_boot_only_with_rollback(self):
-        source = ROOT / "tools/stage_dualboot_maintenance_v3.sh"
+        source = ROOT / "tools/stage_dualboot_maintenance_v4.sh"
         subprocess.run(["sh", "-n", source], check=True)
         text = source.read_text()
         self.assertIn("/dev/sda19", text)

@@ -8,6 +8,17 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
+const KEYBOARD_DBUS_PATH = '/org/gnome/Shell/Extensions/T630TabletTools';
+const KEYBOARD_DBUS_XML = `<node>
+  <interface name="org.gnome.Shell.Extensions.T630TabletTools">
+    <method name="ShowKeyboard"/>
+    <method name="HideKeyboard"/>
+    <method name="GetKeyboardVisible">
+      <arg name="visible" direction="out" type="b"/>
+    </method>
+  </interface>
+</node>`;
+
 export default class TabletKeyboard extends Extension {
     _hideStockControl(item) {
         if (!item)
@@ -61,6 +72,20 @@ export default class TabletKeyboard extends Extension {
             Main.keyboard.open(Main.layoutManager.focusIndex);
     }
 
+    ShowKeyboard() {
+        if (!Main.keyboard.visible)
+            Main.keyboard.open(Main.layoutManager.focusIndex);
+    }
+
+    HideKeyboard() {
+        if (Main.keyboard.visible)
+            Main.keyboard.close();
+    }
+
+    GetKeyboardVisible() {
+        return Main.keyboard.visible;
+    }
+
     _openSettings() {
         try {
             // Shell itself is a nested compositor client. Join the desktop's
@@ -81,6 +106,13 @@ export default class TabletKeyboard extends Extension {
 
     enable() {
         this._settings = this.getSettings();
+        // Chromium correctly advertises text-input-v3 but Mutter's nested
+        // backend does not turn that request into an OSK visibility change.
+        // Export the already-proven keyboard action to the per-user focus
+        // watcher; the session bus keeps this surface private to the owner.
+        this._keyboardDbus = Gio.DBusExportedObject.wrapJSObject(
+            KEYBOARD_DBUS_XML, this);
+        this._keyboardDbus.export(Gio.DBus.session, KEYBOARD_DBUS_PATH);
         Main.wm.addKeybinding(
             'toggle-keyboard', this._settings,
             Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
@@ -210,6 +242,8 @@ export default class TabletKeyboard extends Extension {
     }
 
     disable() {
+        this._keyboardDbus?.unexport();
+        this._keyboardDbus = null;
         if (this._flashlight?.checked)
             this._displayRequest(['flashlight', 'off']);
         this._displayActive = false;

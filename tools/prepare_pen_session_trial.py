@@ -4,8 +4,8 @@ import argparse
 import hashlib
 from pathlib import Path
 
-# Reviewed after adding the owner-scoped Chrome Wayland-IME launcher refresh.
-BASE_SHA = '6e69074c1fe38240b424192842f2864e63e298d39263a88a04700b7aeff24e5b'
+# Reviewed after adding the owner-scoped Chrome editable-focus OSK bridge.
+BASE_SHA = 'edcdeff039f0f77d69ebf87a7e414c978e0f510023b14499e41f700985e8b915'
 PREPARE = '''if [ "${T630_PEN_METADATA_TRIAL:-0}" = 1 ]; then
     /usr/bin/python3 /usr/local/libexec/t630-pen-x11-metadata --prepare
 fi

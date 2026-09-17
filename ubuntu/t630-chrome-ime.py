@@ -10,7 +10,14 @@ import tempfile
 
 SOURCE = Path("/usr/share/applications/google-chrome.desktop")
 MARKER = "# Managed by t630-chrome-ime; regenerated from the system launcher.\n"
-FLAGS = ("--enable-wayland-ime", "--wayland-text-input-version=3")
+FLAGS = (
+    "--enable-wayland-ime",
+    "--wayland-text-input-version=3",
+    # Chrome otherwise publishes only empty top-level AT-SPI frames until a
+    # screen reader connects. The owner-session OSK watcher needs editable
+    # focus, not page contents, and this switch makes that state available.
+    "--force-renderer-accessibility",
+)
 EXECUTABLE = "Exec=/usr/bin/google-chrome-stable"
 
 

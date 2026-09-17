@@ -13,7 +13,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-desktop-runtime"
-VERSION = "0.1.12"
+VERSION = "0.1.13"
 
 POSTINST = b"""#!/bin/sh
 set -e
@@ -37,6 +37,7 @@ FILES = {
     "usr/local/lib/t630/t630_display.py": ("ubuntu/t630_display.py", 0o644),
     "usr/local/libexec/t630-auth-watch": ("ubuntu/t630-auth-watch.py", 0o755),
     "usr/local/libexec/t630-chrome-ime": ("ubuntu/t630-chrome-ime.py", 0o755),
+    "usr/local/libexec/t630-chrome-osk": ("ubuntu/t630-chrome-osk.py", 0o755),
     "usr/local/libexec/t630-first-boot-resize": ("ubuntu/t630-first-boot-resize.py", 0o755),
     "usr/local/libexec/t630-first-boot-rotation": ("ubuntu/t630-first-boot-rotation.py", 0o755),
     "usr/local/libexec/t630-first-boot-session": ("ubuntu/t630-first-boot-session", 0o755),

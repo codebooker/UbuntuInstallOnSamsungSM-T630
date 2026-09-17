@@ -49,6 +49,10 @@ else
     gsettings set org.gnome.desktop.screensaver lock-enabled false
 fi
 gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true
+# Chrome exposes focused web fields to AT-SPI only while toolkit accessibility
+# is enabled. A tiny owner-session watcher uses those focus events to bridge a
+# nested-Mutter OSK visibility bug; native applications retain normal handling.
+gsettings set org.gnome.desktop.interface toolkit-accessibility true
 gsettings set org.gnome.shell.keybindings toggle-application-view "['<Super>a', 'XF86HomePage']"
 gsettings set org.gnome.shell.keybindings toggle-overview "['XF86Launch6']"
 # Run before Shell constructs AppDisplay: its empty-folder defaults are lazy.
@@ -85,6 +89,7 @@ media_keys_pid=
 power_pid=
 rotation_pid=
 session_manager_pid=
+chrome_osk_pid=
 cleanup() {
     trap - EXIT INT TERM
     if [ -n "$shell_pid" ]; then kill -TERM "$shell_pid" 2>/dev/null || true; fi
@@ -93,6 +98,7 @@ cleanup() {
     if [ -n "$power_pid" ]; then kill -TERM "$power_pid" 2>/dev/null || true; fi
     if [ -n "$rotation_pid" ]; then kill -TERM "$rotation_pid" 2>/dev/null || true; fi
     if [ -n "$session_manager_pid" ]; then kill -TERM "$session_manager_pid" 2>/dev/null || true; fi
+    if [ -n "$chrome_osk_pid" ]; then kill -TERM "$chrome_osk_pid" 2>/dev/null || true; fi
     kill -TERM "$xwayland_pid" 2>/dev/null || true
     wait "$xwayland_pid" 2>/dev/null || true
     rm -f "$XAUTHORITY"
@@ -183,6 +189,11 @@ until gdbus call --session --dest org.freedesktop.DBus \
     test "$attempt" -lt 20
     sleep 1
 done
+if [ -x /usr/local/libexec/t630-chrome-osk ]; then
+    /usr/local/libexec/t630-chrome-osk \
+        >"$XDG_RUNTIME_DIR/t630-chrome-osk.log" 2>&1 &
+    chrome_osk_pid=$!
+fi
 if [ -x /usr/libexec/gsd-media-keys ]; then
     (
         # The nested shell must publish its display before GTK initializes.

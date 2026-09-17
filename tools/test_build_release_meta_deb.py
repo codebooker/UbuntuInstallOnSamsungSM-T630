@@ -56,7 +56,7 @@ class ReleaseMetaPackageTests(unittest.TestCase):
         self.assertIn("t630-polkit-runtime (= 0.1.0)", builder.DEPENDENCIES)
         self.assertIn("t630-login-runtime (= 0.1.2)", builder.DEPENDENCIES)
         self.assertIn("t630-first-boot (= 0.1.3)", builder.DEPENDENCIES)
-        self.assertIn("t630-desktop-runtime (= 0.1.12)", builder.DEPENDENCIES)
+        self.assertIn("t630-desktop-runtime (= 0.1.13)", builder.DEPENDENCIES)
         self.assertIn("t630-camera-runtime (= 0.1.7)", builder.DEPENDENCIES)
 
 

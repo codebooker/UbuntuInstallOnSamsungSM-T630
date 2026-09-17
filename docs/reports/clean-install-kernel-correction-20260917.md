@@ -103,3 +103,32 @@ leaving 56.6 GB free on `linuxroot`.
 The Ubuntu-to-Android-to-Ubuntu touchscreen-button round trip has passed. The
 remaining release gates are repeated cold-switch/failure endurance and the
 full stock-recovery rehearsal.
+
+## Post-v3 Chrome keyboard correction
+
+Physical use showed that Chrome 153 negotiated `zwp_text_input_v3`, enabled its
+text input, and committed the focused field, but nested Mutter did not convert
+that protocol state into on-screen-keyboard visibility. The v3 launch flags
+were therefore necessary but insufficient.
+
+Desktop 0.1.13 keeps those flags, enables Chrome's renderer accessibility tree,
+and adds an owner-session watcher limited to focused editable Chrome/Chromium
+objects. It calls the same idempotent GNOME keyboard action already used by the
+physical red button. A 400 ms AT-SPI collection check covers initial autofocus,
+which can predate focus-event subscription, while normal text-input-v3 remains
+responsible for closing the keyboard. The bridge does not inspect or log field
+contents. Its reproducible package SHA-256 is
+`ed7b3ad710cd2bfea1dbe28c971c8544704bfbf789977c420c03bbeaf50f29da`.
+Release-base 0.1.22 locks that desktop package and has reproducible SHA-256
+`84ce91801bb57479f9b54873c4eb4ffcb0a16fc44165b11f4d779d99186b2f46`.
+The sealed v3 installer remains a valid historical artifact, but a replacement
+bundle must not be declared until this bridge passes the real Chrome profile
+and a clean restart.
+
+The real owner Chrome profile then passed: a focused web field reached the
+AT-SPI bridge, GNOME accepted `ShowKeyboard`, and the owner confirmed that the
+keyboard opened automatically. A clean restart then restored Wi-Fi, the real
+unmuted speaker sink, the watcher, and the Tablet Controls extension. Chrome
+launched from the app drawer with all three managed flags and the keyboard was
+visible again. The replacement installer bundle remains to be rebuilt from an
+identity-clean root carrying desktop 0.1.13.

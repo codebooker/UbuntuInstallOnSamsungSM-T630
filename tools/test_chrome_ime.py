@@ -20,9 +20,10 @@ class ChromeImeTests(unittest.TestCase):
         self.assertEqual(once, twice)
         self.assertEqual(once.count("--enable-wayland-ime"), 2)
         self.assertEqual(once.count("--wayland-text-input-version=3"), 2)
+        self.assertEqual(once.count("--force-renderer-accessibility"), 2)
         self.assertIn(
             "Exec=/usr/bin/google-chrome-stable --enable-wayland-ime "
-            "--wayland-text-input-version=3 %U",
+            "--wayland-text-input-version=3 --force-renderer-accessibility %U",
             once,
         )
 

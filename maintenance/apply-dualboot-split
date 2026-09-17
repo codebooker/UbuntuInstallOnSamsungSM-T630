@@ -1,0 +1,289 @@
+#!/bin/busybox sh
+# Two-phase, device-specific SM-T630 Ubuntu/Android storage split.
+# This is deliberately not run from init. It must be uploaded to the RAM-only
+# maintenance image together with a host-verified GPT backup and explicit
+# per-phase authorization tokens.
+set -eu
+export PATH=/bin:/sbin:/usr/sbin
+export LC_ALL=C
+umask 077
+
+disk=/dev/sda
+rootdev=
+backup=/run/gpt-before-split.bin
+host_marker=/run/HOST-VERIFIED-GPT-BACKUP
+shrink_token=/run/AUTHORIZE-DUALBOOT-SHRINK
+split_token=/run/AUTHORIZE-DUALBOOT-SPLIT
+target_blocks=16777216
+hash_sequence=0
+
+fail() { echo "DUALBOOT_APPLY_REFUSED: $*" >&2; exit 1; }
+make_block_node() {
+    device=$1
+    node=$2
+    test -r "/sys/class/block/$device/dev" || fail "$device device number is absent"
+    numbers=$(cat "/sys/class/block/$device/dev")
+    major=${numbers%%:*}
+    minor=${numbers#*:}
+    test ! -e "$node" || fail "$node already exists"
+    mknod "$node" b "$major" "$minor"
+    test -b "$node" || fail "could not create current node for $device"
+}
+expect_uevent() {
+    device=$1
+    name=$2
+    test -r "/sys/class/block/$device/uevent" || fail "$device is absent"
+    grep -qx "PARTNAME=$name" "/sys/class/block/$device/uevent" ||
+        fail "$device is not $name"
+}
+is_mounted() {
+    device=$1
+    major_minor=$(cat "/sys/class/block/$device/dev")
+    awk -v wanted="$major_minor" '$3 == wanted { found=1 } END { exit found ? 0 : 1 }' \
+        /proc/self/mountinfo
+}
+check_hash() {
+    expected=$1
+    device_name=$2
+    label=$3
+    hash_sequence=$((hash_sequence + 1))
+    node="/dev/t630-hash-$device_name-$$-$hash_sequence"
+    make_block_node "$device_name" "$node"
+    printf '%s  %s\n' "$expected" "$node" | sha256sum -c - >/dev/null ||
+        fail "$label hash mismatch"
+}
+check_protected() {
+    check_hash 2b6901f8341de3b76fbcabc69bf0229683d503f233eafd580b4d602392ff74f5 sda20 recovery
+    check_hash fbebd763c17c05bc162776a6e9abd86fc386aa0ef58ccfdaa6cb9b13a6a0c72f sda21 vendor_boot
+    check_hash f9111b7a566b0a7342ec4d8f14cee53dc465a272d42596f774c0519d6e89fc57 sda22 dtbo
+    check_hash a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225 sde19 vbmeta
+}
+check_platform() {
+    test "$(id -u)" = 0 || fail "root is required"
+    test "$(uname -r)" = 5.4.274-qgki-31225846-abT630XXSBDZE3 ||
+        fail "kernel baseline mismatch"
+    grep -q 'androidboot.em.model=SM-T630' /proc/cmdline || fail "model mismatch"
+    test "$(cat /sys/class/block/sda/size)" = 248799232 || fail "disk size mismatch"
+    test "$(cat /sys/class/block/sda/queue/logical_block_size)" = 4096 ||
+        fail "GPT logical sector size mismatch"
+    test "$(cat /sys/class/power_supply/battery/capacity)" -ge 50 ||
+        fail "battery below 50 percent"
+    status=$(cat /sys/class/power_supply/battery/status)
+    case "$status" in
+        Charging) ;;
+        Full)
+            ac_online=$(cat /sys/class/power_supply/ac/online 2>/dev/null || echo 0)
+            usb_online=$(cat /sys/class/power_supply/usb/online 2>/dev/null || echo 0)
+            test "$ac_online" = 1 || test "$usb_online" = 1 ||
+                fail "full battery is not externally powered"
+            ;;
+        *) fail "external power is required" ;;
+    esac
+    test -b "$disk" || fail "internal disk absent"
+    rootdev="/dev/t630-sda34-initial-$$"
+    make_block_node sda34 "$rootdev"
+    test -z "$(ls /sys/class/block/sda34/holders)" || fail "partition 34 has holders"
+    if is_mounted sda34; then fail "partition 34 is mounted"; fi
+}
+check_ext4_identity() {
+    test "$(dd if="$rootdev" bs=1 skip=1080 count=2 2>/dev/null |
+        od -An -tx1 | tr -d ' \n')" = 53ef || fail "ext4 magic mismatch"
+    test "$(dd if="$rootdev" bs=1 skip=1128 count=16 2>/dev/null |
+        od -An -tx1 | tr -d ' \n')" = 64de854453ea4fdc8946d6b07e238630 ||
+        fail "Ubuntu filesystem UUID mismatch"
+    test "$(dd if="$rootdev" bs=1 skip=1048 count=4 2>/dev/null |
+        od -An -tu4 | tr -d ' \n')" = 2 || fail "ext4 block size is not 4096"
+}
+check_ext4_shrunk() {
+    check_ext4_identity
+    blocks=$(dd if="$rootdev" bs=1 skip=1028 count=4 2>/dev/null |
+        od -An -tu4 | tr -d ' \n')
+    high=$(dd if="$rootdev" bs=1 skip=1360 count=4 2>/dev/null |
+        od -An -tu4 | tr -d ' \n')
+    test "$blocks" = "$target_blocks" || fail "ext4 block count is $blocks, expected $target_blocks"
+    test "$high" = 0 || fail "ext4 high block count is nonzero"
+}
+check_original_layout() {
+    expect_uevent sda34 userdata
+    test "$(cat /sys/class/block/sda34/start)" = 21880832 || fail "partition 34 start mismatch"
+    test "$(cat /sys/class/block/sda34/size)" = 226918360 || fail "partition 34 size mismatch"
+    info=$(sgdisk --info=34 "$disk" 2>&1) || fail "cannot inspect GPT entry 34"
+    printf '%s\n' "$info" | grep -q 'Android user data' || fail "partition 34 type mismatch"
+    printf '%s\n' "$info" | grep -q 'First sector: 2735104 ' || fail "GPT start mismatch"
+    printf '%s\n' "$info" | grep -q 'Last sector: 31099898 ' || fail "GPT end mismatch"
+    printf '%s\n' "$info" | grep -q "Partition name: 'userdata'" || fail "GPT name mismatch"
+}
+check_split_layout() {
+    expect_uevent sda34 linuxroot
+    expect_uevent sda35 userdata
+    test "$(cat /sys/class/block/sda34/start)" = 21880832 || fail "linuxroot start mismatch"
+    test "$(cat /sys/class/block/sda34/size)" = 134217728 || fail "linuxroot size mismatch"
+    test "$(cat /sys/class/block/sda35/start)" = 156098560 || fail "userdata start mismatch"
+    test "$(cat /sys/class/block/sda35/size)" = 92700632 || fail "userdata size mismatch"
+    info34=$(sgdisk --info=34 "$disk" 2>&1) || fail "cannot inspect split entry 34"
+    info35=$(sgdisk --info=35 "$disk" 2>&1) || fail "cannot inspect split entry 35"
+    printf '%s\n' "$info34" | grep -q 'Linux filesystem' || fail "linuxroot type mismatch"
+    printf '%s\n' "$info34" | grep -q 'First sector: 2735104 ' || fail "linuxroot GPT start mismatch"
+    printf '%s\n' "$info34" | grep -q 'Last sector: 19512319 ' || fail "linuxroot GPT end mismatch"
+    printf '%s\n' "$info34" | grep -q "Partition name: 'linuxroot'" || fail "linuxroot GPT name mismatch"
+    printf '%s\n' "$info35" | grep -q 'Android user data' || fail "userdata type mismatch"
+    printf '%s\n' "$info35" | grep -q 'First sector: 19512320 ' || fail "userdata GPT start mismatch"
+    printf '%s\n' "$info35" | grep -q 'Last sector: 31099898 ' || fail "userdata GPT end mismatch"
+    printf '%s\n' "$info35" | grep -q "Partition name: 'userdata'" || fail "userdata GPT name mismatch"
+}
+require_host_verified_backup() {
+    test -f "$backup" && test ! -L "$backup" || fail "GPT backup absent"
+    test "$(stat -c %s "$backup")" = 6656 || fail "GPT backup size mismatch"
+    test -f "$host_marker" && test ! -L "$host_marker" || fail "host verification marker absent"
+    expected=$(sed -n 's/^HOST_SAVED_GPT_SHA256=//p' "$host_marker")
+    case "$expected" in
+        [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*) ;;
+        *) fail "host verification marker invalid" ;;
+    esac
+    test "${#expected}" = 64 || fail "host verification digest length invalid"
+    actual=$(sha256sum "$backup" | awk '{print $1}')
+    test "$actual" = "$expected" || fail "RAM GPT backup differs from host copy"
+}
+verify_live_gpt_matches_backup() {
+    live=$1
+    test ! -e "$live" || fail "live GPT comparison path already exists"
+    sgdisk --backup="$live" "$disk" >/dev/null || fail "could not export live GPT"
+    cmp "$backup" "$live" >/dev/null || fail "live GPT differs from host-saved backup"
+    sgdisk --verify "$disk" >/run/gpt-verify-apply.txt 2>&1 || fail "GPT verification failed"
+    grep -q 'No problems found' /run/gpt-verify-apply.txt || fail "GPT problems reported"
+}
+run_e2fsck_preen() {
+    set +e
+    e2fsck -fp "$rootdev"
+    result=$?
+    set -e
+    case "$result" in 0|1) ;; *) fail "e2fsck returned $result" ;; esac
+}
+
+mode=${1:-}
+case "$mode" in
+    --shrink)
+        check_platform
+        check_original_layout
+        check_ext4_identity
+        require_host_verified_backup
+        verify_live_gpt_matches_backup "/run/gpt-live-before-shrink-$$.bin"
+        check_protected
+        dualboot-preflight --deep
+        test -f "$shrink_token" && test ! -L "$shrink_token" || fail "shrink authorization absent"
+        test "$(cat "$shrink_token")" = 'SHRINK SM-T630 UBUNTU EXT4 TO 16777216 BLOCKS' ||
+            fail "shrink authorization invalid"
+        echo 'DUALBOOT_SHRINK_STARTING_GPT_REMAINS_UNCHANGED'
+        run_e2fsck_preen
+        resize2fs "$rootdev" "$target_blocks"
+        sync
+        run_e2fsck_preen
+        check_ext4_shrunk
+        check_original_layout
+        verify_live_gpt_matches_backup "/run/gpt-live-after-shrink-$$.bin"
+        check_protected
+        printf '%s\n' 'EXT4 SHRUNK TO 16777216 BLOCKS; ORIGINAL GPT STILL ACTIVE' \
+            >/run/DUALBOOT-SHRINK-COMPLETE
+        sync
+        echo 'DUALBOOT_SHRINK_COMPLETE_GPT_UNCHANGED'
+        ;;
+    --split)
+        check_platform
+        check_original_layout
+        check_ext4_shrunk
+        require_host_verified_backup
+        test -f /run/DUALBOOT-SHRINK-COMPLETE || fail "same-session shrink marker absent"
+        test "$(cat /run/DUALBOOT-SHRINK-COMPLETE)" = \
+            'EXT4 SHRUNK TO 16777216 BLOCKS; ORIGINAL GPT STILL ACTIVE' ||
+            fail "shrink marker invalid"
+        verify_live_gpt_matches_backup "/run/gpt-live-before-split-$$.bin"
+        check_protected
+        run_e2fsck_preen
+        test -f "$split_token" && test ! -L "$split_token" || fail "split authorization absent"
+        test "$(cat "$split_token")" = 'SPLIT SM-T630 PARTITION 34 AND CREATE PARTITION 35' ||
+            fail "split authorization invalid"
+        unique=$(sgdisk --info=34 "$disk" | sed -n 's/^Partition unique GUID: //p')
+        test -n "$unique" || fail "partition 34 unique GUID absent"
+        gpt_changed=0
+        committed=0
+        rollback_on_exit() {
+            result=$?
+            trap - 0 HUP INT TERM
+            if test "$result" -ne 0 && test "$gpt_changed" = 1 && test "$committed" = 0; then
+                echo 'DUALBOOT_SPLIT_FAILED_ATTEMPTING_GPT_ROLLBACK' >&2
+                set +e
+                umount /run/check-root 2>/dev/null
+                sgdisk --load-backup="$backup" "$disk" >/run/gpt-auto-rollback.txt 2>&1
+                rollback_result=$?
+                if test "$rollback_result" -eq 0; then
+                    sync
+                    blockdev --rereadpt "$disk" >/dev/null 2>&1
+                    rollback_result=$?
+                fi
+                if test "$rollback_result" -eq 0; then
+                    mdev -s
+                    check_original_layout
+                    rollback_check="/run/gpt-auto-rollback-check-$$.bin"
+                    sgdisk --backup="$rollback_check" "$disk" >/dev/null 2>&1
+                    cmp "$backup" "$rollback_check" >/dev/null
+                    rollback_result=$?
+                fi
+                set -e
+                if test "$rollback_result" -ne 0; then
+                    echo 'DUALBOOT_GPT_AUTO_ROLLBACK_FAILED_USE_HOST_BACKUP' >&2
+                    exit 126
+                fi
+                echo 'DUALBOOT_GPT_AUTO_ROLLBACK_APPLIED' >&2
+            fi
+            exit "$result"
+        }
+        trap rollback_on_exit 0
+        trap 'exit 125' HUP INT TERM
+        echo 'DUALBOOT_GPT_SPLIT_STARTING'
+        # Mark the GPT as potentially changed before invoking sgdisk so that a
+        # partial write followed by a nonzero exit also takes the rollback path.
+        gpt_changed=1
+        sgdisk \
+            --delete=34 \
+            --new=34:2735104:19512319 \
+            --typecode=34:8300 \
+            --partition-guid=34:"$unique" \
+            --change-name=34:linuxroot \
+            --new=35:19512320:31099898 \
+            --typecode=35:A03A \
+            --change-name=35:userdata "$disk"
+        sync
+        blockdev --rereadpt "$disk"
+        mdev -s
+        attempts=0
+        while test "$attempts" -lt 10 && test ! -r /sys/class/block/sda35/dev; do
+            sleep 1
+            mdev -s
+            attempts=$((attempts + 1))
+        done
+        test -r /sys/class/block/sda35/dev || fail "partition 35 device did not appear"
+        rootdev="/dev/t630-sda34-split-$$"
+        userdata_node="/dev/t630-sda35-split-$$"
+        make_block_node sda34 "$rootdev"
+        make_block_node sda35 "$userdata_node"
+        test -z "$(ls /sys/class/block/sda35/holders)" || fail "partition 35 has holders"
+        if is_mounted sda35; then fail "partition 35 is mounted"; fi
+        check_split_layout
+        check_ext4_shrunk
+        sgdisk --verify "$disk" >/run/gpt-verify-split.txt 2>&1 || fail "split GPT verification failed"
+        grep -q 'No problems found' /run/gpt-verify-split.txt || fail "split GPT problems reported"
+        e2fsck -fn "$rootdev" >/run/e2fsck-after-split.txt 2>&1 || fail "split ext4 check failed"
+        mkdir -p /run/check-root
+        mount -t ext4 -o ro,noload "$rootdev" /run/check-root
+        test -s /run/check-root/etc/t630-install-id || fail "Ubuntu install marker absent"
+        umount /run/check-root
+        check_protected
+        committed=1
+        sync
+        echo 'DUALBOOT_GPT_SPLIT_APPLIED_AND_VERIFIED_USERDATA_UNFORMATTED'
+        ;;
+    *)
+        echo 'usage: apply-dualboot-split --shrink|--split' >&2
+        exit 2
+        ;;
+esac

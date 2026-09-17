@@ -14,38 +14,38 @@ architecture is reused.
 
 ## Evidence from the development tablet
 
-The following read-only facts were rechecked on 2026-09-16:
+The following facts were rechecked after the authorized storage transaction on
+2026-09-16:
 
 - internal UFS exposes 248,799,232 512-byte sectors;
-- partition 34 starts at sector 21,880,832 and occupies 226,918,360 sectors;
-- partition 34 is currently an ext4 Ubuntu root labelled by GPT as `userdata`;
-- the filesystem is clean, has 28,364,795 4 KiB blocks, and has an estimated
-  minimum shrink size of 9,836,055 blocks;
-- approximately 71 GiB is free in the mounted Ubuntu filesystem;
+- partition 34 starts at sector 21,880,832, occupies 134,217,728 sectors, and
+  is the 64 GiB ext4 Ubuntu root labelled `linuxroot`;
+- partition 35 starts at sector 156,098,560, occupies 92,700,632 sectors, and
+  is the new 44.2 GiB native Android `userdata` extent;
+- the Ubuntu filesystem is clean, has exactly 16,777,216 4 KiB blocks, and has
+  approximately 27 GiB free;
 - Samsung's `super`, `recovery`, `vendor_boot`, DTBO, VBMETA, and bootloader
   partitions remain outside partition 34;
 - the exact DZE3 factory archive and extracted stock `boot.img` are available
   locally for recovery; and
-- Waydroid is stopped, while its data remains intact.
+- Waydroid is stopped and disabled at desktop startup, while its data remains
+  intact.
 
-No partition table, filesystem, boot partition, Android data, or recovery
-partition was changed during this investigation.
+The exact pre-split and post-split GPT backups remain private local recovery
+artifacts and are deliberately excluded from Git.
 
-## Proposed installed layout
+## Installed layout
 
-The conservative candidate preserves the beginning of the current Ubuntu
-filesystem and divides only the existing final partition extent:
+The conservative layout preserves the beginning of the Ubuntu filesystem and
+divides only the former final partition extent:
 
-| Partition | Proposed extent in 512-byte sectors | Approximate capacity | Purpose |
+| Partition | Installed extent in 512-byte sectors | Approximate capacity | Purpose |
 | --- | ---: | ---: | --- |
 | 34 `linuxroot` | 21,880,832–156,098,559 | 64 GiB | Existing Ubuntu ext4 root after an offline shrink |
 | 35 `userdata` | 156,098,560–248,799,191 | 44.2 GiB | Fresh native Android data |
 
-Both starts are 1 MiB aligned. The 64 GiB Ubuntu target is substantially above
-the current estimated 37.6 GiB filesystem minimum. Exact free-space and
-filesystem checks must be repeated from the maintenance image immediately
-before any write; these numbers are a reviewed plan, not permission to alter
-the tablet.
+Both starts are 1 MiB aligned. Immediately before the shrink, the maintenance
+image measured a 9,944,888-block minimum against the 16,777,216-block target.
 
 Those values use Linux sysfs's conventional 512-byte sector units. Samsung's
 UFS exposes a 4096-byte logical sector to GPT tools, so the corresponding
@@ -140,6 +140,17 @@ Maintenance v4 now embeds that accepted dual-layout BOOT as its fail-safe. A
 second physical maintenance cycle passed the unchanged read-only preflight,
 verified the new embedded image, restored it with a full BOOT readback, and
 returned to Ubuntu. This supersedes v3 for any future storage operation.
+
+Gates 3, 5, 6, and the storage/boot portion of gate 7 now pass physically.
+`maintenance/apply-dualboot-split` requires a host-verified exact GPT backup,
+external power, two separate RAM-only authorization tokens, exact model and
+geometry, unmounted storage, and pinned protected-partition hashes. It shrinks
+ext4 before touching GPT and arms automatic GPT rollback until the split has
+passed all checks. The final Ubuntu boot from `linuxroot` returned GNOME,
+Wi-Fi, the exact accepted BOOT hash, a clean package audit, and a valid GPT.
+Partition 35 remains intentionally unformatted pending the isolated stock
+recovery/Android initialization gate. See the
+[physical storage split report](reports/dualboot-storage-split-20260916.md).
 
 ## Rejected shortcuts
 

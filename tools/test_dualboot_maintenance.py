@@ -13,6 +13,7 @@ class DualbootMaintenanceTest(unittest.TestCase):
         for source in (
             "maintenance/init", "maintenance/usb-shell",
             "maintenance/dualboot-preflight", "maintenance/restore-ubuntu-boot",
+            "maintenance/apply-dualboot-split",
         ):
             subprocess.run(["sh", "-n", ROOT / source], check=True)
 

@@ -19,7 +19,7 @@ class SwitchToNativeAndroidTest(unittest.TestCase):
         self.assertIn("android_hash_file=$artifact/boot.sha256", self.text)
         self.assertIn('test "${#android_boot}" = 64', self.text)
         self.assertIn('check_hash "$android_boot" "$image" accepted-android-boot', self.text)
-        self.assertIn("eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb", self.text)
+        self.assertIn("fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f", self.text)
         self.assertIn("of=/dev/sda19", self.text)
         self.assertNotIn("of=/dev/sda25", self.text)
         self.assertNotIn("of=/dev/sda34", self.text)

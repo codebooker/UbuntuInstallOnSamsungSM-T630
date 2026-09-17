@@ -10,8 +10,8 @@ import os
 from pathlib import Path
 
 
-EXPECTED_BOOT_SHA256 = "eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb"
-EXPECTED_KERNEL_SHA256 = "49b648801a751be9761bd8b2b24e9833964acbb06741d87f7db384dd2d36845d"
+EXPECTED_BOOT_SHA256 = "fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f"
+EXPECTED_KERNEL_SHA256 = "7ffa08471df8e47cf9d6cccca55ff24c96e3afc8393f4163ef0a020f7d2958b6"
 EXPECTED_BOOT_BYTES = 100663296
 ROOT_UUID = "64de8544-53ea-4fdc-8946-d6b07e238630"
 INPUTS = (
@@ -102,6 +102,12 @@ def validate(work: Path) -> dict:
         raise ValueError("BOOT is not the physically accepted dual-layout image")
     if boot_record.get("kernel_sha256") != EXPECTED_KERNEL_SHA256:
         raise ValueError("BOOT kernel is not the accepted dual-layout build")
+    dualboot = root_record.get("private_dualboot_assets")
+    if (not isinstance(dualboot, dict) or
+            dualboot.get("ubuntu_boot_sha256") != EXPECTED_BOOT_SHA256 or
+            not isinstance(dualboot.get("android_boot_sha256"), str) or
+            len(dualboot["android_boot_sha256"]) != 64):
+        raise ValueError("rootfs private dual-boot assets are not sealed")
 
     files = []
     for name in INPUTS:

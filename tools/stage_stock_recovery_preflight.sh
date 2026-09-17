@@ -55,7 +55,7 @@ case "$status" in
     *) fail "external power is required" ;;
 esac
 
-check_hash eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb /dev/sda19 boot
+check_hash fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f /dev/sda19 boot
 check_hash 2b6901f8341de3b76fbcabc69bf0229683d503f233eafd580b4d602392ff74f5 /dev/sda20 recovery
 check_hash fbebd763c17c05bc162776a6e9abd86fc386aa0ef58ccfdaa6cb9b13a6a0c72f /dev/sda21 vendor_boot
 check_hash f9111b7a566b0a7342ec4d8f14cee53dc465a272d42596f774c0519d6e89fc57 /dev/sda22 dtbo
@@ -105,7 +105,7 @@ readback=$(dd if="$misc" bs=2048 count=1 status=none | sha256sum | awk '{print $
 test "$readback" = "$bcb_hash" || fail "BCB readback mismatch"
 test "$(tail_hash "$misc")" = "$original_tail" || fail "misc bytes after BCB changed"
 check_hash 2b6901f8341de3b76fbcabc69bf0229683d503f233eafd580b4d602392ff74f5 /dev/sda20 recovery
-check_hash eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb /dev/sda19 boot
+check_hash fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f /dev/sda19 boot
 committed=1
 sync
 echo STOCK_RECOVERY_PREFLIGHT_BCB_STAGED_NO_WIPE_RESTART_WITH_ORDERLY_HELPER

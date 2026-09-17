@@ -21,6 +21,10 @@ class InstallerBundleTests(unittest.TestCase):
             "contains_proprietary_stock_assets": True,
             "contains_human_account": False,
             "contains_network_credentials": False,
+            "private_dualboot_assets": {
+                "android_boot_sha256": "a" * 64,
+                "ubuntu_boot_sha256": hashlib.sha256(b"boot").hexdigest(),
+            },
         }
         (root / "t630-release-rootfs.tar.gz.manifest.json").write_text(
             json.dumps(root_record), encoding="utf-8")

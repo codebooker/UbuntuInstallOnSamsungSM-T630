@@ -16,7 +16,7 @@ loader=$runtime/lib/ld-linux-aarch64.so.1
 library_path=$runtime/lib/aarch64-linux-gnu:$runtime/usr/lib/aarch64-linux-gnu:$runtime/lib
 authorization=$stage/ERASE-SM-T630-LINUXROOT
 started=/run/t630-format-started
-boot_hash=eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb
+boot_hash=fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f
 
 fail() { echo "INSTALLER_REFUSED: $*" >&2; exit 1; }
 
@@ -131,7 +131,7 @@ if awk -F: '$3 >= 1000 && $3 < 60000 { found=1 } END { exit found ? 0 : 1 }' \
 fi
 package_state=$(run "$runtime/usr/bin/dpkg-query" --root="$target" -W \
     '-f=${db:Status-Status} ${Version}\n' t630-release-base)
-test "$package_state" = 'installed 0.1.19' || fail "release package state mismatch"
+test "$package_state" = 'installed 0.1.20' || fail "release package state mismatch"
 test ! -e "$target/etc/ssh/ssh_host_rsa_key" || fail "SSH host key leaked"
 test ! -e "$target/etc/NetworkManager/system-connections" ||
     test -z "$(find "$target/etc/NetworkManager/system-connections" \

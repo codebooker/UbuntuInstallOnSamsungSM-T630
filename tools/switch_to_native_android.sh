@@ -10,7 +10,7 @@ android_hash_file=$artifact/boot.sha256
 ubuntu_rollback=$artifact/ubuntu-dual-layout.transaction-rollback.img
 acceptance=/etc/t630/native-android-accepted
 authorization=$artifact/AUTHORIZE-NATIVE-ANDROID-SWITCH
-ubuntu_boot=eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb
+ubuntu_boot=fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f
 
 case "$mode" in
     --check|--write|--switch-and-reboot) ;;

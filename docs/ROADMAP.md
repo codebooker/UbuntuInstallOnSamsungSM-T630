@@ -66,7 +66,7 @@
    locking, explicit typed authorization, and no automatic reboot. After the
    working system was stopped and `linuxroot` was genuinely unmounted, the full
    physical read-only gate verified every protected partition and the isolated
-   recovery runtime without formatting. The fresh 0.1.19 bundle and its exact
+   recovery runtime without formatting. The fresh 0.1.20 bundle and its exact
    dual-layout partition/BOOT guards passed the same physical RAM-stage and
    unmounted read-only gate on 2026-09-17. Remaining gates are the explicitly
    authorized clean-install/first-boot run and stock-return rehearsal. Boot v3
@@ -89,7 +89,7 @@
    byte-for-byte. Writable camera state regenerates without a seed.
    The 2026-09-16 package refresh also removed stale exact dependencies left by
    incremental development. Component packages use compatible minimum versions,
-   while `t630-release-base` 0.1.19 remains the single exact-version lock for a
+   while `t630-release-base` 0.1.20 remains the single exact-version lock for a
    release. The live personalized root now passes `dpkg --audit` and
    `apt-get check` after a clean reboot; the login runtime rebuild is
    byte-identical. See the

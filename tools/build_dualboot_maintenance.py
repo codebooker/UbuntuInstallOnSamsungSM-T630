@@ -17,9 +17,9 @@ from build_boot_test import newc, run, sha, ROOT, STOCK, TOOLS, PARTITION_SIZE
 
 STOCK_BOOT_SHA256 = "79a9b1d56763cb6e3c113473eb783f6332fe79b054e3c67494c5094c6c382796"
 BUSYBOX_SHA256 = "52151e7f322f926b64049cdaa1410dc3ea6485525e0624b05813791c219ae933"
-KERNEL_SHA256 = "49b648801a751be9761bd8b2b24e9833964acbb06741d87f7db384dd2d36845d"
+KERNEL_SHA256 = "7ffa08471df8e47cf9d6cccca55ff24c96e3afc8393f4163ef0a020f7d2958b6"
 KERNEL_RELEASE = b"5.4.274-qgki-31225846-abT630XXSBDZE3"
-UBUNTU_BOOT_SHA256 = "eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb"
+UBUNTU_BOOT_SHA256 = "fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f"
 
 MAINTENANCE_HASHES = {
     "usr/sbin/e2fsck": "e08e5d3c172369356a92c5f20f28260bba5b7ae35726144e5bdf83383dee026a",
@@ -99,7 +99,7 @@ def build_ramdisk() -> tuple[bytes, dict[str, str]]:
         ("etc/group", stat.S_IFREG | 0o644, b"root:x:0:\n", 0, 0),
     ])
 
-    ubuntu_boot = ROOT / "output/dual-layout-ubuntu-v1/boot.img"
+    ubuntu_boot = ROOT / "output/dual-layout-ubuntu-v2/boot.img"
     ubuntu_boot_data = ubuntu_boot.read_bytes()
     if sha(ubuntu_boot_data) != UBUNTU_BOOT_SHA256 or len(ubuntu_boot_data) != PARTITION_SIZE:
         raise ValueError("accepted Ubuntu recovery BOOT mismatch")
@@ -115,7 +115,7 @@ def build(kernel: Path, output: Path) -> dict:
     kernel = kernel.resolve(strict=True)
     kernel_data = kernel.read_bytes()
     if sha(kernel_data) != KERNEL_SHA256 or KERNEL_RELEASE not in kernel_data:
-        raise ValueError("kernel is not the pinned SM-T630 v13 build")
+        raise ValueError("kernel is not the pinned module-compatible SM-T630 v12 build")
     if struct.unpack_from("<I", kernel_data, 0x38)[0] != 0x644D5241:
         raise ValueError("kernel is not an uncompressed ARM64 Image")
 
@@ -189,8 +189,8 @@ def build(kernel: Path, output: Path) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--kernel", type=Path, default=ROOT / "output/waydroid-kernel-v13/Image")
-    parser.add_argument("--output", type=Path, default=ROOT / "output/dualboot-maintenance-v4")
+    parser.add_argument("--kernel", type=Path, default=ROOT / "output/wifi-safe-checksum-v10/Image")
+    parser.add_argument("--output", type=Path, default=ROOT / "output/dualboot-maintenance-v5")
     args = parser.parse_args()
     print(json.dumps(build(args.kernel, args.output), indent=2, sort_keys=True))
 

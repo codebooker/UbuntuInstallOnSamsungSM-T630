@@ -174,10 +174,12 @@ marker. The accepted image returned GNOME, Wi-Fi, package health, and the
 unchanged full-size root after a cold boot. See the
 [dual-layout boot report](reports/dual-layout-ubuntu-boot-20260916.md).
 
-Maintenance v4 now embeds that accepted dual-layout BOOT as its fail-safe. A
-second physical maintenance cycle passed the unchanged read-only preflight,
-verified the new embedded image, restored it with a full BOOT readback, and
-returned to Ubuntu. This supersedes v3 for any future storage operation.
+Maintenance v5 embeds the corrected module-compatible dual-layout BOOT v2 as
+its fail-safe. The image is built from the proven v12 kernel because its symbol
+versions match the packaged DZE3 modules; the retired v13 Waydroid kernel does
+not. BOOT v2 completed a guarded physical BOOT-only write and full readback,
+then reached the clean first-boot GNOME UI with the packaged modules loaded.
+Maintenance v5 supersedes v4 for any future storage operation.
 
 Gates 3, 5, 6, and the storage/boot portion of gate 7 now pass physically.
 `maintenance/apply-dualboot-split` requires a host-verified exact GPT backup,

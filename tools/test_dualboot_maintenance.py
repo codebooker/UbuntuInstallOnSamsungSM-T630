@@ -49,7 +49,7 @@ class DualbootMaintenanceTest(unittest.TestCase):
         self.assertIn("maintenance input hash mismatch", text)
 
     def test_stager_is_boot_only_with_rollback(self):
-        source = ROOT / "tools/stage_dualboot_maintenance_v4.sh"
+        source = ROOT / "tools/stage_dualboot_maintenance_v5.sh"
         subprocess.run(["sh", "-n", source], check=True)
         text = source.read_text()
         self.assertIn("/dev/sda19", text)
@@ -92,10 +92,11 @@ class DualbootMaintenanceTest(unittest.TestCase):
         self.assertIn("OFFLINE_VALIDATED_DUAL_LAYOUT_NOT_FLASH_APPROVED", text)
         self.assertIn("linuxroot", text)
         self.assertIn("134217728", text)
+        self.assertIn("module-compatible SM-T630 v12", text)
         self.assertNotIn("/dev/sda19", text)
 
     def test_dual_layout_stager_is_boot_only(self):
-        source = ROOT / "tools/stage_dual_layout_boot_v1.sh"
+        source = ROOT / "tools/stage_dual_layout_boot_v2.sh"
         subprocess.run(["sh", "-n", source], check=True)
         text = source.read_text()
         self.assertIn("/dev/sda19", text)

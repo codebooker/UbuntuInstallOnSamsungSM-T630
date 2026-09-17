@@ -17,7 +17,7 @@ class StageNativeAndroidBootTest(unittest.TestCase):
 
     def test_writes_only_boot_with_exact_images(self):
         self.assertIn("79a9b1d56763cb6e3c113473eb783f6332fe79b054e3c67494c5094c6c382796", self.text)
-        self.assertIn("eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb", self.text)
+        self.assertIn("fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f", self.text)
         self.assertIn('of=/dev/sda19', self.text)
         self.assertNotIn('of=/dev/sda34', self.text)
         self.assertNotIn('of=/dev/sda35', self.text)

@@ -69,6 +69,36 @@ class ReleaseArchiveTests(unittest.TestCase):
         finally:
             temporary.cleanup()
 
+    def test_private_dualboot_assets_are_required_and_verified(self):
+        temporary, root = self.root()
+        try:
+            with self.assertRaisesRegex(ValueError, "switch assets"):
+                subject.validate_private_dualboot_assets(root)
+            artifact = root / "opt/t630/artifacts/native-android-stock"
+            artifact.mkdir(parents=True)
+            android = artifact / "boot.img"
+            ubuntu = artifact / "ubuntu-dual-layout.transaction-rollback.img"
+            android.write_bytes(b"a")
+            ubuntu.write_bytes(b"u")
+            (artifact / "boot.sha256").write_text("a" * 64 + "\n")
+            (artifact / "AUTHORIZE-NATIVE-ANDROID-SWITCH").write_text(
+                subject.AUTHORIZATION)
+            for path in artifact.iterdir():
+                path.chmod(0o400)
+            hashes = {android: "a" * 64, ubuntu: subject.UBUNTU_BOOT_SHA256}
+            with (mock.patch.object(subject, "BOOT_BYTES", 1),
+                  mock.patch.object(subject, "is_root_private_file",
+                                    return_value=True),
+                  mock.patch.object(subject, "digest",
+                                    side_effect=lambda path: hashes[path])):
+                self.assertEqual(
+                    subject.validate_private_dualboot_assets(root)[
+                        "ubuntu_boot_sha256"],
+                    subject.UBUNTU_BOOT_SHA256,
+                )
+        finally:
+            temporary.cleanup()
+
     def test_live_mount_below_root_fails(self):
         with mock.patch.object(
                 subject.Path, "read_text",

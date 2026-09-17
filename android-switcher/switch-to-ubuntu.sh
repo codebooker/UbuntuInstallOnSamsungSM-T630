@@ -14,7 +14,7 @@ ubuntu_image=$state/ubuntu-boot.img
 android_hash_file=$state/android-boot.sha256
 rollback=$state/android-boot.transaction-rollback.img
 boot=/dev/block/by-name/boot
-ubuntu_boot=eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb
+ubuntu_boot=fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f
 
 fail() { echo "UBUNTU_SWITCH_REFUSED: $*" >&2; exit 1; }
 check_hash() {

@@ -33,7 +33,7 @@ awk '
 sha256sum -c SHA256SUMS
 test "$(stat -c %s boot/boot.img)" = 100663296
 printf '%s  %s\n' \
-  eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb \
+  fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f \
   boot/boot.img | sha256sum -c -
 test "$(stat -c %s t630-release-rootfs.tar.gz)" -gt 104857600
 test "$(stat -c %s t630-release-rootfs.tar.gz)" -le 4294967296

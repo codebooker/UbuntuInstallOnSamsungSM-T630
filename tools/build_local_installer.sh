@@ -2,15 +2,16 @@
 # Build the complete private installer input set. Performs no device I/O.
 set -eu
 
-if [ "$#" -ne 4 ]; then
-    echo "usage: sudo $0 UBUNTU_BASE PACKAGE_DIR ACCEPTED_BOOT_DIR NEW_WORK_DIR" >&2
+if [ "$#" -ne 5 ]; then
+    echo "usage: sudo $0 UBUNTU_BASE PACKAGE_DIR ACCEPTED_BOOT_DIR PATCHED_ANDROID_BOOT NEW_WORK_DIR" >&2
     exit 2
 fi
 
 base=$1
 packages=$2
 accepted_boot=$3
-work=$4
+android_boot=$4
+work=$5
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repo_dir=$(CDPATH= cd -- "$script_dir/.." && pwd)
 
@@ -25,6 +26,7 @@ test -d "$packages"
 test -d "$accepted_boot"
 test -f "$accepted_boot/boot.img"
 test -f "$accepted_boot/manifest.json"
+test -f "$android_boot"
 case "$work" in /|"") echo "refusing broad or empty work directory" >&2; exit 2 ;; esac
 test ! -e "$work" || { echo "work directory must not exist" >&2; exit 2; }
 parent=$(dirname -- "$work")
@@ -36,6 +38,8 @@ root=$work/root
 python3 "$script_dir/prepare_rehearsal_root.py" "$base" "$root"
 "$script_dir/provision_rehearsal_root.sh" "$root"
 python3 "$script_dir/assemble_release_root.py" "$packages" --root "$root" --apply
+python3 "$script_dir/provision_private_dualboot_assets.py" \
+    "$root" "$android_boot" "$accepted_boot/boot.img"
 "$script_dir/check_rehearsal_root.sh" "$root"
 python3 "$script_dir/build_installer_runtime.py" \
     "$root" "$work/t630-installer-runtime.tar.gz"

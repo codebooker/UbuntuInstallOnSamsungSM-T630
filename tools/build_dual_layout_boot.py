@@ -16,7 +16,7 @@ from build_boot_persistent import ramdisk
 
 
 STOCK_BOOT_SHA256 = "79a9b1d56763cb6e3c113473eb783f6332fe79b054e3c67494c5094c6c382796"
-KERNEL_SHA256 = "49b648801a751be9761bd8b2b24e9833964acbb06741d87f7db384dd2d36845d"
+KERNEL_SHA256 = "7ffa08471df8e47cf9d6cccca55ff24c96e3afc8393f4163ef0a020f7d2958b6"
 KERNEL_RELEASE = b"5.4.274-qgki-31225846-abT630XXSBDZE3"
 
 
@@ -24,7 +24,7 @@ def build(kernel: Path, output: Path) -> dict:
     kernel = kernel.resolve(strict=True)
     kernel_data = kernel.read_bytes()
     if sha(kernel_data) != KERNEL_SHA256 or KERNEL_RELEASE not in kernel_data:
-        raise ValueError("kernel is not the pinned SM-T630 v13 build")
+        raise ValueError("kernel is not the pinned module-compatible SM-T630 v12 build")
     if struct.unpack_from("<I", kernel_data, 0x38)[0] != 0x644D5241:
         raise ValueError("kernel is not an uncompressed ARM64 Image")
 
@@ -101,8 +101,8 @@ def build(kernel: Path, output: Path) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--kernel", type=Path, default=ROOT / "output/waydroid-kernel-v13/Image")
-    parser.add_argument("--output", type=Path, default=ROOT / "output/dual-layout-ubuntu-v1")
+    parser.add_argument("--kernel", type=Path, default=ROOT / "output/wifi-safe-checksum-v10/Image")
+    parser.add_argument("--output", type=Path, default=ROOT / "output/dual-layout-ubuntu-v2")
     args = parser.parse_args()
     print(json.dumps(build(args.kernel, args.output), indent=2, sort_keys=True))
 

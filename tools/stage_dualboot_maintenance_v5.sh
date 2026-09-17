@@ -3,13 +3,13 @@
 set -eu
 
 mode=${1:---check}
-artifact=/opt/t630/artifacts/dualboot-maintenance-v4
+artifact=/opt/t630/artifacts/dualboot-maintenance-v5
 image=$artifact/boot.img
 manifest=$artifact/manifest.json
-rollback=$artifact/dual-layout-ubuntu-v1.transaction-rollback.img
-old_boot=eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb
-new_boot=f4299f215ec908d1b8117ec364c08baf6125f652e87e47658cd549e55badce4e
-manifest_hash=55f9527ff8a591b26ba0a2760fe4d9563706955a2b892b83c42dce8ee651cf65
+rollback=$artifact/dual-layout-ubuntu-v2.transaction-rollback.img
+old_boot=fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f
+new_boot=c45e960fcbc6a30ab98872529d27a157a41409ea7601166330956b7f6e74ea4e
+manifest_hash=635537b32539ed17afdfbd155c7da65ab6bc128315fdb628189c72938c228083
 
 case "$mode" in
     --check|--write) ;;
@@ -53,7 +53,7 @@ check_neighbors() {
 check_neighbors
 
 if [ "$mode" = --check ]; then
-    echo DUALBOOT_MAINTENANCE_V4_READY_NO_CHANGES
+    echo DUALBOOT_MAINTENANCE_V5_READY_NO_CHANGES
     exit 0
 fi
 
@@ -80,4 +80,4 @@ printf '%s  %s\n' "$new_boot" /dev/sda19 | sha256sum -c -
 check_neighbors
 committed=1
 trap - EXIT HUP INT TERM
-echo DUALBOOT_MAINTENANCE_V4_STAGED_BOOT_ONLY_READBACK_VERIFIED
+echo DUALBOOT_MAINTENANCE_V5_STAGED_BOOT_ONLY_READBACK_VERIFIED

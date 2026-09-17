@@ -21,7 +21,7 @@ FILES = (
     "installer-bundle.json",
 )
 EXPECTED_BOOT_SHA256 = (
-    "eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb"
+    "fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f"
 )
 
 

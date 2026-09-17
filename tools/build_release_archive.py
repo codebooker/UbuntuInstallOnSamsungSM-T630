@@ -16,6 +16,12 @@ import tarfile
 from typing import Dict, Tuple
 
 from assemble_release_root import EXPECTED, INSTALL_ID, validate_root
+from provision_private_dualboot_assets import (
+    AUTHORIZATION,
+    BOOT_BYTES,
+    STOCK_ANDROID_BOOT_SHA256,
+    UBUNTU_BOOT_SHA256,
+)
 
 
 SOURCE_DATE_EPOCH = 1700000000
@@ -64,6 +70,44 @@ def validate_installed_root(root: Path) -> Tuple[Path, Dict[str, str]]:
     return root, versions
 
 
+def validate_private_dualboot_assets(root: Path) -> dict:
+    artifact = root / "opt/t630/artifacts/native-android-stock"
+    if artifact.is_symlink() or not artifact.is_dir():
+        raise ValueError("private native-Android switch assets are absent")
+    names = (
+        "boot.img", "boot.sha256",
+        "ubuntu-dual-layout.transaction-rollback.img",
+        "AUTHORIZE-NATIVE-ANDROID-SWITCH",
+    )
+    paths = {name: artifact / name for name in names}
+    for name, path in paths.items():
+        if path.is_symlink() or not path.is_file():
+            raise ValueError(f"private dual-boot asset is absent or unsafe: {name}")
+        if not is_root_private_file(path):
+            raise ValueError(f"private dual-boot asset permissions are unsafe: {name}")
+    android = paths["boot.img"]
+    ubuntu = paths["ubuntu-dual-layout.transaction-rollback.img"]
+    if android.stat().st_size != BOOT_BYTES or ubuntu.stat().st_size != BOOT_BYTES:
+        raise ValueError("private dual-boot image size mismatch")
+    android_hash = digest(android)
+    if paths["boot.sha256"].read_text(encoding="ascii") != android_hash + "\n":
+        raise ValueError("private Android BOOT hash record mismatch")
+    if android_hash == STOCK_ANDROID_BOOT_SHA256:
+        raise ValueError("private Android BOOT is not rooted for the return switch")
+    if digest(ubuntu) != UBUNTU_BOOT_SHA256:
+        raise ValueError("private Ubuntu rollback BOOT mismatch")
+    if paths["AUTHORIZE-NATIVE-ANDROID-SWITCH"].read_text(
+            encoding="ascii") != AUTHORIZATION:
+        raise ValueError("native-Android switch authorization mismatch")
+    return {"android_boot_sha256": android_hash,
+            "ubuntu_boot_sha256": UBUNTU_BOOT_SHA256}
+
+
+def is_root_private_file(path: Path) -> bool:
+    metadata = path.stat()
+    return metadata.st_uid == 0 and not metadata.st_mode & 0o077
+
+
 def check_tools() -> Tuple[str, str]:
     tar = shutil.which("tar")
     gzip = shutil.which("gzip")
@@ -104,6 +148,7 @@ def build(root: Path, output: Path) -> dict:
     if os.geteuid() != 0:
         raise PermissionError("root is required to preserve numeric ownership")
     root, versions = validate_installed_root(root)
+    dualboot = validate_private_dualboot_assets(root)
     reject_mounts(root)
     output = output.expanduser().resolve()
     manifest_path = output.with_name(output.name + ".manifest.json")
@@ -141,6 +186,7 @@ def build(root: Path, output: Path) -> dict:
         member_count = archive_members(output)
         # The build must not cause identity state to appear in the source tree.
         validate_installed_root(root)
+        validate_private_dualboot_assets(root)
         reject_mounts(root)
         record = {
             "status": "LOCAL_PRIVATE_INSTALLER_INPUT_DO_NOT_REDISTRIBUTE",
@@ -152,6 +198,7 @@ def build(root: Path, output: Path) -> dict:
             "archive_members": member_count,
             "source_date_epoch": SOURCE_DATE_EPOCH,
             "release_packages": dict(sorted(versions.items())),
+            "private_dualboot_assets": dualboot,
             "contains_proprietary_stock_assets": True,
             "contains_human_account": False,
             "contains_network_credentials": False,

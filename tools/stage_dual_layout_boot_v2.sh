@@ -1,15 +1,15 @@
 #!/bin/sh
-# Install the backward-compatible whole-disk/linuxroot Ubuntu BOOT only.
+# Install the module-compatible whole-disk/linuxroot Ubuntu BOOT only.
 set -eu
 
 mode=${1:---check}
-artifact=/opt/t630/artifacts/dual-layout-ubuntu-v1
+artifact=/opt/t630/artifacts/dual-layout-ubuntu-v2
 image=$artifact/boot.img
 manifest=$artifact/manifest.json
-rollback=$artifact/ubuntu-v13.transaction-rollback.img
-old_boot=1403afb30d584418ea6bfc011317f33bf8073294eae355d0c05d8d61c7355e76
-new_boot=eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb
-manifest_hash=82d3fda51d52a190431cde1ef468e4684dd163b1d02274def705dc2d6872e0b2
+rollback=$artifact/dual-layout-ubuntu-v1.transaction-rollback.img
+old_boot=eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb
+new_boot=fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f
+manifest_hash=ac3c7e3477424c59e1babf852c7f3a37a5d5e8986122fe07fd05e1b2c7a291ec
 
 case "$mode" in --check|--write) ;; *) echo "usage: $0 [--check|--write]" >&2; exit 2;; esac
 test "$(id -u)" = 0
@@ -48,7 +48,7 @@ check_neighbors() {
 }
 check_neighbors
 if [ "$mode" = --check ]; then
-    echo DUAL_LAYOUT_UBUNTU_V1_READY_NO_CHANGES
+    echo DUAL_LAYOUT_UBUNTU_V2_READY_NO_CHANGES
     exit 0
 fi
 
@@ -60,7 +60,7 @@ rollback_on_error() {
     if [ "$committed" != 1 ] && [ "$backup_ready" = 1 ]; then
         dd if="$rollback" of=/dev/sda19 bs=4M conv=fsync status=none || true
         sync
-        echo 'Dual-layout staging failed; Ubuntu v13 rollback attempted.' >&2
+        echo 'Dual-layout staging failed; Ubuntu v1 rollback attempted.' >&2
     fi
     exit "$result"
 }
@@ -74,4 +74,4 @@ printf '%s  %s\n' "$new_boot" /dev/sda19 | sha256sum -c -
 check_neighbors
 committed=1
 trap - EXIT HUP INT TERM
-echo DUAL_LAYOUT_UBUNTU_V1_STAGED_BOOT_ONLY_READBACK_VERIFIED
+echo DUAL_LAYOUT_UBUNTU_V2_STAGED_BOOT_ONLY_READBACK_VERIFIED

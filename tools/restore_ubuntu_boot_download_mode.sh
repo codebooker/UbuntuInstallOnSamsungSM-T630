@@ -6,9 +6,9 @@ export LC_ALL=C
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 mode=${1:---check}
 authorization=${2:-}
-image=${T630_UBUNTU_BOOT_IMAGE:-$root/output/dual-layout-ubuntu-v1/boot.img}
+image=${T630_UBUNTU_BOOT_IMAGE:-$root/output/dual-layout-ubuntu-v2/boot.img}
 bundled_heimdall=$root/output/heimdall-build/bin/heimdall
-ubuntu_boot=eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb
+ubuntu_boot=fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f
 
 fail() { echo "UBUNTU_DOWNLOAD_RESTORE_REFUSED: $*" >&2; exit 1; }
 case "$mode" in

@@ -8,7 +8,7 @@ artifact=/opt/t630/artifacts/native-android-stock
 image=$artifact/boot.img
 rollback=$artifact/ubuntu-dual-layout.transaction-rollback.img
 authorization=$artifact/AUTHORIZE-NATIVE-ANDROID-BOOT
-ubuntu_boot=eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb
+ubuntu_boot=fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f
 android_boot=79a9b1d56763cb6e3c113473eb783f6332fe79b054e3c67494c5094c6c382796
 
 case "$mode" in --check|--write) ;; *) echo "usage: $0 --check|--write" >&2; exit 2 ;; esac

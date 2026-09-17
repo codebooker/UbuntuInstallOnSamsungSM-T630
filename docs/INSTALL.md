@@ -224,7 +224,7 @@ separately:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_desktop_runtime_deb.py
 ```
 
-This creates `output/t630-desktop-runtime_0.1.10_all.deb`. It depends on the
+This creates `output/t630-desktop-runtime_0.1.11_all.deb`. It depends on the
 matching first-boot package and contains the desktop launcher, login/session
 glue, input mappings, rotation, display controls, guarded suspend, and Tablet
 Controls extension source. It also depends on GNOME Settings, supplies the
@@ -409,7 +409,7 @@ release-set metapackage:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_release_meta_deb.py
 ```
 
-This creates `output/t630-release-base_0.1.19_arm64.deb`. It contains no device
+This creates `output/t630-release-base_0.1.20_arm64.deb`. It contains no device
 payload; its exact-version dependencies prevent a fresh root from mixing
 incompatible first-boot, desktop, hardware, login, native, sensor, pd-mapper,
 camera, or DZE3 stock-asset revisions. The camera package's redistributable
@@ -471,18 +471,26 @@ sudo tools/build_local_installer.sh \
   /absolute/path/to/ubuntu-base-24.04.5-base-arm64.tar.gz \
   /absolute/path/to/complete-package-directory \
   /absolute/path/to/accepted-dual-layout-boot-directory \
+  /absolute/path/to/private-magisk-patched-android-boot.img \
   /absolute/path/to/new-work-directory
 ```
 
 The command requires a new work directory and refuses macOS, non-ARM64 hosts,
 unprivileged execution, incomplete package sets, unclean roots, unexpected
-package versions, and an unaccepted dual-layout BOOT. It performs the preparation,
-public dependency provisioning, exact package apply, complete root check,
-rootfs archive build, accepted BOOT copy, and final identity audit. It never
+package versions, an unaccepted dual-layout BOOT, a stock/unrooted Android BOOT,
+or unsafe private-file ownership. It performs the preparation, public dependency
+provisioning, exact package apply, private dual-boot asset provisioning, complete
+root check, rootfs archive build, accepted BOOT copy, and final identity audit. It never
 opens a block device. The accepted BOOT directory must contain the exact
 `boot.img` and adjacent `manifest.json` emitted by
 `tools/build_dual_layout_boot.py`; the final sealer validates both by hash,
 size, model, stock build, root UUID, and kernel hash.
+The private Android image must be the Magisk-patched DZE3 BOOT produced during
+the native-Android setup phase. It and the accepted Ubuntu rollback image are
+installed root-only in the private root archive; their hashes are sealed in the
+archive manifest. The Android-data acceptance marker is deliberately not
+created by the builder and must only be created after the physical encrypted
+Android installation passes its acceptance checks.
 
 The resulting `t630-release-rootfs.tar.gz` is mode 0600 and includes the
 owner's locally reconstructed proprietary stock-assets package contents. It is
@@ -581,7 +589,7 @@ type `ERASE SM-T630 LINUXROOT` exactly. Only then does it create a one-time RAM
 token and invoke `--apply`. Apply formats only the validated 64 GiB `linuxroot`
 at `sda34`, explicitly revalidates Android `userdata` at `sda35`, and extracts with
 numeric ownership, ACLs, and xattrs, rejects identity/account/network leakage,
-requires `t630-release-base` 0.1.19, unmounts, and runs read-only `e2fsck`.
+requires `t630-release-base` 0.1.20, unmounts, and runs read-only `e2fsck`.
 Failures after format stay in recovery with the bundle available for diagnosis;
 the same boot cannot silently retry. Success still requires an explicit reboot.
 It never writes BOOT or another partition.

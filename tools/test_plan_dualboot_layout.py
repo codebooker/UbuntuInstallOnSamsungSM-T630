@@ -25,10 +25,14 @@ class DualbootLayoutTest(unittest.TestCase):
             ext4_block_bytes=4096,
         )
         self.assertEqual(plan["status"], "PLAN_ONLY_NO_DEVICE_WRITES")
-        self.assertEqual(plan["linuxroot_start"], 21_880_832)
-        self.assertEqual(plan["linuxroot_end"], 156_098_559)
-        self.assertEqual(plan["userdata_start"], 156_098_560)
-        self.assertEqual(plan["userdata_end"], 248_799_191)
+        self.assertEqual(plan["sysfs_linuxroot_start"], 21_880_832)
+        self.assertEqual(plan["sysfs_linuxroot_end"], 156_098_559)
+        self.assertEqual(plan["sysfs_userdata_start"], 156_098_560)
+        self.assertEqual(plan["sysfs_userdata_end"], 248_799_191)
+        self.assertEqual(plan["gpt_linuxroot_start"], 2_735_104)
+        self.assertEqual(plan["gpt_linuxroot_end"], 19_512_319)
+        self.assertEqual(plan["gpt_userdata_start"], 19_512_320)
+        self.assertEqual(plan["gpt_userdata_end"], 31_099_898)
         self.assertAlmostEqual(plan["userdata_gib"], 44.2031059265)
         self.assertGreater(plan["ext4_headroom_blocks"], 6_000_000)
 

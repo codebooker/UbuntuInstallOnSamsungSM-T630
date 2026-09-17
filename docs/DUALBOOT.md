@@ -47,6 +47,14 @@ filesystem checks must be repeated from the maintenance image immediately
 before any write; these numbers are a reviewed plan, not permission to alter
 the tablet.
 
+Those values use Linux sysfs's conventional 512-byte sector units. Samsung's
+UFS exposes a 4096-byte logical sector to GPT tools, so the corresponding
+`sgdisk` coordinates are 2,735,104–19,512,319 for partition 34 and
+19,512,320–31,099,898 for partition 35. `tools/plan_dualboot_layout.py` emits
+both forms and rejects boundaries that cannot be converted exactly. A writer
+must use the units reported by its own tool; confusing these two coordinate
+systems would be destructive.
+
 Android's read-only operating-system partitions remain in `super`. A stock
 Android boot would discover the new partition by its `userdata` GPT name. The
 existing partition 34 would be renamed `linuxroot`, and the Ubuntu initramfs
@@ -100,6 +108,33 @@ Mac remains the recovery route.
    reboot; recovery must remain reachable throughout.
 10. Only after repeated cold switches and forced-failure recovery should dual
     boot become part of the public installer.
+
+Gate 1 now has a physically accepted v3 image. Its init mounts no block device,
+its preflight has no write mode, and its exact Ubuntu `boot.img` is embedded as
+a compressed fail-safe. A separate guarded recovery helper can restore only
+that pinned BOOT after an explicit RAM token and verifies the full partition
+readback; it cannot touch the GPT or either data partition. The ARM64 tools ran
+successfully first from an isolated RAM staging directory and then from the
+physical maintenance boot. Both quick and deep preflight passed; the deep run
+used `e2fsck -fn`. The embedded Ubuntu BOOT was restored with a complete
+readback match, and the normal desktop, Wi-Fi, original partition geometry,
+and clean package state returned. See the
+[maintenance acceptance report](reports/dualboot-maintenance-preflight-20260916.md).
+
+Gate 4's exact-geometry sparse rehearsal also passes. The test creates a
+127,385,206,784-byte logical disk with a 4096-byte sector, uses only a few MiB
+of real host storage, preserves a filesystem marker through the 64 GiB shrink
+and split, verifies both proposed partition sizes, restores the saved GPT, and
+mounts the preserved filesystem again. The sparse image is deleted on success.
+See the [sparse rehearsal report](reports/dualboot-sparse-rehearsal-20260916.md).
+
+The backward-compatible Ubuntu BOOT prerequisite also passes physically on the
+unchanged whole-disk layout. Its initramfs accepts only partition 34 with either
+the exact current `userdata` geometry or the exact proposed `linuxroot`
+geometry, then independently requires the existing ext4 UUID and installation
+marker. The accepted image returned GNOME, Wi-Fi, package health, and the
+unchanged full-size root after a cold boot. See the
+[dual-layout boot report](reports/dual-layout-ubuntu-boot-20260916.md).
 
 ## Rejected shortcuts
 

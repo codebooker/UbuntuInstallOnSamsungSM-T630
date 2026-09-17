@@ -1,0 +1,8 @@
+#!/bin/busybox sh
+export PATH=/bin:/sbin:/usr/sbin HOME=/root TERM=xterm-256color
+echo 'SM-T630 RAM-only dual-boot maintenance shell'
+echo 'Internal storage is unmounted. No repartition/filesystem apply command is included.'
+echo 'Read-only check: dualboot-preflight [--deep]'
+echo 'Recovery check: restore-ubuntu-boot --check'
+export PS1='t630-maintenance# '
+exec /bin/busybox sh -i

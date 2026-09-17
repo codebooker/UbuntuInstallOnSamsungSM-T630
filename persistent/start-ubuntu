@@ -12,8 +12,12 @@ while [ ! -b /dev/sda34 ] && [ "$attempt" -lt 60 ]; do
     sleep 1
     attempt=$((attempt + 1))
 done
-grep -qx 'PARTNAME=userdata' /sys/class/block/sda34/uevent
-test "$(cat /sys/class/block/sda34/size)" = 226918360
+partition_name=$(sed -n 's/^PARTNAME=//p' /sys/class/block/sda34/uevent)
+partition_size=$(cat /sys/class/block/sda34/size)
+case "$partition_name:$partition_size" in
+    userdata:226918360|linuxroot:134217728) ;;
+    *) echo "Unexpected Ubuntu root geometry: $partition_name:$partition_size" >&2; exit 1 ;;
+esac
 # Refuse any unexpected or unprovisioned filesystem, without repair or format.
 # This minimal BusyBox has no blkid. Read only the ext superblock's magic and
 # UUID bytes; mounting below performs the actual filesystem validation.

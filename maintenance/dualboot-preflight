@@ -1,0 +1,90 @@
+#!/bin/busybox sh
+# Read-only eligibility check. This file contains no partition/filesystem writer.
+set -eu
+export PATH=/bin:/sbin:/usr/sbin
+export LC_ALL=C
+
+mode=${1:-quick}
+case "$mode" in
+    quick) ;;
+    --deep) ;;
+    *) echo "usage: dualboot-preflight [--deep]" >&2; exit 2 ;;
+esac
+
+fail() { echo "DUALBOOT_PREFLIGHT_REFUSED: $*" >&2; exit 1; }
+expect_uevent() {
+    device=$1
+    name=$2
+    test -r "/sys/class/block/$device/uevent" || fail "$device is absent"
+    grep -qx "PARTNAME=$name" "/sys/class/block/$device/uevent" ||
+        fail "$device is not $name"
+}
+check_hash() {
+    expected=$1
+    device=$2
+    label=$3
+    printf '%s  %s\n' "$expected" "$device" | sha256sum -c - >/dev/null ||
+        fail "$label hash mismatch"
+}
+
+test "$(id -u)" = 0 || fail "root is required"
+test "$(uname -r)" = 5.4.274-qgki-31225846-abT630XXSBDZE3 ||
+    fail "kernel baseline mismatch"
+grep -q 'androidboot.em.model=SM-T630' /proc/cmdline || fail "model mismatch"
+
+test "$(cat /sys/class/block/sda/size)" = 248799232 || fail "disk size mismatch"
+test "$(cat /sys/class/block/sda/queue/logical_block_size)" = 4096 ||
+    fail "GPT logical sector size mismatch"
+expect_uevent sda19 boot
+expect_uevent sda20 recovery
+expect_uevent sda21 vendor_boot
+expect_uevent sda22 dtbo
+expect_uevent sda25 metadata
+expect_uevent sda26 super
+expect_uevent sda34 userdata
+expect_uevent sde19 vbmeta
+test "$(cat /sys/class/block/sda34/start)" = 21880832 ||
+    fail "userdata start mismatch"
+test "$(cat /sys/class/block/sda34/size)" = 226918360 ||
+    fail "userdata size mismatch"
+test -b /dev/sda34 || fail "userdata block device absent"
+test -z "$(ls /sys/class/block/sda34/holders)" || fail "userdata has holders"
+if awk '$3 == "259:18" { found=1 } END { exit found ? 0 : 1 }' /proc/self/mountinfo; then
+    fail "userdata is mounted"
+fi
+
+test "$(dd if=/dev/sda34 bs=1 skip=1080 count=2 2>/dev/null |
+    od -An -tx1 | tr -d ' \n')" = 53ef || fail "ext4 magic mismatch"
+test "$(dd if=/dev/sda34 bs=1 skip=1128 count=16 2>/dev/null |
+    od -An -tx1 | tr -d ' \n')" = 64de854453ea4fdc8946d6b07e238630 ||
+    fail "Ubuntu filesystem UUID mismatch"
+
+gpt_info=$(sgdisk --info=34 /dev/sda 2>&1) || fail "cannot inspect GPT entry 34"
+printf '%s\n' "$gpt_info" | grep -q 'Android user data' ||
+    fail "partition 34 type mismatch"
+printf '%s\n' "$gpt_info" | grep -q 'First sector: 2735104 ' ||
+    fail "GPT start mismatch"
+printf '%s\n' "$gpt_info" | grep -q 'Last sector: 31099898 ' ||
+    fail "GPT end mismatch"
+printf '%s\n' "$gpt_info" | grep -q "Partition name: 'userdata'" ||
+    fail "GPT name mismatch"
+sgdisk --verify /dev/sda >/run/gpt-verify.txt 2>&1 || fail "GPT verification failed"
+grep -q 'No problems found' /run/gpt-verify.txt || fail "GPT problems reported"
+
+minimum=$(resize2fs -P /dev/sda34 2>&1 | sed -n 's/.*: //p' | tail -n 1)
+case "$minimum" in *[!0-9]*|'') fail "could not read ext4 minimum";; esac
+test "$minimum" -lt 16777216 || fail "filesystem cannot fit the 64 GiB target"
+
+check_hash 2b6901f8341de3b76fbcabc69bf0229683d503f233eafd580b4d602392ff74f5 /dev/sda20 recovery
+check_hash fbebd763c17c05bc162776a6e9abd86fc386aa0ef58ccfdaa6cb9b13a6a0c72f /dev/sda21 vendor_boot
+check_hash f9111b7a566b0a7342ec4d8f14cee53dc465a272d42596f774c0519d6e89fc57 /dev/sda22 dtbo
+check_hash a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225 /dev/sde19 vbmeta
+
+if [ "$mode" = --deep ]; then
+    e2fsck -fn /dev/sda34 >/run/e2fsck-read-only.txt 2>&1 ||
+        fail "read-only ext4 check did not pass"
+fi
+
+capacity=$(cat /sys/class/power_supply/battery/capacity)
+printf 'DUALBOOT_PREFLIGHT_PASSED_NO_DEVICE_WRITE minimum_blocks=%s target_blocks=16777216 battery=%s\n' \
+    "$minimum" "$capacity"

@@ -1,0 +1,57 @@
+#!/bin/busybox sh
+# SM-T630 RAM-only dual-boot preflight. Never mounts or writes internal storage.
+export PATH=/bin:/sbin:/usr/sbin
+export HOME=/root TERM=xterm-256color
+umask 077
+/bin/busybox --install -s /bin
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t tmpfs -o mode=0755,nosuid tmpfs /dev
+mknod /dev/null c 1 3
+mknod /dev/console c 5 1
+mknod /dev/kmsg c 1 11
+mknod /dev/tty c 5 0
+chmod 666 /dev/null /dev/tty
+mkdir -p /dev/pts
+mount -t devpts -o mode=0620,ptmxmode=0666 devpts /dev/pts
+mount -t tmpfs -o mode=0755,nosuid,nodev,size=256m tmpfs /run
+exec >/run/maintenance.log 2>&1
+hostname t630-maintenance
+mdev -s
+echo 'T630_MAINTENANCE: RAM-only preflight reached; storage remains unmounted' >/dev/kmsg
+[ ! -w /sys/power/wake_lock ] || echo t630_maintenance >/sys/power/wake_lock
+
+mount -t configfs configfs /config
+g=/config/usb_gadget/t630_maintenance
+mkdir -p "$g/strings/0x409" "$g/configs/c.1/strings/0x409"
+echo 0x1d6b >"$g/idVendor"
+echo 0x0104 >"$g/idProduct"
+echo 0x0200 >"$g/bcdUSB"
+echo 0x0100 >"$g/bcdDevice"
+echo 0x02 >"$g/bDeviceClass"
+echo T630MAINT001 >"$g/strings/0x409/serialnumber"
+echo 'Local Linux maintenance' >"$g/strings/0x409/manufacturer"
+echo 'SM-T630 dual-boot read-only preflight' >"$g/strings/0x409/product"
+echo 'USB serial console' >"$g/configs/c.1/strings/0x409/configuration"
+echo 0x80 >"$g/configs/c.1/bmAttributes"
+echo 100 >"$g/configs/c.1/MaxPower"
+mkdir -p "$g/functions/acm.usb0"
+ln -s "$g/functions/acm.usb0" "$g/configs/c.1/acm.usb0"
+
+attempt=0
+while [ "$attempt" -lt 60 ]; do
+    if [ -e /sys/class/udc/a600000.dwc3 ] &&
+       echo a600000.dwc3 >"$g/UDC"; then
+        break
+    fi
+    attempt=$((attempt + 1))
+    sleep 1
+done
+
+while :; do
+    mdev -s
+    if [ -c /dev/ttyGS0 ]; then
+        setsid getty -L -n -l /bin/usb-shell 115200 ttyGS0 xterm-256color
+    fi
+    sleep 2
+done

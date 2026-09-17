@@ -1,5 +1,6 @@
 """Framed command output on the already-running, owner-approved diagnostic shell."""
 import base64
+import glob
 import re
 import time
 import uuid
@@ -10,7 +11,13 @@ from pathlib import Path
 
 class Link:
     def __enter__(self):
-        self.s = serial.Serial('/dev/cu.usbmodemT630BRINGUP0011', 115200,
+        candidates = []
+        for pattern in ('/dev/cu.usbmodemT630MAINT001*',
+                        '/dev/cu.usbmodemT630BRINGUP001*'):
+            candidates.extend(glob.glob(pattern))
+        if len(candidates) != 1:
+            raise RuntimeError(f'Expected one SM-T630 serial console, found {len(candidates)}')
+        self.s = serial.Serial(candidates[0], 115200,
                                timeout=0.1, write_timeout=10)
         time.sleep(0.25)
         self.s.reset_input_buffer()

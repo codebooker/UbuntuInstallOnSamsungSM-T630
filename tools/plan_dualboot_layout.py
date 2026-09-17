@@ -9,6 +9,7 @@ import json
 
 SECTOR_BYTES = 512
 ALIGN_SECTORS = 2048
+GPT_LOGICAL_SECTOR_BYTES = 4096
 GIB = 1024**3
 
 # Exact read-only observations from the DZE3 development tablet.  A future
@@ -28,6 +29,7 @@ def plan_layout(
     ubuntu_gib: int,
     minimum_ext4_blocks: int,
     ext4_block_bytes: int,
+    gpt_logical_sector_bytes: int = GPT_LOGICAL_SECTOR_BYTES,
 ) -> dict[str, int | float | str]:
     values = (
         disk_sectors,
@@ -36,6 +38,7 @@ def plan_layout(
         ubuntu_gib,
         minimum_ext4_blocks,
         ext4_block_bytes,
+        gpt_logical_sector_bytes,
     )
     if any(value <= 0 for value in values):
         raise ValueError("all geometry values must be positive")
@@ -64,22 +67,41 @@ def plan_layout(
     if android_sectors * SECTOR_BYTES < 16 * GIB:
         raise ValueError("proposed Android partition is smaller than 16 GiB")
 
+    for label, sector in (
+        ("disk", disk_sectors),
+        ("current start", current_start),
+        ("current end plus one", current_end + 1),
+        ("linuxroot end plus one", linux_end + 1),
+        ("userdata start", android_start),
+    ):
+        if sector * SECTOR_BYTES % gpt_logical_sector_bytes:
+            raise ValueError(f"{label} is not aligned to the GPT logical sector")
+
+    def gpt_sector(sysfs_sector: int) -> int:
+        return sysfs_sector * SECTOR_BYTES // gpt_logical_sector_bytes
+
     return {
         "status": "PLAN_ONLY_NO_DEVICE_WRITES",
-        "sector_bytes": SECTOR_BYTES,
-        "alignment_sectors": ALIGN_SECTORS,
-        "disk_sectors": disk_sectors,
-        "current_partition_start": current_start,
-        "current_partition_end": current_end,
+        "sysfs_sector_bytes": SECTOR_BYTES,
+        "sysfs_alignment_sectors": ALIGN_SECTORS,
+        "sysfs_disk_sectors": disk_sectors,
+        "sysfs_current_partition_start": current_start,
+        "sysfs_current_partition_end": current_end,
+        "gpt_logical_sector_bytes": gpt_logical_sector_bytes,
+        "gpt_disk_sectors": gpt_sector(disk_sectors),
         "linuxroot_partition_number": 34,
-        "linuxroot_start": current_start,
-        "linuxroot_end": linux_end,
-        "linuxroot_sectors": linux_sectors,
+        "sysfs_linuxroot_start": current_start,
+        "sysfs_linuxroot_end": linux_end,
+        "sysfs_linuxroot_sectors": linux_sectors,
+        "gpt_linuxroot_start": gpt_sector(current_start),
+        "gpt_linuxroot_end": gpt_sector(linux_end + 1) - 1,
         "linuxroot_gib": linux_sectors * SECTOR_BYTES / GIB,
         "userdata_partition_number": 35,
-        "userdata_start": android_start,
-        "userdata_end": current_end,
-        "userdata_sectors": android_sectors,
+        "sysfs_userdata_start": android_start,
+        "sysfs_userdata_end": current_end,
+        "sysfs_userdata_sectors": android_sectors,
+        "gpt_userdata_start": gpt_sector(android_start),
+        "gpt_userdata_end": gpt_sector(current_end + 1) - 1,
         "userdata_gib": android_sectors * SECTOR_BYTES / GIB,
         "ext4_target_blocks": target_ext4_blocks,
         "ext4_minimum_blocks": minimum_ext4_blocks,
@@ -99,6 +121,9 @@ def main() -> None:
     parser.add_argument(
         "--ext4-block-bytes", type=int, default=DEFAULT_EXT4_BLOCK_BYTES
     )
+    parser.add_argument(
+        "--gpt-logical-sector-bytes", type=int, default=GPT_LOGICAL_SECTOR_BYTES
+    )
     args = parser.parse_args()
     print(
         json.dumps(
@@ -109,6 +134,7 @@ def main() -> None:
                 ubuntu_gib=args.ubuntu_gib,
                 minimum_ext4_blocks=args.minimum_ext4_blocks,
                 ext4_block_bytes=args.ext4_block_bytes,
+                gpt_logical_sector_bytes=args.gpt_logical_sector_bytes,
             ),
             indent=2,
             sort_keys=True,

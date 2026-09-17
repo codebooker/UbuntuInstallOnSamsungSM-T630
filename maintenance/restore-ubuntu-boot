@@ -1,0 +1,58 @@
+#!/bin/busybox sh
+# Restore only the embedded, pinned Ubuntu BOOT after a maintenance session.
+set -eu
+export PATH=/bin:/sbin:/usr/sbin
+
+mode=${1:---check}
+case "$mode" in
+    --check|--apply) ;;
+    *) echo "usage: restore-ubuntu-boot [--check|--apply]" >&2; exit 2 ;;
+esac
+
+expected=1403afb30d584418ea6bfc011317f33bf8073294eae355d0c05d8d61c7355e76
+compressed=/opt/t630-ubuntu-boot.img.gz
+image=/run/t630-ubuntu-boot.img
+authorization=/run/AUTHORIZE-RESTORE-UBUNTU-BOOT
+fail() { echo "UBUNTU_BOOT_RESTORE_REFUSED: $*" >&2; exit 1; }
+
+test "$(id -u)" = 0 || fail "root is required"
+grep -q 'androidboot.em.model=SM-T630' /proc/cmdline || fail "model mismatch"
+grep -qx 'PARTNAME=boot' /sys/class/block/sda19/uevent || fail "BOOT identity mismatch"
+test "$(cat /sys/class/block/sda19/size)" = 196608 || fail "BOOT size mismatch"
+test -b /dev/sda19 || fail "BOOT block device absent"
+test "$(cat /sys/class/power_supply/battery/capacity)" -ge 30 ||
+    fail "battery below 30 percent"
+status=$(cat /sys/class/power_supply/battery/status)
+case "$status" in
+    Charging) ;;
+    Full)
+        test "$(cat /sys/class/power_supply/ac/online)" = 1 ||
+        test "$(cat /sys/class/power_supply/usb/online)" = 1 ||
+            fail "full battery is not externally powered"
+        ;;
+    *) fail "external power is required" ;;
+esac
+
+test -f "$compressed" && test ! -L "$compressed" || fail "embedded Ubuntu BOOT absent"
+test "$(gzip -dc "$compressed" | sha256sum | awk '{print $1}')" = "$expected" ||
+    fail "embedded Ubuntu BOOT hash mismatch"
+if [ "$mode" = --check ]; then
+    echo UBUNTU_BOOT_RESTORE_CHECK_PASSED_NO_DEVICE_WRITE
+    exit 0
+fi
+
+test -f "$authorization" && test ! -L "$authorization" ||
+    fail "authorization token absent"
+test "$(cat "$authorization")" = 'RESTORE EXACT SM-T630 UBUNTU BOOT' ||
+    fail "authorization token invalid"
+test ! -e "$image" || fail "RAM image path already exists"
+gzip -dc "$compressed" >"$image"
+test "$(stat -c %s "$image")" = 100663296 || fail "restored image size mismatch"
+printf '%s  %s\n' "$expected" "$image" | sha256sum -c - >/dev/null ||
+    fail "restored image hash mismatch"
+dd if="$image" of=/dev/sda19 bs=4194304 conv=fsync
+sync
+printf '%s  %s\n' "$expected" /dev/sda19 | sha256sum -c - >/dev/null ||
+    fail "BOOT readback mismatch"
+rm "$image" "$authorization"
+echo UBUNTU_BOOT_RESTORE_APPLIED_READBACK_VERIFIED_REBOOT_MANUALLY

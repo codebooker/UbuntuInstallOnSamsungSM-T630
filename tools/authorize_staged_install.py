@@ -8,10 +8,10 @@ import argparse
 from serial_link import Link
 
 
-PHRASE = "ERASE SM-T630 USERDATA"
-TOKEN = "ERASE SM-T630 USERDATA /dev/sda34 226918360"
+PHRASE = "ERASE SM-T630 LINUXROOT"
+TOKEN = "ERASE SM-T630 LINUXROOT /dev/sda34 134217728"
 INSTALLER = "/run/t630-installer/install-staged-release"
-AUTHORIZATION = "/run/t630-installer/ERASE-SM-T630-USERDATA"
+AUTHORIZATION = "/run/t630-installer/ERASE-SM-T630-LINUXROOT"
 
 
 def main() -> None:
@@ -24,15 +24,15 @@ def main() -> None:
     if not args.acknowledge_stock_recovery:
         parser.error("--acknowledge-stock-recovery is required")
 
-    print("This permanently erases Android userdata on the connected SM-T630.")
-    print("The operation cannot preserve files from Android or the current Ubuntu root.")
+    print("This permanently erases the Ubuntu linuxroot on the connected SM-T630.")
+    print("Android userdata is a separate guarded partition and is not written.")
     print(f"Type exactly: {PHRASE}")
     if input("> ") != PHRASE:
         raise SystemExit("Confirmation did not match; nothing was changed.")
 
     with Link() as link:
         checked = link.run(f"sh {INSTALLER} --check", timeout=240)
-        if "INSTALLER_CHECK_PASSED_USERDATA_UNMOUNTED_NO_DEVICE_WRITE" not in checked:
+        if "INSTALLER_CHECK_PASSED_LINUXROOT_UNMOUNTED_NO_DEVICE_WRITE" not in checked:
             raise RuntimeError("final tablet-side check failed; authorization was not created")
         authorize = link.run(
             "set -eu; umask 077; set -C; "

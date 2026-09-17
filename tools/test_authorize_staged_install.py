@@ -8,9 +8,10 @@ import authorize_staged_install as subject
 class AuthorizeInstallTests(unittest.TestCase):
     def test_exact_confirmation_and_recovery_acknowledgement_are_required(self):
         text = Path(subject.__file__).read_text(encoding="utf-8")
-        self.assertEqual(subject.PHRASE, "ERASE SM-T630 USERDATA")
+        self.assertEqual(subject.PHRASE, "ERASE SM-T630 LINUXROOT")
         self.assertEqual(subject.TOKEN,
-                         "ERASE SM-T630 USERDATA /dev/sda34 226918360")
+                         "ERASE SM-T630 LINUXROOT /dev/sda34 134217728")
+        self.assertIn("Android userdata is a separate guarded partition", text)
         self.assertIn("--acknowledge-stock-recovery", text)
         self.assertIn("if input(\"> \") != PHRASE", text)
         self.assertIn("nothing was changed", text)

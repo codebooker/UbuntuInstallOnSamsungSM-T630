@@ -3,13 +3,13 @@
 set -eu
 
 if [ "$#" -ne 4 ]; then
-    echo "usage: sudo $0 UBUNTU_BASE PACKAGE_DIR ACCEPTED_KERNEL NEW_WORK_DIR" >&2
+    echo "usage: sudo $0 UBUNTU_BASE PACKAGE_DIR ACCEPTED_BOOT_DIR NEW_WORK_DIR" >&2
     exit 2
 fi
 
 base=$1
 packages=$2
-kernel=$3
+accepted_boot=$3
 work=$4
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repo_dir=$(CDPATH= cd -- "$script_dir/.." && pwd)
@@ -22,7 +22,9 @@ case "$(uname -m)" in
 esac
 test -f "$base"
 test -d "$packages"
-test -f "$kernel"
+test -d "$accepted_boot"
+test -f "$accepted_boot/boot.img"
+test -f "$accepted_boot/manifest.json"
 case "$work" in /|"") echo "refusing broad or empty work directory" >&2; exit 2 ;; esac
 test ! -e "$work" || { echo "work directory must not exist" >&2; exit 2; }
 parent=$(dirname -- "$work")
@@ -39,8 +41,8 @@ python3 "$script_dir/build_installer_runtime.py" \
     "$root" "$work/t630-installer-runtime.tar.gz"
 python3 "$script_dir/build_release_archive.py" \
     "$root" "$work/t630-release-rootfs.tar.gz"
-python3 "$script_dir/build_boot_persistent.py" \
-    --kernel "$kernel" --output "$work/boot"
+mkdir -m 0700 "$work/boot"
+cp "$accepted_boot/boot.img" "$accepted_boot/manifest.json" "$work/boot/"
 python3 "$script_dir/audit_release_root.py" "$root"
 python3 "$script_dir/finalize_installer_bundle.py" "$work"
 chmod 0600 "$work/t630-release-rootfs.tar.gz" \

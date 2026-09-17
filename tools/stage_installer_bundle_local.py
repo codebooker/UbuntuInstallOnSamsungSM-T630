@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Copy a sealed on-tablet bundle from userdata into guarded recovery RAM."""
+"""Copy a sealed on-tablet bundle from linuxroot into guarded recovery RAM."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ FILES = (
     "installer-bundle.json",
 )
 EXPECTED_BOOT_SHA256 = (
-    "a7bde8259ab09b8238e0a1c8871e94422c3a6eb29e95ff8218e2de1746cd2e28"
+    "eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb"
 )
 
 
@@ -37,8 +37,10 @@ stage={STAGING}
 files='{expected}'
 test "$(uname -r)" = 5.4.274-qgki-31225846-abT630XXSBDZE3
 grep -q 'androidboot.em.model=SM-T630' /proc/cmdline
-grep -qx 'PARTNAME=userdata' /sys/class/block/sda34/uevent
-test "$(cat /sys/class/block/sda34/size)" = 226918360
+grep -qx 'PARTNAME=linuxroot' /sys/class/block/sda34/uevent
+test "$(cat /sys/class/block/sda34/size)" = 134217728
+grep -qx 'PARTNAME=userdata' /sys/class/block/sda35/uevent
+test "$(cat /sys/class/block/sda35/size)" = 92700632
 test -d "$source" && test ! -L "$source"
 test "$(readlink -f "$source")" = "$source"
 test ! -e "$stage"
@@ -91,25 +93,27 @@ grep -Fq '"status": "PRIVATE_INSTALLER_BUNDLE_SEALED_NOT_DEVICE_WRITE_AUTHORIZAT
 grep -Fq '"model": "SM-T630"' installer-bundle.json
 grep -Fq '"stock_build": "T630XXSBDZE3"' installer-bundle.json
 trap - EXIT HUP INT TERM
-echo INSTALLER_BUNDLE_COPIED_FROM_USERDATA_TO_RAM_NO_DEVICE_WRITE
+echo INSTALLER_BUNDLE_COPIED_FROM_LINUXROOT_TO_RAM_NO_DEVICE_WRITE
 '''
 
 
 def stage(source: str) -> None:
     with Link() as link:
         result = link.run(staging_script(source), timeout=900)
-        if "INSTALLER_BUNDLE_COPIED_FROM_USERDATA_TO_RAM_NO_DEVICE_WRITE" not in result:
+        if "INSTALLER_BUNDLE_COPIED_FROM_LINUXROOT_TO_RAM_NO_DEVICE_WRITE" not in result:
             raise RuntimeError("tablet did not complete local RAM staging")
         print(result, end="")
         installer = Path(__file__).with_name("install_staged_release.sh")
         link.upload_file_ram(installer, f"{STAGING}/install-staged-release")
+        prepare = Path(__file__).with_name("prepare_staged_install.sh")
+        link.upload_file_ram(prepare, f"{STAGING}/prepare-staged-install")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "source",
-        help="sealed bundle directory on mounted userdata below /run/ubuntu")
+        help="sealed bundle directory on mounted linuxroot below /run/ubuntu")
     args = parser.parse_args()
     stage(args.source)
 

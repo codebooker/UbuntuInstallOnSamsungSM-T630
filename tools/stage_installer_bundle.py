@@ -33,7 +33,7 @@ awk '
 sha256sum -c SHA256SUMS
 test "$(stat -c %s boot/boot.img)" = 100663296
 printf '%s  %s\n' \
-  a7bde8259ab09b8238e0a1c8871e94422c3a6eb29e95ff8218e2de1746cd2e28 \
+  eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb \
   boot/boot.img | sha256sum -c -
 test "$(stat -c %s t630-release-rootfs.tar.gz)" -gt 104857600
 test "$(stat -c %s t630-release-rootfs.tar.gz)" -le 4294967296
@@ -56,8 +56,10 @@ def setup_script(bytes_needed: int) -> str:
     return f'''set -eu
 test "$(uname -r)" = 5.4.274-qgki-31225846-abT630XXSBDZE3
 grep -q 'androidboot.em.model=SM-T630' /proc/cmdline
-grep -qx 'PARTNAME=userdata' /sys/class/block/sda34/uevent
-test "$(cat /sys/class/block/sda34/size)" = 226918360
+grep -qx 'PARTNAME=linuxroot' /sys/class/block/sda34/uevent
+test "$(cat /sys/class/block/sda34/size)" = 134217728
+grep -qx 'PARTNAME=userdata' /sys/class/block/sda35/uevent
+test "$(cat /sys/class/block/sda35/size)" = 92700632
 test "$(cat /sys/class/power_supply/battery/capacity)" -ge 30
 test ! -e {STAGING}
 available=$(awk '$1 == "MemAvailable:" {{print $2}}' /proc/meminfo)
@@ -93,8 +95,10 @@ def stage(work: Path) -> None:
         installer = Path(__file__).with_name("install_staged_release.sh")
         remote_installer = f"{STAGING}/install-staged-release"
         link.upload_file_ram(installer, remote_installer)
+        prepare = Path(__file__).with_name("prepare_staged_install.sh")
+        link.upload_file_ram(prepare, f"{STAGING}/prepare-staged-install")
         result = link.run(f"sh {remote_installer} --check", timeout=180)
-        if "INSTALLER_CHECK_PASSED_USERDATA_UNMOUNTED_NO_DEVICE_WRITE" not in result:
+        if "INSTALLER_CHECK_PASSED_LINUXROOT_UNMOUNTED_NO_DEVICE_WRITE" not in result:
             raise RuntimeError("tablet-side pre-install check failed")
         print(result, end="")
 

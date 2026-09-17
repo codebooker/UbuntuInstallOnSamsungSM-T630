@@ -1,5 +1,5 @@
 #!/bin/busybox sh
-# Exact SM-T630 DZE3 installer. Default is read-only; --apply erases userdata.
+# Exact SM-T630 DZE3 installer. Default is read-only; --apply erases linuxroot.
 set -eu
 
 mode=${1:---check}
@@ -14,9 +14,9 @@ target=/run/t630-install-target
 device=/dev/sda34
 loader=$runtime/lib/ld-linux-aarch64.so.1
 library_path=$runtime/lib/aarch64-linux-gnu:$runtime/usr/lib/aarch64-linux-gnu:$runtime/lib
-authorization=$stage/ERASE-SM-T630-USERDATA
+authorization=$stage/ERASE-SM-T630-LINUXROOT
 started=/run/t630-format-started
-boot_hash=a7bde8259ab09b8238e0a1c8871e94422c3a6eb29e95ff8218e2de1746cd2e28
+boot_hash=eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb
 
 fail() { echo "INSTALLER_REFUSED: $*" >&2; exit 1; }
 
@@ -24,14 +24,20 @@ test "$(id -u)" = 0 || fail "root is required"
 test "$(uname -r)" = 5.4.274-qgki-31225846-abT630XXSBDZE3 ||
     fail "kernel baseline mismatch"
 grep -q 'androidboot.em.model=SM-T630' /proc/cmdline || fail "model mismatch"
-grep -qx 'PARTNAME=userdata' /sys/class/block/sda34/uevent || fail "userdata name mismatch"
-grep -qx 'PARTN=34' /sys/class/block/sda34/uevent || fail "userdata number mismatch"
-test "$(cat /sys/class/block/sda34/dev)" = 259:18 || fail "userdata device mismatch"
-test "$(cat /sys/class/block/sda34/size)" = 226918360 || fail "userdata size mismatch"
-test -b "$device" || fail "userdata block device absent"
-test -z "$(ls /sys/class/block/sda34/holders)" || fail "userdata has block holders"
+grep -qx 'PARTNAME=linuxroot' /sys/class/block/sda34/uevent || fail "linuxroot name mismatch"
+grep -qx 'PARTN=34' /sys/class/block/sda34/uevent || fail "linuxroot number mismatch"
+test "$(cat /sys/class/block/sda34/dev)" = 259:18 || fail "linuxroot device mismatch"
+test "$(cat /sys/class/block/sda34/size)" = 134217728 || fail "linuxroot size mismatch"
+test -b "$device" || fail "linuxroot block device absent"
+test -z "$(ls /sys/class/block/sda34/holders)" || fail "linuxroot has block holders"
+grep -qx 'PARTNAME=userdata' /sys/class/block/sda35/uevent ||
+    fail "Android userdata identity mismatch"
+grep -qx 'PARTN=35' /sys/class/block/sda35/uevent ||
+    fail "Android userdata number mismatch"
+test "$(cat /sys/class/block/sda35/size)" = 92700632 ||
+    fail "Android userdata size mismatch"
 awk '$3 == "259:18" { found=1 } END { exit found ? 0 : 1 }' /proc/self/mountinfo &&
-    fail "userdata is mounted"
+    fail "linuxroot is mounted"
 test ! -e "$target" || fail "target path already exists"
 test ! -e "$started" || fail "a format was already attempted this boot"
 
@@ -52,9 +58,9 @@ test -d "$stage" && test ! -L "$stage" || fail "RAM staging directory absent"
 cd "$stage"
 sha256sum -c SHA256SUMS >/dev/null || fail "staged checksums failed"
 printf '%s  %s\n' "$boot_hash" boot/boot.img | sha256sum -c - >/dev/null ||
-    fail "bundle BOOT is not accepted v12"
+    fail "bundle BOOT is not accepted dual-layout Ubuntu"
 printf '%s  %s\n' "$boot_hash" /dev/sda19 | sha256sum -c - >/dev/null ||
-    fail "installed BOOT is not accepted v12"
+    fail "installed BOOT is not accepted dual-layout Ubuntu"
 printf '%s  %s\n' 2b6901f8341de3b76fbcabc69bf0229683d503f233eafd580b4d602392ff74f5 /dev/sda20 | sha256sum -c - >/dev/null || fail "recovery mismatch"
 printf '%s  %s\n' fbebd763c17c05bc162776a6e9abd86fc386aa0ef58ccfdaa6cb9b13a6a0c72f /dev/sda21 | sha256sum -c - >/dev/null || fail "vendor_boot mismatch"
 printf '%s  %s\n' f9111b7a566b0a7342ec4d8f14cee53dc465a272d42596f774c0519d6e89fc57 /dev/sda22 | sha256sum -c - >/dev/null || fail "dtbo mismatch"
@@ -83,17 +89,17 @@ run "$runtime/usr/sbin/e2fsck" -V >/dev/null 2>&1 || fail "e2fsck runtime invali
 run "$runtime/usr/bin/dpkg-query" --version >/dev/null 2>&1 || fail "dpkg-query runtime invalid"
 
 if [ "$mode" = --check ]; then
-    echo INSTALLER_CHECK_PASSED_USERDATA_UNMOUNTED_NO_DEVICE_WRITE
+    echo INSTALLER_CHECK_PASSED_LINUXROOT_UNMOUNTED_NO_DEVICE_WRITE
     exit 0
 fi
 
 test -f "$authorization" && test ! -L "$authorization" ||
     fail "authorization token absent"
-test "$(cat "$authorization")" = 'ERASE SM-T630 USERDATA /dev/sda34 226918360' ||
+test "$(cat "$authorization")" = 'ERASE SM-T630 LINUXROOT /dev/sda34 134217728' ||
     fail "authorization token invalid"
 ( set -C; : >"$started" ) 2>/dev/null || fail "cannot lock format attempt"
 
-echo INSTALLER_APPLY_AUTHORIZED_FORMATTING_EXACT_USERDATA
+echo INSTALLER_APPLY_AUTHORIZED_FORMATTING_EXACT_LINUXROOT
 run "$runtime/usr/sbin/mke2fs" -t ext4 -F -L ubuntu-t630 \
     -U 64de8544-53ea-4fdc-8946-d6b07e238630 -m 1 -i 65536 \
     -O '^orphan_file,^metadata_csum_seed' \

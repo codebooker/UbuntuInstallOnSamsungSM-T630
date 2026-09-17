@@ -80,7 +80,7 @@ class InstallerBundleTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.bundle(root)
-            with self.assertRaisesRegex(ValueError, "physically accepted v12"):
+            with self.assertRaisesRegex(ValueError, "physically accepted dual-layout"):
                 subject.validate(root)
 
     def test_changed_checksum_seal_is_rejected(self):

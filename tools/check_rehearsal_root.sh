@@ -31,6 +31,24 @@ chroot "$root" dpkg-query -W \
     t630-login-runtime t630-camera-runtime \
     t630-native-userspace t630-pd-mapper \
     libssc hexagonrpcd iio-sensor-proxy t630-stock-assets
+if [ "$(chroot "$root" dpkg-query -W -f='${db:Status-Status}' \
+        waydroid 2>/dev/null || true)" = installed ] ||
+   [ "$(chroot "$root" dpkg-query -W -f='${db:Status-Status}' \
+        t630-waydroid-runtime 2>/dev/null || true)" = installed ]; then
+    echo "retired Waydroid package is installed" >&2
+    exit 1
+fi
+for path in \
+    var/lib/waydroid \
+    etc/apt/sources.list.d/waydroid.list \
+    usr/local/sbin/t630-waydroid-prepare; do
+    if [ -e "$root/$path" ]; then
+        echo "retired Waydroid state is present: /$path" >&2
+        exit 1
+    fi
+done
+chroot "$root" dpkg-query -W -f='${Package} ${Version} ${db:Status-Status}\n' gdisk
+echo "waydroid_retirement: valid"
 
 echo "everyday_apps:"
 chroot "$root" dpkg-query -W \

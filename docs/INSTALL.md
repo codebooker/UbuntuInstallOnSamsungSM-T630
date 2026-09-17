@@ -470,16 +470,19 @@ run as one command:
 sudo tools/build_local_installer.sh \
   /absolute/path/to/ubuntu-base-24.04.5-base-arm64.tar.gz \
   /absolute/path/to/complete-package-directory \
-  /absolute/path/to/accepted-module-compatible-Image \
+  /absolute/path/to/accepted-dual-layout-boot-directory \
   /absolute/path/to/new-work-directory
 ```
 
 The command requires a new work directory and refuses macOS, non-ARM64 hosts,
 unprivileged execution, incomplete package sets, unclean roots, unexpected
-package versions, and an unaccepted kernel. It performs the preparation,
+package versions, and an unaccepted dual-layout BOOT. It performs the preparation,
 public dependency provisioning, exact package apply, complete root check,
-rootfs archive build, persistent BOOT build, and final identity audit. It never
-opens a block device.
+rootfs archive build, accepted BOOT copy, and final identity audit. It never
+opens a block device. The accepted BOOT directory must contain the exact
+`boot.img` and adjacent `manifest.json` emitted by
+`tools/build_dual_layout_boot.py`; the final sealer validates both by hash,
+size, model, stock build, root UUID, and kernel hash.
 
 The resulting `t630-release-rootfs.tar.gz` is mode 0600 and includes the
 owner's locally reconstructed proprietary stock-assets package contents. It is
@@ -489,7 +492,7 @@ SHA256, size, member count, identity state, and redistribution warning. The
 archive uses GNU tar with numeric ownership, ACLs, xattrs, deterministic member
 order and timestamps, and gzip without a timestamp. The builder re-runs the
 identity audit after packaging. It then refuses any BOOT other than the exact
-physically accepted v12 image and seals the six inputs in
+physically accepted dual-layout Ubuntu image and seals the six inputs in
 `installer-bundle.json` plus a BusyBox-compatible `SHA256SUMS`. The bundle also
 contains a small private ARM64 recovery runtime built from the audited clean
 root: `mke2fs`, `e2fsck`, GNU tar, `dpkg-query`, the dynamic loader and their
@@ -508,10 +511,10 @@ python3 tools/stage_installer_bundle.py \
 ```
 
 The stager revalidates the seal locally, requires the exact model, kernel,
-userdata geometry, battery level, and enough available memory, then creates a
+dual-layout partition geometry, battery level, and enough available memory, then creates a
 bounded `nosuid,nodev,noexec` tmpfs. Files are streamed at constant host memory
 use; each transfer is hashed by the tablet. The tablet finally validates the
-fixed checksum-file shape, all seven covered entries, the accepted v12 BOOT hash,
+fixed checksum-file shape, all seven covered entries, the accepted dual-layout BOOT hash,
 and the private/baseline manifest markers. Its success message explicitly says
 that no device was written. Restarting clears the staged data. This transport
 is implemented and unit-tested. Its constant-memory USB stream physically
@@ -521,36 +524,39 @@ The full sealed bundle was physically exercised through the tablet-local path
 below, avoiding a redundant transfer through the Mac.
 
 The stager uploads `install_staged_release.sh` separately and runs its default
-`--check` mode. That mode is read-only. It additionally requires userdata to
+`--check` mode. That mode is read-only. It additionally requires `linuxroot` to
 have no mount or block holder, verifies the installed BOOT and the untouched
 recovery, vendor_boot, DTBO, and VBMETA partitions, extracts and probes the
-private ARM64 tool runtime in RAM, and then reports readiness. A stock Android
-userdata filesystem is expected to remain unmounted because boot v12 recognizes
-only the exact provisioned ext4 UUID. An already running Ubuntu installation is
-mounted and is therefore refused before authorization.
+private ARM64 tool runtime in RAM, and then reports readiness. It also
+revalidates the separate Android `userdata` partition at `sda35` without
+opening it. An already running Ubuntu installation has `linuxroot` mounted and
+is therefore refused before authorization.
 
 The physical development tablet passed the corresponding negative test:
-`--check` returned `INSTALLER_REFUSED: userdata is mounted` with exit status 1,
+`--check` returned `INSTALLER_REFUSED: linuxroot is mounted` with exit status 1,
 before any staged-bundle, authorization, format, or extraction operation.
 
 When the private bundle is built directly on the tablet, it can be copied from
-mounted userdata into the same bounded recovery-RAM staging area without first
+mounted `linuxroot` into the same bounded recovery-RAM staging area without first
 copying the multi-gigabyte archive to another computer:
 
 ```sh
 python3 tools/stage_installer_bundle_local.py \
   /run/ubuntu/absolute/path/to/sealed-bundle
+python3 tools/prepare_staged_install.py
 ```
 
 This path accepts only a canonical directory below `/run/ubuntu`, verifies the
 complete seal before and after the copy, checks available RAM, mounts a bounded
 `nosuid,nodev,noexec` tmpfs, and uploads only the small guarded installer over
-USB. It does not unmount or modify userdata. The operator must stop the running
-Ubuntu session and unmount userdata before the read-only installer check can
-pass; the separate typed authorization gate remains unchanged.
+USB. It does not unmount or modify either partition. The preparation helper
+then stops only processes rooted in the exact Ubuntu chroot, waits for graceful
+exit, detaches child mounts without force or lazy unmounts, preserves the RAM
+bundle, unmounts `linuxroot`, and runs the read-only installer check. The
+separate typed authorization gate remains unchanged.
 
 The physical tablet completed this path with a 1,230,162,230-byte private
-rootfs archive. After the normal session was stopped and userdata was genuinely
+rootfs archive. After the normal session was stopped and `linuxroot` was genuinely
 unmounted, `install_staged_release.sh --check` also passed its protected-
 partition and isolated-runtime checks without formatting or writing storage.
 
@@ -571,8 +577,9 @@ python3 tools/authorize_staged_install.py --acknowledge-stock-recovery
 ```
 
 It first repeats the tablet-side read-only check, then requires the operator to
-type `ERASE SM-T630 USERDATA` exactly. Only then does it create a one-time RAM
-token and invoke `--apply`. Apply formats only validated `sda34`, extracts with
+type `ERASE SM-T630 LINUXROOT` exactly. Only then does it create a one-time RAM
+token and invoke `--apply`. Apply formats only the validated 64 GiB `linuxroot`
+at `sda34`, explicitly revalidates Android `userdata` at `sda35`, and extracts with
 numeric ownership, ACLs, and xattrs, rejects identity/account/network leakage,
 requires `t630-release-base` 0.1.19, unmounts, and runs read-only `e2fsck`.
 Failures after format stay in recovery with the bundle available for diagnosis;
@@ -580,7 +587,7 @@ the same boot cannot silently retry. Success still requires an explicit reboot.
 It never writes BOOT or another partition.
 
 This completes the source implementation for host assembly, RAM staging, and
-the guarded userdata installer. It does not make the release end-user ready:
+the guarded `linuxroot` installer. It does not make the release end-user ready:
 the destructive install, first boot, and return-to-stock sequence must still
 pass physically before the top warning can be removed.
 

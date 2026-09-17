@@ -78,8 +78,8 @@ guarded BOOT-only writes and repeated cold boots passed on the development
 SM-T630. The latest revision also keeps the personalized clean installation
 selected across orderly restarts, retains wallpaper settings, and preserves the
 old root as an abnormal-boot fallback.
-The guarded recovery-hosted RAM transfer and read-only userdata installation
-gate passed with the complete 1.2 GB private bundle. The destructive
+The guarded recovery-hosted RAM transfer and read-only dual-layout `linuxroot`
+installation gate passed with the complete 1.23 GB private bundle. The destructive
 clean-install/first-boot rehearsal and return-to-stock rehearsal remain; do not
 improvise either operation from the lab scripts unless you can recover the
 tablet independently.

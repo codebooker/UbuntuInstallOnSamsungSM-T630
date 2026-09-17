@@ -14,13 +14,16 @@ class LocalInstallerStagingTests(unittest.TestCase):
         self.assertIn('STAGING = "/run/t630-installer"', text)
         self.assertIn("/run/ubuntu/", text)
         self.assertIn("androidboot.em.model=SM-T630", text)
+        self.assertIn("PARTNAME=linuxroot", text)
+        self.assertIn("134217728", text)
         self.assertIn("PARTNAME=userdata", text)
-        self.assertIn("226918360", text)
+        self.assertIn("92700632", text)
         self.assertIn("MemAvailable", text)
         self.assertIn("nosuid,nodev,noexec", text)
         self.assertIn("sha256sum -c SHA256SUMS", text)
-        self.assertIn("COPIED_FROM_USERDATA_TO_RAM_NO_DEVICE_WRITE", text)
+        self.assertIn("COPIED_FROM_LINUXROOT_TO_RAM_NO_DEVICE_WRITE", text)
         self.assertIn("install_staged_release.sh", text)
+        self.assertIn("prepare_staged_install.sh", text)
         for forbidden in ("mkfs", "dd if=", "of=/dev/", "heimdall", "--apply"):
             self.assertNotIn(forbidden, text)
 

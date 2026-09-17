@@ -19,7 +19,9 @@ class LocalInstallerWorkflowTests(unittest.TestCase):
         self.assertIn("check_rehearsal_root.sh", text)
         self.assertIn("build_installer_runtime.py", text)
         self.assertIn("build_release_archive.py", text)
-        self.assertIn("build_boot_persistent.py", text)
+        self.assertIn("ACCEPTED_BOOT_DIR", text)
+        self.assertIn('test -f "$accepted_boot/boot.img"', text)
+        self.assertIn('test -f "$accepted_boot/manifest.json"', text)
         self.assertIn("finalize_installer_bundle.py", text)
 
     def test_shell_syntax(self):

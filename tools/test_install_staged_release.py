@@ -12,13 +12,13 @@ class StagedInstallerTests(unittest.TestCase):
 
     def test_read_only_check_precedes_authorization_and_format(self):
         text = SCRIPT.read_text(encoding="utf-8")
-        check = text.index("INSTALLER_CHECK_PASSED_USERDATA_UNMOUNTED_NO_DEVICE_WRITE")
+        check = text.index("INSTALLER_CHECK_PASSED_LINUXROOT_UNMOUNTED_NO_DEVICE_WRITE")
         authorization = text.index('test -f "$authorization"')
         format_call = text.index('"$runtime/usr/sbin/mke2fs" -t ext4')
         self.assertLess(check, authorization)
         self.assertLess(authorization, format_call)
         self.assertIn("--check|--apply", text)
-        self.assertIn("ERASE SM-T630 USERDATA /dev/sda34 226918360", text)
+        self.assertIn("ERASE SM-T630 LINUXROOT /dev/sda34 134217728", text)
         self.assertIn('test ! -e "$started"', text)
         self.assertIn('if [ ! -e "$runtime" ]', text)
         self.assertIn('test -d "$runtime" && test ! -L "$runtime"', text)
@@ -26,12 +26,14 @@ class StagedInstallerTests(unittest.TestCase):
     def test_exact_device_and_protected_partition_guards(self):
         text = SCRIPT.read_text(encoding="utf-8")
         for value in (
-                "androidboot.em.model=SM-T630", "PARTNAME=userdata", "PARTN=34",
-                "259:18", "226918360", "/dev/sda19", "/dev/sda20",
+                "androidboot.em.model=SM-T630", "PARTNAME=linuxroot", "PARTN=34",
+                "259:18", "134217728", "PARTNAME=userdata", "PARTN=35",
+                "92700632", "/dev/sda19", "/dev/sda20",
                 "/dev/sda21", "/dev/sda22", "/dev/sde19"):
             self.assertIn(value, text)
-        self.assertIn('fail "userdata is mounted"', text)
-        self.assertIn('fail "userdata has block holders"', text)
+        self.assertIn('fail "linuxroot is mounted"', text)
+        self.assertIn('fail "linuxroot has block holders"', text)
+        self.assertNotIn('device=/dev/sda35', text)
 
     def test_root_validation_precedes_success(self):
         text = SCRIPT.read_text(encoding="utf-8")

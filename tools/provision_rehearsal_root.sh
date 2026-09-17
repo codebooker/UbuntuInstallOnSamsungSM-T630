@@ -94,7 +94,7 @@ chroot "$root" /usr/bin/env \
     apt-get install -y --no-install-recommends \
     alsa-utils at-spi2-core bluez breeze-icon-theme chrony dbus file librsvg2-common \
     gir1.2-gtk-3.0 gdm3 gnome-shell \
-    iio-sensor-proxy libdrm2 libglib2.0-0t64 libglib2.0-bin \
+    iio-sensor-proxy gdisk libdrm2 libglib2.0-0t64 libglib2.0-bin \
     libgtk-3-0t64 libgudev-1.0-0 liblzma5 libprotobuf-c1 libqt5svg5 \
     libqmi-glib5 libqrtr-glib0 libqrtr1 libwayland-client0 libweston-13-0 \
     libxcb1 locales maliit-framework maliit-keyboard network-manager passwd \

@@ -10,8 +10,8 @@ import os
 from pathlib import Path
 
 
-EXPECTED_BOOT_SHA256 = "a7bde8259ab09b8238e0a1c8871e94422c3a6eb29e95ff8218e2de1746cd2e28"
-EXPECTED_KERNEL_SHA256 = "7ffa08471df8e47cf9d6cccca55ff24c96e3afc8393f4163ef0a020f7d2958b6"
+EXPECTED_BOOT_SHA256 = "eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb"
+EXPECTED_KERNEL_SHA256 = "49b648801a751be9761bd8b2b24e9833964acbb06741d87f7db384dd2d36845d"
 EXPECTED_BOOT_BYTES = 100663296
 ROOT_UUID = "64de8544-53ea-4fdc-8946-d6b07e238630"
 INPUTS = (
@@ -99,9 +99,9 @@ def validate(work: Path) -> dict:
             boot_record.get("boot_bytes") != EXPECTED_BOOT_BYTES or
             boot_hash != EXPECTED_BOOT_SHA256 or
             boot_record.get("boot_sha256") != EXPECTED_BOOT_SHA256):
-        raise ValueError("BOOT is not the physically accepted v12 image")
+        raise ValueError("BOOT is not the physically accepted dual-layout image")
     if boot_record.get("kernel_sha256") != EXPECTED_KERNEL_SHA256:
-        raise ValueError("BOOT kernel is not the accepted module-compatible build")
+        raise ValueError("BOOT kernel is not the accepted dual-layout build")
 
     files = []
     for name in INPUTS:

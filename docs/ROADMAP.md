@@ -51,7 +51,7 @@
    installation completion and the return-to-stock rehearsal remain. The new
    one-command ARM64 host builder assembles a fresh ownerless root, applies and
    audits the exact release set, emits a deterministically serialized private rootfs archive
-   with numeric ownership/ACLs/xattrs, and builds the accepted persistent BOOT
+   with numeric ownership/ACLs/xattrs, and seals the accepted dual-layout BOOT
    input without opening any device. A separate recovery verifier requires the
    exact DZE3/XAR BL/AP/CSC/HOME_CSC set and can stream-check every ZIP CRC and
    Samsung tar MD5 without extracting the 6.4 GB factory package. The remaining
@@ -61,12 +61,14 @@
    second multi-gigabyte host copy. The complete 1.2 GB private bundle was
    copied into bounded recovery RAM and verified there on the physical tablet.
    A private recovery-tool builder and two-phase installer now implement exact
-   userdata formatting and extraction with preserved ownership/ACLs/xattrs,
+   `linuxroot` formatting and extraction with preserved ownership/ACLs/xattrs,
    post-extract identity/package checks, unmounted read-only fsck, one-attempt
    locking, explicit typed authorization, and no automatic reboot. After the
-   working system was stopped and userdata was genuinely unmounted, the full
+   working system was stopped and `linuxroot` was genuinely unmounted, the full
    physical read-only gate verified every protected partition and the isolated
-   recovery runtime without formatting. Remaining gates are the explicitly
+   recovery runtime without formatting. The fresh 0.1.19 bundle and its exact
+   dual-layout partition/BOOT guards passed the same physical RAM-stage and
+   unmounted read-only gate on 2026-09-17. Remaining gates are the explicitly
    authorized clean-install/first-boot run and stock-return rehearsal. Boot v3
    makes an incomplete ownerless setup cleanly recoverable; boot v4 retains
    that terminal only for ownerless or explicitly requested recovery boots. The
@@ -210,32 +212,18 @@ terminal from the normal path.
 
 ## Android applications
 
-Waydroid 1.6.2 now runs an official ARM64 LineageOS 20 / Android 13 GAPPS image
-on the physical tablet. The coherent v13 kernel/module payload
-keeps the stock release string and matches all 13,709 audited symbol CRCs. It
-passed native boot, Wi-Fi, touch, S Pen, display, sound, sensors, camera,
-charging, suspend, reboot, and orderly-unmount regressions before Android was
-enabled.
+Native stock Android 15 is the accepted application path. It uses its own
+encrypted 44.2 GiB F2FS `userdata` partition and the stock Adreno stack, while
+Ubuntu remains on the 64 GiB `linuxroot` partition. The Ubuntu and Android
+touchscreen switchers completed a physical round trip without altering either
+data partition or any protected neighbor of BOOT. Android retained Play
+services, Samsung Notes, S Pen input, and the rooted fixed-command switcher;
+Ubuntu returned on its exact accepted BOOT with GNOME and its reverse switch
+ready.
 
-This port's Ubuntu filesystem is a chroot below the recovery-hosted root. A
-normal Waydroid launch therefore exposed inherited trace descriptors as
-`/run/ubuntu/sys/...`, which Android 13 correctly rejected. The packaged
-launcher creates a private outer-root mount namespace, recursively exposes the
-Ubuntu runtime there, and lets unmodified LXC perform its normal pivot. Android
-then sees canonical `/sys/kernel/tracing/trace_marker` descriptors and reaches
-`sys.boot_completed=1`. The nested GNOME socket is selected per owner, Android
-networking works, and F-Droid 1.23.2 installs, persists across both the GAPPS
-migration and restarts, and launches from the GNOME app grid. Google Play
-services runs, Google check-in succeeds, and Play Store reaches its
-unauthenticated sign-in UI with working Android DNS and HTTPS. Account sign-in
-and any required uncertified-device registration remain owner-only steps.
-
-The remaining Android work is release engineering rather than basic bring-up:
-bundle or fetch Waydroid's external Ubuntu packages and official images in the
-installer, pursue a compatible KGSL/Waydroid graphics bridge beyond the
-accepted llvmpipe fallback, exercise longer suspend/rotation/input sessions,
-and decide whether clipboard sharing can be added without weakening the
-locked-session boundary.
-Until those dependencies are sealed, `t630-waydroid-runtime` remains an
-optional post-install package rather than a dependency of the offline native
-base. See [WAYDROID.md](WAYDROID.md).
+The rejected CPU-rendered Waydroid packages, images, owner data, launchers,
+backups, and kernel trials have been removed from Ubuntu. Its source and reports
+remain only as historical evidence. Remaining Android work is limited to
+repeated cold-switch endurance, forced refusal/failure cases, recovery rehearsal,
+and including both switchers in the final clean-install acceptance. See
+[DUALBOOT.md](DUALBOOT.md).

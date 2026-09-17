@@ -82,9 +82,10 @@ old root as an abnormal-boot fallback.
 The guarded recovery-hosted RAM transfer and read-only dual-layout `linuxroot`
 installation gate passed with the complete private bundle. The explicitly
 authorized clean install and owner-created first boot also passed. A complete
-factory-return rehearsal and an end-user host wrapper remain; do not improvise
-either operation from individual lab scripts unless you can recover the tablet
-independently.
+factory-return rehearsal and a graphical host wrapper remain. The current
+single-entry coordinator sequences the tested verifier, RAM staging, read-only
+preparation, and typed authorization gates; do not improvise those phases from
+individual lab scripts unless you can recover the tablet independently.
 
 The current private v4 bundle additionally carries the physically accepted
 Chrome on-screen-keyboard bridge. Its identity audit, full offline rehearsal,

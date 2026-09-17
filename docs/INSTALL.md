@@ -571,6 +571,23 @@ exit, detaches child mounts without force or lazy unmounts, preserves the RAM
 bundle, unmounts `linuxroot`, and runs the read-only installer check. The
 separate typed authorization gate remains unchanged.
 
+For normal release use, the single coordinator replaces those separate host
+commands. Its default tablet-local path only stages and verifies RAM:
+
+```sh
+python3 tools/t630_installer.py \
+  --tablet-bundle /run/ubuntu/absolute/path/to/sealed-bundle
+```
+
+Add `--prepare` in the same invocation to stop Ubuntu, unmount `linuxroot`, and
+finish the read-only gate. Add both `--install` and
+`--acknowledge-stock-recovery` only when erasing `linuxroot` is intended; the
+existing exact typed confirmation is still required. An already staged RAM
+bundle can be resumed with `--staged --prepare` or, after the read-only gate,
+`--staged --install --acknowledge-stock-recovery`. A bundle stored on the host
+uses `--host-bundle`; `--verify-only` checks it without connecting to the
+tablet. See the [single-entry installer report](reports/single-entry-installer-20260917.md).
+
 The physical tablet completed this path with a 1,230,162,230-byte private
 rootfs archive. After the normal session was stopped and `linuxroot` was genuinely
 unmounted, `install_staged_release.sh --check` also passed its protected-
@@ -585,8 +602,8 @@ that exact bundle to bounded RAM and reverified every checksum, then the RAM
 copy was unmounted and removed. Its unmounted read-only device check remains a
 separate gate before destructive acceptance.
 
-The destructive command exists for the eventual physical clean-install
-rehearsal, but that rehearsal has **not** happened yet:
+The destructive command used by the physically accepted clean-install
+rehearsal remains available as a lower-level recovery operation:
 
 ```sh
 python3 tools/authorize_staged_install.py --acknowledge-stock-recovery
@@ -605,7 +622,8 @@ It never writes BOOT or another partition.
 This completes the source implementation for host assembly, RAM staging, and
 the guarded `linuxroot` installer. The destructive clean install and first boot
 passed physically. It does not make the release end-user ready: a complete
-factory-return rehearsal and the graphical installation wrapper remain.
+factory-return rehearsal and a graphical wrapper around the single guarded host
+entry point remain.
 
 Do not overwrite a mapped live library merely to test the package. Extract it
 to a temporary directory and run the dependency/symbol probes described in the

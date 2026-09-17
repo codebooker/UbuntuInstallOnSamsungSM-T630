@@ -28,8 +28,8 @@ The following facts were rechecked after the authorized storage transaction on
   partitions remain outside partition 34;
 - the exact DZE3 factory archive and extracted stock `boot.img` are available
   locally for recovery; and
-- Waydroid is stopped and disabled at desktop startup, while its data remains
-  intact.
+- the rejected Waydroid packages, images, owner data, launchers, backups, and
+  kernel-trial artifacts were removed after native button switching passed.
 
 The exact pre-split and post-split GPT backups remain private local recovery
 artifacts and are deliberately excluded from Git.

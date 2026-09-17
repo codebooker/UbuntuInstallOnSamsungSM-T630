@@ -48,10 +48,10 @@ class WaydroidRuntimeTests(unittest.TestCase):
         self.assertIn("t630-waydroid-profile.request", text)
         self.assertIn("show-full-ui:|app:launch|session:start", text)
 
-    def test_desktop_startup_prepares_waydroid_without_starting_android(self):
+    def test_retired_waydroid_is_not_prepared_at_desktop_startup(self):
         startup = (ROOT / "ubuntu/t630-desktop-autostart").read_text()
-        self.assertIn("/usr/local/sbin/t630-waydroid-prepare", startup)
-        self.assertIn("/etc/t630/waydroid.disabled", startup)
+        self.assertNotIn("/usr/local/sbin/t630-waydroid-prepare", startup)
+        self.assertNotIn("/etc/t630/waydroid.disabled", startup)
 
     def test_profile_supervisor_never_starts_or_unfreezes_android(self):
         supervisor = ROOT / "ubuntu/t630-waydroid-profile-supervisor"

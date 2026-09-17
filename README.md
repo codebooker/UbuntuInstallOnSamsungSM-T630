@@ -36,7 +36,7 @@ full-screen GNOME desktop from internal storage.
 | Browser video acceleration | WebKit hardware selection verified; safe launcher blocked by the stock kernel's missing user-namespace support |
 | Cameras | Front and rear GNOME previews work at 720×480; rear exposure, autofocus, tone, and live color adjustment work; HD Snapshot and flash remain |
 | First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow and packaged GDM password login implemented; full private bundle and unmounted read-only device gate passed, destructive clean-install acceptance remains |
-| Android applications | Waydroid's CPU-rendered UI is rejected; native stock Android boots encrypted F2FS with Adreno acceleration beside the 64 GiB Ubuntu root. Button-only switchers for both operating systems are implemented; final rooted-service and physical round-trip acceptance remain |
+| Android applications | Native stock Android boots encrypted F2FS with Adreno acceleration beside the 64 GiB Ubuntu root. The button-only Ubuntu-to-Android-to-Ubuntu round trip is physically accepted; rejected Waydroid was removed from Ubuntu |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).
 
@@ -67,9 +67,9 @@ be treated as a porting task, not as a reason to remove those checks.
    installer work.
 7. See [pen apps](docs/PEN-APPS.md) and [opt-in remote access](docs/REMOTE-ACCESS.md)
    for the clean installation's current application and network-access recipes.
-8. See [Waydroid](docs/WAYDROID.md) for the functional but performance-rejected
-   Android container, and [native Android dual boot](docs/DUALBOOT.md) for the
-   replacement design.
+8. See [native Android dual boot](docs/DUALBOOT.md) for the accepted Android
+   application path. The retired [Waydroid notes](docs/WAYDROID.md) remain only
+   as historical engineering evidence.
 
 The repository can reproduce the conservative diagnostic image, the physically
 accepted persistent boot image, and a private identity-clean release-root

@@ -1,8 +1,8 @@
 # Android applications with Waydroid
 
-Waydroid is functionally working on the physical SM-T630, but it is rejected as
-an end-user Android solution because physical acceptance found the entirely
-CPU-rendered interface unusably slow at both native and reduced resolutions.
+Waydroid was functionally working on the physical SM-T630, but it is retired and
+removed because physical acceptance found the entirely CPU-rendered interface
+unusably slow at both native and reduced resolutions.
 The verified
 combination is Waydroid 1.6.2, LXC 5.0.3, and the official ARM64 GAPPS
 LineageOS 20 / Android 13 system with the official MAINLINE vendor image on the
@@ -11,16 +11,16 @@ services and the Play Store run, networking works, and the previously installed
 F-Droid data survives both the VANILLA-to-GAPPS migration and a clean Android
 restart.
 
-This is an optional post-install feature. It is not yet in the sealed offline
-native base because the Waydroid Ubuntu packages come from Waydroid's external
-repository and the Android system/vendor images are downloaded separately. Do
-not add `t630-waydroid-runtime` to `t630-release-base` until those inputs have a
-reproducible installer boundary.
+This is no longer an optional post-install feature. It was never added to the
+sealed offline native base because the Waydroid Ubuntu packages came from an
+external repository and the Android system/vendor images were downloaded
+separately. Do not add `t630-waydroid-runtime` to `t630-release-base`.
 
-Waydroid is currently stopped on the development tablet. Its images and app
-data are retained for reproducible diagnostics; they have not been deleted.
-Further resolution or animation tuning is not a release task. The practical
-replacement is native Android beside Ubuntu, documented in [DUALBOOT.md](DUALBOOT.md).
+After native Android's button-only round trip passed on 2026-09-17, the Waydroid
+package, integration runtime, images, owner data, launchers, backups, repository,
+and kernel-trial artifacts were removed from Ubuntu. This document is retained
+only as historical engineering evidence. The accepted replacement is native
+Android beside Ubuntu, documented in [DUALBOOT.md](DUALBOOT.md).
 
 ## Why this port needs a launcher
 

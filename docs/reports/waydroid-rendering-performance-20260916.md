@@ -76,3 +76,17 @@ an Android app launches. The supervisor never starts or unfreezes Android; it
 acts only when the container is already running, and reapplies only the display
 override and animation scales. It does not disable packages, inspect accounts,
 or modify app data.
+
+## Final physical acceptance
+
+The persistent profile fixed the configuration regression, but it did not make
+Android acceptable. The owner found the Android UI unusably slow regardless of
+resolution. That observation is consistent with the verified llvmpipe renderer
+and ends resolution tuning: fewer CPU-rendered pixels improve benchmarks but do
+not provide a native tablet experience.
+
+Waydroid was stopped cleanly after this acceptance result. Its system images
+and application data remain available for diagnostics; nothing was wiped. The
+project now classifies this path as functionally verified but rejected for
+normal use. Native Android dual boot is the replacement direction; see
+[`../DUALBOOT.md`](../DUALBOOT.md).

@@ -36,7 +36,7 @@ full-screen GNOME desktop from internal storage.
 | Browser video acceleration | WebKit hardware selection verified; safe launcher blocked by the stock kernel's missing user-namespace support |
 | Cameras | Front and rear GNOME previews work at 720×480; rear exposure, autofocus, tone, and live color adjustment work; HD Snapshot and flash remain |
 | First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow and packaged GDM password login implemented; full private bundle and unmounted read-only device gate passed, destructive clean-install acceptance remains |
-| Android applications | Working experimentally through Waydroid 1.6.2 / Android 13; Google Play services, Play Store, F-Droid, and Android networking verified |
+| Android applications | Waydroid boots and GAPPS works, but the CPU-rendered UI is rejected as unusably slow; native Android dual boot is the replacement path under development |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).
 
@@ -67,8 +67,9 @@ be treated as a porting task, not as a reason to remove those checks.
    installer work.
 7. See [pen apps](docs/PEN-APPS.md) and [opt-in remote access](docs/REMOTE-ACCESS.md)
    for the clean installation's current application and network-access recipes.
-8. See [Waydroid](docs/WAYDROID.md) for the verified Android 13 integration and
-   its intentionally separate, optional installation step.
+8. See [Waydroid](docs/WAYDROID.md) for the functional but performance-rejected
+   Android container, and [native Android dual boot](docs/DUALBOOT.md) for the
+   replacement design.
 
 The repository can reproduce the conservative diagnostic image, the physically
 accepted persistent boot image, and a private identity-clean release-root

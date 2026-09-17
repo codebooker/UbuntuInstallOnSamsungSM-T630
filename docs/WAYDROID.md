@@ -1,6 +1,9 @@
 # Android applications with Waydroid
 
-Waydroid is experimentally working on the physical SM-T630. The verified
+Waydroid is functionally working on the physical SM-T630, but it is rejected as
+an end-user Android solution because physical acceptance found the entirely
+CPU-rendered interface unusably slow at both native and reduced resolutions.
+The verified
 combination is Waydroid 1.6.2, LXC 5.0.3, and the official ARM64 GAPPS
 LineageOS 20 / Android 13 system with the official MAINLINE vendor image on the
 v13 kernel/module payload. Android reaches `sys.boot_completed=1`, Google Play
@@ -13,6 +16,11 @@ native base because the Waydroid Ubuntu packages come from Waydroid's external
 repository and the Android system/vendor images are downloaded separately. Do
 not add `t630-waydroid-runtime` to `t630-release-base` until those inputs have a
 reproducible installer boundary.
+
+Waydroid is currently stopped on the development tablet. Its images and app
+data are retained for reproducible diagnostics; they have not been deleted.
+Further resolution or animation tuning is not a release task. The practical
+replacement is native Android beside Ubuntu, documented in [DUALBOOT.md](DUALBOOT.md).
 
 ## Why this port needs a launcher
 
@@ -237,6 +245,8 @@ and refuses the host unmount if any Android mount remains busy.
 
 ## Current limitations
 
+- Physical owner acceptance rejects the Android UI as unusably slow. The
+  software profile is a diagnostic fallback, not a supported daily-use mode.
 - The GAPPS runtime and unauthenticated Play Store are verified. Google account
   authentication and a Play Store application install require the owner and
   are not automated or recorded by this project.

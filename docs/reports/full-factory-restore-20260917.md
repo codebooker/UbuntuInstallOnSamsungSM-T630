@@ -65,5 +65,14 @@ After first-boot initialization, macOS observed Samsung vendor ID `0x04e8` and
 Android product ID `0x6860` with product name `SAMSUNG_Android`. ADB listed no
 authorized device, as expected after wiping userdata.
 
+The owner then completed Samsung's normal setup and explicitly re-enabled USB
+debugging for final verification. Android reported model `SM-T630`, device
+`gtact4prowifi`, bootloader `T630XXSBDZE3`, and the exact stock release
+fingerprint ending in `T630XXSBDZE3:user/release-keys`. Verified Boot reported
+the deliberately retained unlocked/orange state. `/dev/block/by-name/userdata`
+resolved to `sda34`; the `linuxroot` by-name entry and `sda35` were both absent.
+This closes the physical factory-return gate through completed end-user setup,
+not merely the first USB enumeration.
+
 No serial number, credentials, calibration data, proprietary firmware, or GPT
 backup is committed to the repository.

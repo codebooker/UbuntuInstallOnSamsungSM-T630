@@ -57,13 +57,25 @@ class AndroidSwitcherTest(unittest.TestCase):
 
     def test_helper_pins_geometry_and_protected_hashes(self):
         source = (ROOT / "android-switcher/switch-to-ubuntu.sh").read_text()
-        for value in ("sda34", "67108864", "sda35", "46350316"):
+        for value in ("sda19", "98304", "sda34", "67108864", "sda35", "46350316"):
             self.assertIn(value, source)
+        self.assertIn('readlink -f "$boot"', source)
         self.assertIn("/proc/partitions", source)
         self.assertIn("dumpsys battery", source)
         self.assertIn("ro.boot.boot_recovery", source)
         for partition in ("recovery", "vendor_boot", "dtbo", "vbmeta"):
             self.assertIn(f"by-name/{partition}", source)
+
+    def test_helper_flushes_and_journals_durable_boot_handoff(self):
+        source = (ROOT / "android-switcher/switch-to-ubuntu.sh").read_text()
+        self.assertGreaterEqual(source.count('blockdev --flushbufs "$boot"'), 2)
+        self.assertIn("Ubuntu-BOOT-durable-readback", source)
+        self.assertIn("last-ubuntu-switch", source)
+        durable = source.index("Ubuntu-BOOT-durable-readback")
+        committed = source.index("committed=1", durable)
+        reboot = source.index("setprop sys.powerctl reboot", committed)
+        self.assertLess(durable, committed)
+        self.assertLess(committed, reboot)
 
     def test_builder_is_valid_python_and_uses_private_keystore_default(self):
         ast.parse(BUILDER.read_text())

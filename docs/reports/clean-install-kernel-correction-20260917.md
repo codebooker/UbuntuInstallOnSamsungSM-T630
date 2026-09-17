@@ -100,9 +100,10 @@ reconstructed stock assets and both switch images. The superseded v2 bundle and
 the disposable 3+ GB ownerless build tree were removed after verification,
 leaving 56.6 GB free on `linuxroot`.
 
-The Ubuntu-to-Android-to-Ubuntu touchscreen-button round trip has passed. The
-remaining release gates are repeated cold-switch/failure endurance and the
-full stock-recovery rehearsal.
+The initial Ubuntu-to-Android-to-Ubuntu touchscreen-button round trip passed but
+did not catch Android's stale v1 return payload. The corrected v2 cycle described
+below closes that generation mismatch; forced-failure coverage and the full
+stock-recovery rehearsal remain.
 
 ## Post-v3 Chrome keyboard correction
 
@@ -165,5 +166,7 @@ retained log may predate the immediately preceding Ubuntu boot, it is evidence
 against a recorded Android crash, not proof of the exact trigger for the latest
 restart.
 
-The remaining release gates are a fresh v4-era cold-switch endurance cycle,
-forced-refusal coverage, and the complete stock-recovery rehearsal.
+The fresh v4-era cold-switch cycle subsequently exposed and corrected a stale
+Android-side v1 Ubuntu payload. The corrected cycle returned on module-compatible
+BOOT v2 and passed the complete Ubuntu health checks. Remaining release gates
+are the untested forced-refusal classes and complete stock-recovery rehearsal.

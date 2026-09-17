@@ -236,6 +236,9 @@ ready.
 The rejected CPU-rendered Waydroid packages, images, owner data, launchers,
 backups, and kernel trials have been removed from Ubuntu. Its source and reports
 remain only as historical evidence. Remaining Android work is limited to
-repeated cold-switch endurance, forced refusal/failure cases, recovery rehearsal,
-and including both switchers in the final clean-install acceptance. See
+additional cold-switch endurance, forced refusal/failure cases, recovery
+rehearsal, and including both switchers in the final clean-install acceptance.
+The first post-v4 endurance cycle exposed Android's stale v1 Ubuntu payload;
+after an atomic no-partition-write payload update, the corrected v2 cycle
+returned with the complete Ubuntu health check passing. See
 [DUALBOOT.md](DUALBOOT.md).

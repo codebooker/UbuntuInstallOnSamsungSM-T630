@@ -99,6 +99,14 @@ reverse switch still ready. Download Mode plus a host remains the recovery route
 not the normal switching interface. See the
 [button-only round-trip report](reports/native-button-dualboot-20260917.md).
 
+A subsequent endurance pass caught Android retaining the obsolete v1 Ubuntu
+image even after Ubuntu itself had advanced to module-compatible BOOT v2. The
+Android payload updater now installs and verifies v2 explicitly. Its return
+helper requires `/dev/block/by-name/boot` to resolve to physical `sda19`, checks
+the exact 96 MiB geometry, flushes the block device, performs a delayed durable
+readback, and writes a root-only handoff journal before rebooting. The corrected
+cycle returned on v2 with the complete Ubuntu desktop health check passing.
+
 For a corrected Ubuntu BOOT generation, `tools/update_android_switch_payload.py`
 updates Android's private Ubuntu image and fixed root helper over an already
 authorized USB-debugging connection. It defaults to a no-change check. Its

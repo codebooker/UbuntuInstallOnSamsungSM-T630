@@ -15,7 +15,7 @@ android_hash_file=$state/android-boot.sha256
 boot=/dev/block/by-name/boot
 old_ubuntu=eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb
 new_ubuntu=fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f
-new_helper=f307368aacb47db8f4be058c5c7cb23c217d67a39ada93fb0675cc44cb32cd13
+new_helper=cc7dd9b2ff0c84295031c36bb94dfa534570fa9e75097030c3170b116aa30c60
 
 fail() { echo "ANDROID_SWITCH_UPDATE_REFUSED: $*" >&2; exit 1; }
 check_hash() {

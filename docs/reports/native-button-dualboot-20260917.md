@@ -44,8 +44,43 @@ installation mechanisms only.
 
 ## Remaining endurance work
 
-- repeat cold cycles with USB detached after each verified write;
 - exercise deliberate image, hash, power, and protected-neighbor failures and
   confirm that every one refuses the switch without rebooting; and
 - include both launchers and their root-owned artifacts in the final clean-image
   installer acceptance.
+
+## Module-compatible BOOT endurance correction
+
+A later release-endurance cycle exposed that Android still retained the old v1
+Ubuntu image and helper even though the Ubuntu-side switcher had advanced to the
+module-compatible v2 image. Android correctly verified and wrote what it had,
+but that image was SHA-256
+`eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb`.
+It boots the retired v13 kernel, whose symbol versions do not match the packaged
+v12 touchscreen and WLAN modules. Ubuntu consequently stopped during early
+startup before GNOME. Neither data partition was modified.
+
+The recovery serial console restored only BOOT from the root-owned v2 image.
+The recovery updater verified the full 100,663,296-byte write plus recovery,
+`vendor_boot`, DTBO, and VBMETA before an orderly reboot. Ubuntu returned on
+BOOT `fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f`
+with the v12 kernel, input modules, GNOME, Wi-Fi, audio, clean package state, and
+zero checked kernel faults.
+
+Inspection in Android proved `/dev/block/by-name/boot` resolves to
+`/dev/block/sda19` and has the expected 98,304 KiB size. The installed private
+Ubuntu image was v1 and the installed helper predated the v2 updater. The
+updater then atomically replaced only those two root-owned files below
+`/data/adb/t630`; it performed no partition write. The current helper additionally
+requires the exact physical BOOT mapping and size, flushes the block device,
+performs a delayed durable readback, and records a mode-0600 handoff journal
+before requesting Android's orderly reboot.
+
+The corrected Android payload contains Ubuntu BOOT v2 and helper SHA-256
+`cc7dd9b2ff0c84295031c36bb94dfa534570fa9e75097030c3170b116aa30c60`.
+Its complete read-only gate passed, then a second Android-to-Ubuntu transaction
+reported `UBUNTU_BOOT_STAGED_READBACK_VERIFIED_RESTARTING`. Ubuntu returned on
+v2 and again passed GNOME, Wi-Fi, the 30% unmuted speaker sink, Chrome's keyboard
+watcher, `dpkg --audit`, `apt-get check`, the reverse-switch preflight, and a
+zero checked-fault count. Malformed-mode requests on both sides were also
+refused before any write.

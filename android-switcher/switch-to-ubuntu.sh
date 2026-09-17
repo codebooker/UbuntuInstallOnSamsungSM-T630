@@ -14,6 +14,8 @@ ubuntu_image=$state/ubuntu-boot.img
 android_hash_file=$state/android-boot.sha256
 rollback=$state/android-boot.transaction-rollback.img
 boot=/dev/block/by-name/boot
+journal=$state/last-ubuntu-switch
+journal_new=$state/.last-ubuntu-switch.new
 ubuntu_boot=fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f
 
 fail() { echo "UBUNTU_SWITCH_REFUSED: $*" >&2; exit 1; }
@@ -36,6 +38,9 @@ test "$(getprop ro.build.version.incremental)" = T630XXSBDZE3 || fail "Android b
 test "$(getprop sys.boot_completed)" = 1 || fail "Android has not completed boot"
 test "$(getprop ro.crypto.state)" = encrypted || fail "Android data is not encrypted"
 grep -q ' /data f2fs ' /proc/mounts || fail "Android data is not mounted as F2FS"
+test "$(readlink -f "$boot")" = /dev/block/sda19 || fail "BOOT device mapping mismatch"
+test "$(awk '$4 == "sda19" { print $3 }' /proc/partitions)" = 98304 ||
+    fail "BOOT size mismatch"
 test "$(readlink -f /dev/block/by-name/linuxroot)" = /dev/block/sda34 ||
     fail "linuxroot identity mismatch"
 test "$(awk '$4 == "sda34" { print $3 }' /proc/partitions)" = 67108864 ||
@@ -100,13 +105,27 @@ rollback_on_exit() {
 }
 trap rollback_on_exit 0
 trap 'exit 125' HUP INT TERM
+test ! -e "$journal_new" || fail "stale switch journal transaction"
 dd if="$boot" of="$rollback" bs=4194304 2>/dev/null
 check_hash "$android_boot" "$rollback" transaction-android-backup
 changed=1
 dd if="$ubuntu_image" of="$boot" bs=4194304 conv=fsync 2>/dev/null
 sync
+blockdev --flushbufs "$boot"
 check_hash "$ubuntu_boot" "$boot" Ubuntu-BOOT-readback
+sleep 2
+blockdev --flushbufs "$boot"
+check_hash "$ubuntu_boot" "$boot" Ubuntu-BOOT-durable-readback
 check_neighbors
+(
+    umask 077
+    printf 'status=ubuntu-boot-durable-readback-verified\nboot_device=/dev/block/sda19\nboot_sha256=%s\n' \
+        "$ubuntu_boot" >"$journal_new"
+    chown 0:0 "$journal_new"
+    chmod 0600 "$journal_new"
+    mv -f "$journal_new" "$journal"
+    sync
+)
 committed=1
 sync
 echo UBUNTU_BOOT_STAGED_READBACK_VERIFIED_RESTARTING

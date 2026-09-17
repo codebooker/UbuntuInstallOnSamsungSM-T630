@@ -50,8 +50,8 @@ class DesktopRuntimePackageTests(unittest.TestCase):
                 control = control_archive.extractfile("./control").read().decode()
                 postinst = control_archive.extractfile("./postinst").read().decode()
             self.assertIn("Package: t630-desktop-runtime\n", control)
-            self.assertIn("Version: 0.1.11", control)
-            self.assertIn("t630-first-boot (= 0.1.2)", control)
+            self.assertIn("Version: 0.1.12", control)
+            self.assertIn("t630-first-boot (= 0.1.3)", control)
             self.assertIn("t630-native-userspace (= 0.1.0)", control)
             self.assertIn("gnome-control-center", control)
             self.assertIn("sudo", control)
@@ -65,6 +65,8 @@ class DesktopRuntimePackageTests(unittest.TestCase):
                 "gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true")
             self.assertLess(ready, keyboard)
             self.assertIn("GTK_THEME=Adwaita:dark", session)
+            self.assertLess(session.index("test-audio-cold-order.sh"),
+                            session.index("t630-sensors-start"))
             self.assertIn("-extension GLX", session)
             self.assertIn("--nested --wayland --no-x11", session)
             owner_session = (builder.ROOT / "ubuntu/t630-gnome-session").read_text()
@@ -78,6 +80,7 @@ class DesktopRuntimePackageTests(unittest.TestCase):
                 owner_session,
             )
             self.assertIn('/usr/local/libexec/t630-app-grid', owner_session)
+            self.assertIn('/usr/local/libexec/t630-chrome-ime', owner_session)
             self.assertLess(owner_session.index('/usr/local/libexec/t630-app-grid'),
                             owner_session.index('/usr/bin/gnome-shell --nested'))
             self.assertNotIn('gsettings set org.gnome.shell favorite-apps', owner_session)
@@ -102,6 +105,7 @@ class DesktopRuntimePackageTests(unittest.TestCase):
             with tarfile.open(data_path, "r:xz") as payload:
                 names = {entry.name.removeprefix("./") for entry in payload.getmembers()}
             self.assertIn("usr/local/libexec/t630-x11-recovery", names)
+            self.assertIn("usr/local/libexec/t630-chrome-ime", names)
             self.assertIn("usr/local/libexec/t630-install-owner-assets", names)
             self.assertIn("usr/local/share/t630/gnome-tablet-tools/extension.js", names)
             self.assertIn("usr/local/sbin/t630-suspend", names)

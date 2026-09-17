@@ -90,7 +90,9 @@ class FirstBootPackageTests(unittest.TestCase):
         self.assertIn("window.password.grab_focus()", helper)
         self.assertIn("Path('/sys/class/net/wlan0')", helper)
         self.assertIn("802-11-wireless.mac-address", helper)
-        self.assertIn("GENERAL.HWADDR", helper)
+        self.assertIn("f'/sys/class/net/{interface}/address'", helper)
+        self.assertIn("except (OSError, subprocess.SubprocessError):\n                        pass", helper)
+        self.assertNotIn("GENERAL.HWADDR", helper)
 
     def test_first_boot_embeds_wifi_in_the_existing_wizard_surface(self):
         wizard = (builder.ROOT / "ubuntu/t630-first-boot-ui.py").read_text()
@@ -100,7 +102,8 @@ class FirstBootPackageTests(unittest.TestCase):
         self.assertNotIn("subprocess.Popen", wizard)
         self.assertIn('Path("/sys/class/net/wlan0")', wizard)
         self.assertIn("802-11-wireless.mac-address", wizard)
-        self.assertIn("GENERAL.HWADDR", wizard)
+        self.assertIn("Association and DHCP", wizard)
+        self.assertNotIn("GENERAL.HWADDR", wizard)
 
 
 if __name__ == "__main__":

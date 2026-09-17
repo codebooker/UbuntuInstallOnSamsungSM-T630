@@ -163,6 +163,16 @@ chgrp "$installer_gid" /run/user/0 /run/user/0/wayland-0
 chmod 0710 /run/user/0
 chmod 0660 /run/user/0/wayland-0
 
+# The SSC sensor client and the sound card share the ADSP. Its service
+# publication is one-shot on this stock kernel, so register audio before the
+# setup screen starts sensors. The user audio server still starts only after
+# the owner exists.
+if ! grep -q lahaina-yupikidp-snd-card /proc/asound/cards && \
+   [ -x /usr/local/share/t630/test-audio-cold-order.sh ] && \
+   [ ! -e /etc/t630/audio.disabled ]; then
+    /usr/local/share/t630/test-audio-cold-order.sh \
+        >>/var/log/t630-first-boot-audio.log 2>&1 || true
+fi
 if [ ! -e /run/t630-sensors-ready ] && [ -x /usr/local/sbin/t630-sensors-start ]; then
     T630_FIRST_BOOT=1 /usr/local/sbin/t630-sensors-start \
         >>/var/log/t630-first-boot-sensors.log 2>&1 || true

@@ -12,6 +12,12 @@ fi
 if [ -x /usr/local/libexec/t630-install-owner-assets ]; then
     /usr/local/libexec/t630-install-owner-assets
 fi
+if [ -x /usr/local/libexec/t630-chrome-ime ]; then
+    # Chromium requires an explicit Wayland IME opt-in before it advertises
+    # text-input-v3 focus to GNOME Shell's on-screen keyboard.
+    /usr/local/libexec/t630-chrome-ime ||
+        echo 'Chrome keyboard integration unavailable; continuing GNOME startup.' >&2
+fi
 exec 9>"$XDG_RUNTIME_DIR/t630-gnome-preview.lock"
 flock -n 9 || exit 0
 gsettings set org.gnome.desktop.interface enable-animations false

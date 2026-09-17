@@ -82,9 +82,9 @@ class CameraRuntimePackageTests(unittest.TestCase):
             control_path.write_bytes(members["control.tar.xz"])
             with tarfile.open(control_path, "r:xz") as archive:
                 control = archive.extractfile("./control").read().decode()
-            self.assertIn("Version: 0.1.6", control)
-            self.assertIn("t630-first-boot (= 0.1.2)", control)
-            self.assertIn("t630-desktop-runtime (>= 0.1.6)", control)
+            self.assertIn("Version: 0.1.7", control)
+            self.assertIn("t630-first-boot (= 0.1.3)", control)
+            self.assertIn("t630-desktop-runtime (>= 0.1.12)", control)
             self.assertIn("t630-hardware-runtime (>= 0.1.6)", control)
             self.assertIn("t630-stock-assets (>= 1.0.2+dze3)", control)
             self.assertIn("must be reconstructed locally", control)

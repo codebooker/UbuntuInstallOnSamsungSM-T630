@@ -4,8 +4,8 @@ import argparse
 import hashlib
 from pathlib import Path
 
-# Reviewed after adding the conventional GNOME minimize/maximize button layout.
-BASE_SHA = '25a89a397281ed396f8b365535eb02a5f297cb4ae34cb07168e83d8ff5e8cadc'
+# Reviewed after adding the owner-scoped Chrome Wayland-IME launcher refresh.
+BASE_SHA = '6e69074c1fe38240b424192842f2864e63e298d39263a88a04700b7aeff24e5b'
 PREPARE = '''if [ "${T630_PEN_METADATA_TRIAL:-0}" = 1 ]; then
     /usr/bin/python3 /usr/local/libexec/t630-pen-x11-metadata --prepare
 fi

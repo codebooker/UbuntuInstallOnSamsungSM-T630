@@ -117,21 +117,21 @@ class WifiWindow(Gtk.Window):
                                         timeout=50)
                 success = result.returncode == 0
                 if success:
-                    profile = subprocess.run(
-                        ['/usr/bin/nmcli', '-g', 'GENERAL.CONNECTION', 'device',
-                        'show', interface], capture_output=True, text=True,
-                        timeout=5, check=True).stdout.strip()
-                    hardware_address = subprocess.run(
-                        ['/usr/bin/nmcli', '-g', 'GENERAL.HWADDR', 'device',
-                         'show', interface], capture_output=True, text=True,
-                        timeout=5, check=True).stdout.strip()
-                    if not hardware_address:
-                        raise OSError('Primary Wi-Fi MAC address is unavailable')
-                    subprocess.run(['/usr/bin/nmcli', 'connection', 'modify', profile,
-                                    'connection.interface-name', '',
-                                    '802-11-wireless.mac-address', hardware_address],
-                                   capture_output=True,
-                                   timeout=5, check=True)
+                    try:
+                        profile = subprocess.run(
+                            ['/usr/bin/nmcli', '-g', 'GENERAL.CONNECTION', 'device',
+                             'show', interface], capture_output=True, text=True,
+                            timeout=5, check=True).stdout.strip()
+                        hardware_address = Path(
+                            f'/sys/class/net/{interface}/address').read_text().strip()
+                        if not hardware_address:
+                            raise OSError('Primary Wi-Fi MAC address is unavailable')
+                        subprocess.run(['/usr/bin/nmcli', 'connection', 'modify', profile,
+                                        'connection.interface-name', '',
+                                        '802-11-wireless.mac-address', hardware_address],
+                                       capture_output=True, timeout=5, check=True)
+                    except (OSError, subprocess.SubprocessError):
+                        pass
             except (OSError, subprocess.SubprocessError):
                 success = False
             GLib.idle_add(self.finished, success)

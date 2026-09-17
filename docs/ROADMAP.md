@@ -40,6 +40,14 @@
    real `wlan0` client rather than secondary/P2P interfaces. Full Power Off
    while USB-powered then passed GNOME, the stock CNSS timeout, first scan,
    DHCP, and zero-fault health checks.
+   The final clean walkthrough exposed two setup-to-owner edge cases: Wi-Fi was
+   already associated when best-effort profile modification made the UI report
+   failure, and the installer sensor client could publish on ADSP before the
+   sound card. Association/DHCP is now the UI success boundary, persistence is
+   pinned from the exact sysfs client MAC, and ownerless startup establishes the
+   audio card before sensors. The following physical restart reconnected Wi-Fi
+   and restored the calibrated PipeWire sink. Chrome's native Wayland launcher
+   is also refreshed per owner with its required IME/text-input-v3 flags.
 2. Build and exercise a reproducible installer and complete stock-recovery path.
    The desktop runtime, source-only hardware orchestration, Qualcomm sensor
    stack, ARM64 compatibility packages, isolated GDM/elogind password-login
@@ -66,7 +74,7 @@
    locking, explicit typed authorization, and no automatic reboot. After the
    working system was stopped and `linuxroot` was genuinely unmounted, the full
    physical read-only gate verified every protected partition and the isolated
-   recovery runtime without formatting. The fresh 0.1.20 bundle and its exact
+   recovery runtime without formatting. The fresh 0.1.21 bundle and its exact
    dual-layout partition/BOOT guards passed the same physical RAM-stage and
    unmounted read-only gate on 2026-09-17. Remaining gates are the explicitly
    authorized clean-install/first-boot run and stock-return rehearsal. Boot v3
@@ -89,7 +97,7 @@
    byte-for-byte. Writable camera state regenerates without a seed.
    The 2026-09-16 package refresh also removed stale exact dependencies left by
    incremental development. Component packages use compatible minimum versions,
-   while `t630-release-base` 0.1.20 remains the single exact-version lock for a
+   while `t630-release-base` 0.1.21 remains the single exact-version lock for a
    release. The live personalized root now passes `dpkg --audit` and
    `apt-get check` after a clean reboot; the login runtime rebuild is
    byte-identical. See the

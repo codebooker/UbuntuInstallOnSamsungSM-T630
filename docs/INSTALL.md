@@ -191,7 +191,7 @@ The account-neutral portion is also built as a deterministic Debian package:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_first_boot_deb.py
 ```
 
-This creates `output/t630-first-boot_0.1.2_all.deb`. It contains only tracked
+This creates `output/t630-first-boot_0.1.3_all.deb`. It contains only tracked
 setup code and the non-secret example profile; it does not contain an owner
 marker, user account, password, machine identity, SSH key, or network profile.
 Building the package is not by itself equivalent to building the complete
@@ -224,7 +224,7 @@ separately:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_desktop_runtime_deb.py
 ```
 
-This creates `output/t630-desktop-runtime_0.1.11_all.deb`. It depends on the
+This creates `output/t630-desktop-runtime_0.1.12_all.deb`. It depends on the
 matching first-boot package and contains the desktop launcher, login/session
 glue, input mappings, rotation, display controls, guarded suspend, and Tablet
 Controls extension source. It also depends on GNOME Settings, supplies the
@@ -233,7 +233,13 @@ and persists the SM-T630 Home/Recents shortcuts. On first GNOME launch, the exte
 installed into the selected owner's isolated profile without assuming a user
 name, UID, GID, or home path. It also installs the packaged WirePlumber policy
 into that owner's XDG configuration and preserves unrelated extensions and
-configuration.
+configuration. First boot registers the Qualcomm sound card before starting the
+sensor client that shares its ADSP, preventing the setup-to-owner transition
+from losing the card's one-shot service publication. If Google Chrome is later
+installed, each owner session also derives a private launcher from Chrome's
+current system desktop file and adds only its Wayland IME/text-input-v3 flags;
+this makes GNOME's on-screen keyboard follow focused Chrome text fields without
+editing a package-owned launcher.
 
 The redistributable hardware orchestration is a separate source-only package:
 
@@ -395,7 +401,7 @@ SOURCE_DATE_EPOCH=1700000000 python3 tools/build_camera_runtime_deb.py \
   build/camera
 ```
 
-This creates `output/t630-camera-runtime_0.1.6_arm64.deb`. It contains the
+This creates `output/t630-camera-runtime_0.1.7_arm64.deb`. It contains the
 launchers, GNOME integration, safety controls, templates, and independently
 built helpers. It contains no stock Android libraries, firmware image,
 calibration, mutable camera state, or photograph. Those non-redistributable
@@ -409,7 +415,7 @@ release-set metapackage:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_release_meta_deb.py
 ```
 
-This creates `output/t630-release-base_0.1.20_arm64.deb`. It contains no device
+This creates `output/t630-release-base_0.1.21_arm64.deb`. It contains no device
 payload; its exact-version dependencies prevent a fresh root from mixing
 incompatible first-boot, desktop, hardware, login, native, sensor, pd-mapper,
 camera, or DZE3 stock-asset revisions. The camera package's redistributable
@@ -589,7 +595,7 @@ type `ERASE SM-T630 LINUXROOT` exactly. Only then does it create a one-time RAM
 token and invoke `--apply`. Apply formats only the validated 64 GiB `linuxroot`
 at `sda34`, explicitly revalidates Android `userdata` at `sda35`, and extracts with
 numeric ownership, ACLs, and xattrs, rejects identity/account/network leakage,
-requires `t630-release-base` 0.1.20, unmounts, and runs read-only `e2fsck`.
+requires `t630-release-base` 0.1.21, unmounts, and runs read-only `e2fsck`.
 Failures after format stay in recovery with the bundle available for diagnosis;
 the same boot cannot silently retry. Success still requires an explicit reboot.
 It never writes BOOT or another partition.

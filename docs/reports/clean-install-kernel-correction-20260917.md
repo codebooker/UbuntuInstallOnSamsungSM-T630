@@ -56,5 +56,50 @@ Android BOOT hash, and Ubuntu BOOT v2. The complete six-input installer bundle
 was sealed, immediately reverified against `SHA256SUMS`, and retained on p34;
 the disposable 3.6 GB build clone was removed afterward.
 
-The remaining physical acceptance item is a post-setup button round trip using
-the corrected image on both sides.
+That archive and bundle are retained above as the historical v2 correction
+record. They are superseded by the owner-setup refresh below.
+
+## Owner-setup refresh and sealed bundle v3
+
+The completed owner walkthrough exposed three userspace issues without another
+partition write:
+
+- Wi-Fi association and DHCP had succeeded, but failure of a subsequent
+  profile-hardening operation made the setup UI incorrectly blame the password.
+  Association/DHCP is now the visible success boundary; the persistence step is
+  best-effort and uses the exact client MAC from sysfs. The next physical boot
+  reconnected `wlan0` automatically.
+- The disposable first-boot GNOME host started the sensor client before audio.
+  Both share ADSP, whose stock-kernel service publication is one-shot. First
+  boot now registers the Qualcomm card, caches factory speaker calibration, and
+  leaves the amplifiers off before it attaches sensors. A physical clean cold
+  start then exposed `lahaina-yupikidp-snd-card`, created the normal 30% unmuted
+  PipeWire speaker sink and microphone source, and restored GNOME volume policy.
+- Google Chrome's ARM64 Wayland binary supports GNOME text-input-v3 but requires
+  its explicit Wayland IME flag. Desktop 0.1.12 now derives an owner-private
+  launcher from Chrome's current package-owned desktop file and adds only
+  `--enable-wayland-ime --wayland-text-input-version=3`; Chrome updates remain
+  package-owned and unmodified.
+
+The refreshed exact set is first-boot 0.1.3, desktop 0.1.12, camera 0.1.7,
+and release-base 0.1.21. Desktop 0.1.12 is reproducible at SHA-256
+`3898ecbb797a11e41fe1e231e65752805b1bba232ddaabd7e71d0a25adde54a4`.
+The live package database is clean and the ownerless source tree passed the
+identity audit again before packaging.
+
+Private root archive v3 is 1,274,356,982 bytes, contains 84,690 members, and
+has SHA-256
+`77ff0f3ffa8db7cf7c015a16e5df2bf0f22b72ff2dd9db82ab6973fdd23ac3bd`.
+Its matching ARM64 installer runtime has SHA-256
+`7218e2b2e87b9e55119e128e8ac68d492e223feef9710b1ed3da76aecdeb17f7`;
+the accepted 100,663,296-byte BOOT remains
+`fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f`.
+The six-input bundle was sealed and then independently reverified against its
+generated `SHA256SUMS`. It remains private on p34 because it includes locally
+reconstructed stock assets and both switch images. The superseded v2 bundle and
+the disposable 3+ GB ownerless build tree were removed after verification,
+leaving 56.6 GB free on `linuxroot`.
+
+The Ubuntu-to-Android-to-Ubuntu touchscreen-button round trip has passed. The
+remaining release gates are repeated cold-switch/failure endurance and the
+full stock-recovery rehearsal.

@@ -15,7 +15,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = "t630-first-boot"
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 
 FILES = {
     "usr/local/libexec/t630-first-boot": ("ubuntu/t630-first-boot-ui.py", 0o755),

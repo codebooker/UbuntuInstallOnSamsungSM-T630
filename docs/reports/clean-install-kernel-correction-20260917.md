@@ -47,5 +47,14 @@ there was no human account and `machine-id` was empty while the setup UI ran.
 - The live clean root's restored private switch assets pass the complete
   read-only Ubuntu-side native-Android preflight.
 
+The corrected identity-clean root was then cloned before owner creation,
+audited, and archived. The final private root archive is 1,274,364,467 bytes,
+contains 84,688 members, and has SHA-256
+`7bbd12374677144ddcab7542c3f3dd6bd00dd33219ac604f069cb920e805bac1`.
+Its manifest records desktop 0.1.11, release-base 0.1.20, the accepted rooted
+Android BOOT hash, and Ubuntu BOOT v2. The complete six-input installer bundle
+was sealed, immediately reverified against `SHA256SUMS`, and retained on p34;
+the disposable 3.6 GB build clone was removed afterward.
+
 The remaining physical acceptance item is a post-setup button round trip using
 the corrected image on both sides.

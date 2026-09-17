@@ -36,18 +36,19 @@ test "$(getprop ro.build.version.incremental)" = T630XXSBDZE3 || fail "Android b
 test "$(getprop sys.boot_completed)" = 1 || fail "Android has not completed boot"
 test "$(getprop ro.crypto.state)" = encrypted || fail "Android data is not encrypted"
 grep -q ' /data f2fs ' /proc/mounts || fail "Android data is not mounted as F2FS"
-grep -qx PARTNAME=linuxroot /sys/class/block/sda34/uevent || fail "linuxroot identity mismatch"
-test "$(cat /sys/class/block/sda34/start)" = 21880832 || fail "linuxroot start mismatch"
-test "$(cat /sys/class/block/sda34/size)" = 134217728 || fail "linuxroot size mismatch"
-grep -qx PARTNAME=userdata /sys/class/block/sda35/uevent || fail "userdata identity mismatch"
-test "$(cat /sys/class/block/sda35/start)" = 156098560 || fail "userdata start mismatch"
-test "$(cat /sys/class/block/sda35/size)" = 92700632 || fail "userdata size mismatch"
-test -d /sys/class/block/sda35/holders || fail "userdata holder state unavailable"
-test -n "$(ls /sys/class/block/sda35/holders)" || fail "encrypted userdata mapping absent"
+test "$(readlink -f /dev/block/by-name/linuxroot)" = /dev/block/sda34 ||
+    fail "linuxroot identity mismatch"
+test "$(awk '$4 == "sda34" { print $3 }' /proc/partitions)" = 67108864 ||
+    fail "linuxroot size mismatch"
+test "$(readlink -f /dev/block/by-name/userdata)" = /dev/block/sda35 ||
+    fail "userdata identity mismatch"
+test "$(awk '$4 == "sda35" { print $3 }' /proc/partitions)" = 46350316 ||
+    fail "userdata size mismatch"
+awk '$2 == "/data" && $1 ~ /^\/dev\/block\/dm-[0-9]+$/ && $3 == "f2fs" { found=1 }
+    END { exit found ? 0 : 1 }' /proc/mounts || fail "encrypted userdata mapping absent"
 test "$(dd if=/dev/block/by-name/metadata bs=1 skip=1080 count=2 2>/dev/null |
     od -An -tx1 | tr -d ' \n')" = 53ef || fail "metadata is not ext4"
-test -z "$(dd if=/dev/block/by-name/misc bs=32 count=1 2>/dev/null | tr -d '\000')" ||
-    fail "misc contains a boot command"
+test "$(getprop ro.boot.boot_recovery)" = 0 || fail "Android booted through recovery"
 
 test -d "$state" && test ! -L "$state" || fail "switch state directory absent"
 for path in "$ubuntu_image" "$android_hash_file"; do
@@ -63,7 +64,16 @@ case "$android_boot" in
 esac
 test "${#android_boot}" = 64 || fail "Android BOOT hash length mismatch"
 check_hash "$android_boot" "$boot" installed-android-boot
-test "$(cat /sys/class/power_supply/battery/capacity)" -ge 50 || fail "battery below 50 percent"
+battery=$(dumpsys battery)
+level=$(printf '%s\n' "$battery" | awk '$1 == "level:" { print $2; exit }')
+test -n "$level" && test "$level" -ge 50 || fail "battery below 50 percent"
+printf '%s\n' "$battery" | awk '
+    $1 == "AC" && $2 == "powered:" && $3 == "true" { powered=1 }
+    $1 == "USB" && $2 == "powered:" && $3 == "true" { powered=1 }
+    $1 == "Wireless" && $2 == "powered:" && $3 == "true" { powered=1 }
+    $1 == "Dock" && $2 == "powered:" && $3 == "true" { powered=1 }
+    END { exit powered ? 0 : 1 }
+' || fail "external power is required"
 check_neighbors
 
 if test "$mode" = --check; then

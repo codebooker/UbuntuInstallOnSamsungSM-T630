@@ -26,7 +26,9 @@ class AndroidSwitcherTest(unittest.TestCase):
 
     def test_app_invokes_only_fixed_root_helper(self):
         source = (ROOT / "android-switcher/src/org/codebooker/t630switcher/MainActivity.java").read_text()
-        self.assertIn('"su", "-c", SWITCH_COMMAND', source)
+        self.assertIn('new ProcessBuilder("su")', source)
+        self.assertIn('writer.write("exec " + SWITCH_COMMAND + "\\n")', source)
+        self.assertNotIn('"su", "-c"', source)
         self.assertIn('"/data/adb/t630/switch-to-ubuntu"', source)
         self.assertIn('" --switch-and-reboot"', source)
         self.assertNotIn("Runtime.getRuntime", source)
@@ -55,8 +57,11 @@ class AndroidSwitcherTest(unittest.TestCase):
 
     def test_helper_pins_geometry_and_protected_hashes(self):
         source = (ROOT / "android-switcher/switch-to-ubuntu.sh").read_text()
-        for value in ("21880832", "134217728", "156098560", "92700632"):
+        for value in ("sda34", "67108864", "sda35", "46350316"):
             self.assertIn(value, source)
+        self.assertIn("/proc/partitions", source)
+        self.assertIn("dumpsys battery", source)
+        self.assertIn("ro.boot.boot_recovery", source)
         for partition in ("recovery", "vendor_boot", "dtbo", "vbmeta"):
             self.assertIn(f"by-name/{partition}", source)
 

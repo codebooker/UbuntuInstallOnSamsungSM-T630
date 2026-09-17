@@ -91,9 +91,13 @@ The end-user interface is deliberately button-only:
 Neither path asks the owner to open a terminal or type a command. Both validate
 the model, build, installed layout, selected image, current BOOT, protected
 neighbors, battery state, and rollback image before changing anything. The
-Android button and its narrow rooted service are implemented and locally signed;
-physical installation and round-trip acceptance are still pending. Until that
-acceptance passes, Download Mode plus the Mac remains the recovery route.
+Android button and its narrow rooted service are installed and locally signed.
+On 2026-09-17, both touchscreen paths completed a physical Ubuntu to Android to
+Ubuntu round trip. Android retained encrypted `/data`, Samsung Notes, Magisk,
+and the launcher; Ubuntu returned on the exact accepted BOOT with GNOME and its
+reverse switch still ready. Download Mode plus a host remains the recovery route,
+not the normal switching interface. See the
+[button-only round-trip report](reports/native-button-dualboot-20260917.md).
 
 After Magisk patching, the Ubuntu-side artifact is the accepted patched Android
 BOOT rather than the factory BOOT. Its root-owned `boot.sha256` is checked before
@@ -102,13 +106,15 @@ hash before replacing it with Ubuntu. This preserves the Android service across
 round trips while keeping the untouched factory BOOT as the Download Mode
 recovery image.
 
-`tools/restore_ubuntu_boot_download_mode.sh` implements that temporary host
-route. Its default `--check` mode validates only local artifacts. The explicit
+`tools/restore_ubuntu_boot_download_mode.sh` implements the temporary Ubuntu
+recovery route. `tools/flash_accepted_android_boot_download_mode.sh` provides the
+equivalent guarded Android BOOT route used for initial Magisk installation. Each
+default `--check` mode validates only local artifacts. The explicit
 write mode requires the accepted 96 MiB Ubuntu BOOT hash, Heimdall 2.2.2, exact
 authorization text, a detected Download Mode device, and a freshly downloaded
 live PIT whose BOOT entry is identifier 19 with 24,576 4 KiB blocks. It then
 flashes only `BOOT`, without repartitioning or bypassing Heimdall's size check.
-Ubuntu must verify the complete BOOT hash again after returning.
+The running target must verify the complete BOOT hash again after returning.
 
 ## Required implementation gates
 

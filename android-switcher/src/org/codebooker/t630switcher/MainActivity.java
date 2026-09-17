@@ -11,7 +11,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -94,9 +96,18 @@ public final class MainActivity extends Activity {
             int result = -1;
             String lastLine = "The guarded switch did not start.";
             try {
-                Process process = new ProcessBuilder("su", "-c", SWITCH_COMMAND)
+                // Samsung's stock DEFEX path drops credentials when MagiskSU
+                // launches /system/bin/sh through `su -c`.  An interactive
+                // Magisk root shell retains its verified root context.  Feed
+                // only this compile-time constant, never user-controlled text.
+                Process process = new ProcessBuilder("su")
                     .redirectErrorStream(true)
                     .start();
+                try (BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(process.getOutputStream()))) {
+                    writer.write("set -e\n");
+                    writer.write("exec " + SWITCH_COMMAND + "\n");
+                }
                 try (BufferedReader reader = new BufferedReader(
                         new InputStreamReader(process.getInputStream()))) {
                     String line;

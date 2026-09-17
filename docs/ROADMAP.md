@@ -100,7 +100,11 @@
    while `t630-release-base` 0.1.22 remains the single exact-version lock for a
    release. The live personalized root now passes `dpkg --audit` and
    `apt-get check` after a clean reboot; the login runtime rebuild is
-   byte-identical. See the
+   byte-identical. Sealed private bundle v4 now contains that exact set,
+   including desktop 0.1.13 and its physically accepted Chrome keyboard bridge.
+   The offline root passed the identity audit and complete rehearsal before its
+   deterministic archive was read back and the entire bundle reverified from
+   `SHA256SUMS`; its temporary 3.8 GB build tree was removed afterward. See the
    [package consistency report](reports/package-dependency-repair-20260916.md).
 3. Pen-friendly handwritten notes and drawing. Xournal++ and MyPaint are now
    installed as native ARM64 apps on the personalized clean root; both launch

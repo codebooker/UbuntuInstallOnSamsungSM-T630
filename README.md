@@ -84,6 +84,11 @@ clean-install/first-boot rehearsal and return-to-stock rehearsal remain; do not
 improvise either operation from the lab scripts unless you can recover the
 tablet independently.
 
+The current private v4 bundle additionally carries the physically accepted
+Chrome on-screen-keyboard bridge. Its identity audit, full offline rehearsal,
+deterministic archive read-back, and complete checksum seal passed on the
+tablet.
+
 ## Repository layout
 
 - `initramfs/` — first, RAM-only diagnostic boot

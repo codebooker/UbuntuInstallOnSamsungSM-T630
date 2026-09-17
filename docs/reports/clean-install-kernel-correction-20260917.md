@@ -130,5 +130,40 @@ AT-SPI bridge, GNOME accepted `ShowKeyboard`, and the owner confirmed that the
 keyboard opened automatically. A clean restart then restored Wi-Fi, the real
 unmuted speaker sink, the watcher, and the Tablet Controls extension. Chrome
 launched from the app drawer with all three managed flags and the keyboard was
-visible again. The replacement installer bundle remains to be rebuilt from an
-identity-clean root carrying desktop 0.1.13.
+visible again.
+
+## Sealed bundle v4
+
+The replacement bundle was rebuilt tablet-locally from the sealed v3 ownerless
+archive rather than from the personalized running root. Only the fourteen
+hash-pinned release packages were admitted; desktop 0.1.13 replaced 0.1.12 and
+release-base 0.1.22 replaced 0.1.21. The resulting offline root passed the
+identity audit, package audit, application inventory, native-linkage checks,
+private dual-boot asset checks, and mount-leak gate before and after packaging.
+
+Private root archive v4 is 1,274,375,145 bytes, contains 84,691 members, and has
+SHA-256
+`c7aea4fee23a8bd9661bd8da692b956f1f72aa41a079a8f78e9db863be46c1b8`.
+Its ARM64 installer runtime remains byte-identical at SHA-256
+`7218e2b2e87b9e55119e128e8ac68d492e223feef9710b1ed3da76aecdeb17f7`.
+The accepted 100,663,296-byte BOOT remains
+`fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f`.
+The root manifest declares no human account and no network credentials.
+
+The six-input bundle was sealed and independently reverified against all seven
+entries in `SHA256SUMS`. Every payload and control file is root-private mode
+0600. No block device was opened or written during this refresh. The disposable
+3.8 GB extracted root and 41 MB Mac transfer staging were removed only after the
+seal passed; v3 remains available as a historical fallback. The tablet retained
+55.3 GB free on `linuxroot` afterward.
+
+During the handoff into this refresh the tablet had recently restarted. The
+build had not begun, pstore contained no panic, the boot reason was normal, and
+the retained Android kernel log recorded an orderly userspace
+`sys.powerctl=reboot` rather than a watchdog or kernel panic. Because that
+retained log may predate the immediately preceding Ubuntu boot, it is evidence
+against a recorded Android crash, not proof of the exact trigger for the latest
+restart.
+
+The remaining release gates are a fresh v4-era cold-switch endurance cycle,
+forced-refusal coverage, and the complete stock-recovery rehearsal.

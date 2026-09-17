@@ -170,7 +170,14 @@ F2FS check passed. See the
 [native Android storage report](reports/native-android-storage-init-20260916.md).
 The exact stock Android BOOT then passed its complete no-write gate and an
 atomic BOOT-only write/readback; first-boot display and Android setup acceptance
-are the remaining part of gate 8.
+subsequently passed as well. Android mounted encrypted F2FS `/data` through a
+`dm-default-key` mapping, used the Adreno 642L renderer, and ran Samsung Notes
+with working S Pen strokes. After first boot, raw p35 is ciphertext and must not
+be given to `fsck.f2fs`; the repeat Ubuntu-to-Android helper explicitly enforces
+that boundary. The guarded Download-Mode return restored only the accepted
+Ubuntu BOOT, whose complete readback matched after GNOME and Wi-Fi returned.
+See the
+[native Android first-boot report](reports/native-android-firstboot-20260916.md).
 
 ## Rejected shortcuts
 

@@ -29,7 +29,23 @@ was then unmounted and removed. BOOT remained
 and `misc` remained
 `7c3277fd24046b110002c2a4f02fbbecfc4dedbd0ef1e5b39abe48c5128c9b17`.
 
-This closes the command-fragmentation problem but is not yet a graphical host
-installer. The Ubuntu first-boot experience itself is already touch-first and
-physically accepted with user-selected language, network, account, password,
-time zone, and privacy settings.
+## Button-driven host window
+
+`tools/t630_installer_gui.py` provides **Verify**, **Stage**, **Prepare
+(read-only)**, and **Install Ubuntu** buttons over the coordinator. It can browse
+for a host bundle, accept a tablet-local bundle path, or resume a bundle already
+staged in RAM. It runs the coordinator with an argument vector and never invokes
+a shell. The GUI itself contains no block-device path, format operation, or
+apply implementation.
+
+The Install button additionally requires the recovery checkbox, the exact erase
+phrase in the window, and a final destructive confirmation. Only then does it
+feed that same phrase to the existing authorizer, which repeats the tablet-side
+gate. The window refuses to close while a guarded phase is active, including
+the short process-start interval.
+
+This closes the command-fragmentation and basic graphical-wrapper gaps. A signed
+standalone host application is still future packaging work. The Ubuntu
+first-boot experience itself is already touch-first and physically accepted
+with user-selected language, network, account, password, time zone, and privacy
+settings.

@@ -574,6 +574,22 @@ separate typed authorization gate remains unchanged.
 For normal release use, the single coordinator replaces those separate host
 commands. Its default tablet-local path only stages and verifies RAM:
 
+On macOS, double-click **Launch SM-T630 Installer.command** in the repository.
+The equivalent portable launch command is:
+
+```sh
+python3 tools/t630_installer_gui.py
+```
+
+The button-driven host window can browse for a local bundle or accept a
+tablet-local path, then exposes **Verify**, **Stage**, **Prepare (read-only)**,
+and **Install Ubuntu**. It invokes the coordinator without a shell and contains
+no partition or format implementation. Install is refused until the recovery
+acknowledgement is checked, the exact erase phrase is entered, and the final
+confirmation is accepted.
+
+The equivalent coordinator command is:
+
 ```sh
 python3 tools/t630_installer.py \
   --tablet-bundle /run/ubuntu/absolute/path/to/sealed-bundle
@@ -623,7 +639,7 @@ This completes the source implementation for host assembly, RAM staging, and
 the guarded `linuxroot` installer. The destructive clean install and first boot
 passed physically. It does not make the release end-user ready: a complete
 factory-return rehearsal and a graphical wrapper around the single guarded host
-entry point remain.
+entry point remain to be packaged as a signed standalone host application.
 
 Do not overwrite a mapped live library merely to test the package. Extract it
 to a temporary directory and run the dependency/symbol probes described in the

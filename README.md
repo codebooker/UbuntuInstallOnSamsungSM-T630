@@ -58,6 +58,8 @@ be treated as a porting task, not as a reason to remove those checks.
 ## Start here
 
 1. Read the [installation and recovery guide](docs/INSTALL.md) completely.
+   On macOS, the guarded host UI can then be opened by double-clicking
+   **Launch SM-T630 Installer.command**.
 2. Read the [architecture](docs/ARCHITECTURE.md) to understand what is stock,
    rebuilt, and Ubuntu-native.
 3. Check [STATUS.md](docs/STATUS.md) before relying on a hardware feature.
@@ -82,10 +84,11 @@ old root as an abnormal-boot fallback.
 The guarded recovery-hosted RAM transfer and read-only dual-layout `linuxroot`
 installation gate passed with the complete private bundle. The explicitly
 authorized clean install and owner-created first boot also passed. A complete
-factory-return rehearsal and a graphical host wrapper remain. The current
-single-entry coordinator sequences the tested verifier, RAM staging, read-only
-preparation, and typed authorization gates; do not improvise those phases from
-individual lab scripts unless you can recover the tablet independently.
+factory-return rehearsal and standalone host-app packaging remain. The current
+button-driven host window and single-entry coordinator sequence the tested
+verifier, RAM staging, read-only preparation, and typed authorization gates; do
+not improvise those phases from individual lab scripts unless you can recover
+the tablet independently.
 
 The current private v4 bundle additionally carries the physically accepted
 Chrome on-screen-keyboard bridge. Its identity audit, full offline rehearsal,

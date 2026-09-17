@@ -84,7 +84,9 @@
    default read-only gate now pass; only a destructive full stock-return
    rehearsal remains in this track. A single guarded host coordinator now
    sequences bundle verification, RAM staging, optional orderly preparation,
-   and the existing typed authorization; a graphical wrapper remains. Boot v3
+   and the existing typed authorization. A button-driven Tk host window wraps
+   those exact actions without a shell; signed standalone host-app packaging
+   remains. Boot v3
    makes an incomplete ownerless setup cleanly recoverable; boot v4 retains
    that terminal only for ownerless or explicitly requested recovery boots. The
    account-neutral Weston/Maliit host runtime is now packaged with reversible distro-file

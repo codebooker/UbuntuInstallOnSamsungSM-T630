@@ -28,6 +28,14 @@ class StageStockRecoveryPreflightTest(unittest.TestCase):
         self.assertNotIn("of=/dev/sda34", self.text)
         self.assertNotIn("of=/dev/sda35", self.text)
 
+    def test_defaults_to_read_only_check_before_the_first_write(self):
+        self.assertIn('mode=${1:---check}', self.text)
+        self.assertIn('--check|--stage', self.text)
+        self.assertIn('STOCK_RECOVERY_PREFLIGHT_READY_NO_CHANGES', self.text)
+        check_gate = self.text.index('if test "$mode" = --check; then')
+        first_write = self.text.index('of="$misc" bs=2048 count=1')
+        self.assertLess(check_gate, first_write)
+
     def test_rollback_restores_full_misc(self):
         self.assertIn('of="$misc" bs=1048576 count=1 conv=fsync', self.text)
         self.assertIn("STOCK_RECOVERY_MISC_ROLLBACK_VERIFIED", self.text)

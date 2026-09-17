@@ -44,8 +44,6 @@ installation mechanisms only.
 
 ## Remaining endurance work
 
-- exercise deliberate image, hash, power, and protected-neighbor failures and
-  confirm that every one refuses the switch without rebooting; and
 - include both launchers and their root-owned artifacts in the final clean-image
   installer acceptance.
 
@@ -84,3 +82,11 @@ v2 and again passed GNOME, Wi-Fi, the 30% unmuted speaker sink, Chrome's keyboar
 watcher, `dpkg --audit`, `apt-get check`, the reverse-switch preflight, and a
 zero checked-fault count. Malformed-mode requests on both sides were also
 refused before any write.
+
+The remaining physical refusal classes subsequently passed. A private mount
+namespace presented the production Ubuntu helper with a bad selected-image
+hash, simulated loss of external power, and a bad recovery-neighbor hash while
+leaving the real files and devices untouched. Every check returned the expected
+refusal status without rebooting. BOOT and all four protected neighbors were
+rehashed after each case and remained exact. See the
+[release refusal and recovery report](release-refusal-recovery-gates-20260917.md).

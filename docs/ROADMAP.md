@@ -56,7 +56,8 @@
    The reproducible AVB-verified persistent boot image uses the current module-
    compatible kernel and initramfs; its guarded write, two cold boots, full
    shutdown, automatic remote startup, and health checks passed. Clean-root
-   installation completion and the return-to-stock rehearsal remain. The new
+   installation and owner-created first boot pass; a deliberately destructive
+   full factory-return rehearsal remains. The new
    one-command ARM64 host builder assembles a fresh ownerless root, applies and
    audits the exact release set, emits a deterministically serialized private rootfs archive
    with numeric ownership/ACLs/xattrs, and seals the accepted dual-layout BOOT
@@ -76,8 +77,11 @@
    physical read-only gate verified every protected partition and the isolated
    recovery runtime without formatting. The fresh 0.1.21 bundle and its exact
    dual-layout partition/BOOT guards passed the same physical RAM-stage and
-   unmounted read-only gate on 2026-09-17. Remaining gates are the explicitly
-   authorized clean-install/first-boot run and stock-return rehearsal. Boot v3
+   unmounted read-only gate on 2026-09-17. The explicitly authorized clean
+   install and first boot subsequently passed. The exact factory ZIP's deep
+   stream check, all three switch-refusal drills, and the stock-recovery
+   default read-only gate now pass; only a destructive full stock-return
+   rehearsal remains in this track. Boot v3
    makes an incomplete ownerless setup cleanly recoverable; boot v4 retains
    that terminal only for ownerless or explicitly requested recovery boots. The
    account-neutral Weston/Maliit host runtime is now packaged with reversible distro-file
@@ -236,8 +240,10 @@ ready.
 The rejected CPU-rendered Waydroid packages, images, owner data, launchers,
 backups, and kernel trials have been removed from Ubuntu. Its source and reports
 remain only as historical evidence. Remaining Android work is limited to
-additional cold-switch endurance, forced refusal/failure cases, recovery
-rehearsal, and including both switchers in the final clean-install acceptance.
+additional cold-switch endurance and including both switchers in the final
+end-user installer acceptance. The corrupt-image-hash, no-external-power, and
+protected-neighbor mismatch refusals all passed without a write or reboot; the
+read-only stock-recovery gate also passed.
 The first post-v4 endurance cycle exposed Android's stale v1 Ubuntu payload;
 after an atomic no-partition-write payload update, the corrected v2 cycle
 returned with the complete Ubuntu health check passing. See

@@ -1,9 +1,10 @@
 # Installation and recovery guide
 
 > [!WARNING]
-> The daily-driver installer is not finished. This document currently covers
-> the validated preparation and RAM-only diagnostic boot. The persistent-root
-> scripts are published for review and continued development, not as a blind
+> The daily-driver installer is not finished. The guarded clean install and
+> first-boot flow have passed on the development tablet, but the workflow is
+> still a release-engineering procedure rather than an end-user graphical
+> installer. Do not treat individual low-level commands as a blind
 > copy-and-paste installer.
 
 ## 1. Confirm the exact tablet
@@ -152,10 +153,10 @@ filesystem is mounted. The exact expected evidence is documented in
 `docs/reports/ubuntu-ram-milestone.md`.
 
 The development snapshot is no longer an acceptable installer input. The
-ownerless release-root build described below replaces it, but the device-side
-USB transfer/format/install stage is still a release gate. Until that guarded
-stage is complete, use the persistent scripts as auditable source and do not
-run the one-time formatter from an abbreviated guide.
+ownerless release-root build described below replaces it. The guarded
+device-side transfer, format, install, and first-boot flow passed physically;
+use that complete audited workflow rather than running the one-time formatter
+from an abbreviated guide.
 
 ## Release-image and first-boot gates
 
@@ -181,9 +182,9 @@ the selected account through the local password database and do not assume
 `tablet`, UID 1000, a fixed GID, or a fixed home path.
 
 These components and the generic Ubuntu root archive builder are implemented
-and tested. The device-side transfer/format/install stage and complete
-end-to-end wipe/install/recovery rehearsal remain release gates. Do not
-redistribute the development tablet's filesystem.
+and tested. The physical clean install and owner-created first boot passed. A
+complete destructive factory-return rehearsal and end-user packaging remain
+release gates. Do not redistribute the development tablet's filesystem.
 
 The account-neutral portion is also built as a deterministic Debian package:
 
@@ -602,9 +603,9 @@ the same boot cannot silently retry. Success still requires an explicit reboot.
 It never writes BOOT or another partition.
 
 This completes the source implementation for host assembly, RAM staging, and
-the guarded `linuxroot` installer. It does not make the release end-user ready:
-the destructive install, first boot, and return-to-stock sequence must still
-pass physically before the top warning can be removed.
+the guarded `linuxroot` installer. The destructive clean install and first boot
+passed physically. It does not make the release end-user ready: a complete
+factory-return rehearsal and the graphical installation wrapper remain.
 
 Do not overwrite a mapped live library merely to test the package. Extract it
 to a temporary directory and run the dependency/symbol probes described in the
@@ -648,6 +649,21 @@ the computer used to install Ubuntu. Odin's `CSC` archive is the clean/wiping
 recovery choice; `HOME_CSC` is intended to preserve compatible Android user
 data and must not be treated as a way to preserve an Ubuntu-formatted userdata
 partition.
+
+The development tablet's exact 6,434,873,419-byte archive passed this complete
+deep check. The private manifest is mode 0600 and kept outside the repository.
+The stock-recovery BCB helper now defaults to a read-only gate:
+
+```sh
+sudo tools/stage_stock_recovery_preflight.sh --check
+```
+
+That release-only check requires the exact non-wiping BCB, host-saved `misc`
+backup, verification marker, and authorization file. On the physical tablet it
+returned `STOCK_RECOVERY_PREFLIGHT_READY_NO_CHANGES`; `misc`, BOOT, recovery,
+`vendor_boot`, DTBO, and VBMETA remained byte-identical. Only the explicit
+`--stage` argument can reach its guarded 2 KiB BCB write. See the
+[release refusal and recovery report](reports/release-refusal-recovery-gates-20260917.md).
 
 Never relock the bootloader until every custom image has been replaced with
 known-matching stock firmware and the device has booted successfully.

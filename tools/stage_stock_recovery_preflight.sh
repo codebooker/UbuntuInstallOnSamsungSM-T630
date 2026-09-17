@@ -3,6 +3,12 @@
 set -eu
 export LC_ALL=C
 
+mode=${1:---check}
+case "$mode" in
+    --check|--stage) ;;
+    *) echo "usage: $0 --check|--stage" >&2; exit 2 ;;
+esac
+
 candidate=/tmp/t630-recovery-preflight-bcb.bin
 backup=/tmp/t630-misc-before-recovery.bin
 host_marker=/tmp/HOST-VERIFIED-MISC-BACKUP
@@ -76,6 +82,11 @@ test "$(cat "$host_marker")" = "HOST_SAVED_MISC_SHA256=$misc_hash" ||
 check_hash "$misc_hash" "$misc" live-misc
 test "$(cat "$authorization")" = 'BOOT STOCK RECOVERY FOR READ ONLY DUALBOOT PREFLIGHT' ||
     fail "authorization token invalid"
+
+if test "$mode" = --check; then
+    echo STOCK_RECOVERY_PREFLIGHT_READY_NO_CHANGES
+    exit 0
+fi
 
 original_tail=$(tail_hash "$backup")
 bcb_changed=0

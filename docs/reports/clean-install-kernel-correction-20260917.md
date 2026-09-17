@@ -101,9 +101,9 @@ the disposable 3+ GB ownerless build tree were removed after verification,
 leaving 56.6 GB free on `linuxroot`.
 
 The initial Ubuntu-to-Android-to-Ubuntu touchscreen-button round trip passed but
-did not catch Android's stale v1 return payload. The corrected v2 cycle described
-below closes that generation mismatch; forced-failure coverage and the full
-stock-recovery rehearsal remain.
+did not catch Android's stale v1 return payload. The corrected v2 cycle and the
+later refusal/recovery gates described below close that generation mismatch and
+the non-destructive failure coverage.
 
 ## Post-v3 Chrome keyboard correction
 
@@ -168,5 +168,10 @@ restart.
 
 The fresh v4-era cold-switch cycle subsequently exposed and corrected a stale
 Android-side v1 Ubuntu payload. The corrected cycle returned on module-compatible
-BOOT v2 and passed the complete Ubuntu health checks. Remaining release gates
-are the untested forced-refusal classes and complete stock-recovery rehearsal.
+BOOT v2 and passed the complete Ubuntu health checks. The bad-image-hash,
+no-external-power, and protected-neighbor refusal classes then passed physically
+without a write or reboot. The exact DZE3/XAR archive passed its full streaming
+CRC and Samsung-MD5 check, and the revised stock-recovery preflight passed its
+new default read-only mode with `misc` byte-identical before and after. Only a
+deliberately destructive full factory restore remains outside this acceptance
+run. See the [release refusal and recovery report](release-refusal-recovery-gates-20260917.md).

@@ -107,6 +107,13 @@ the exact 96 MiB geometry, flushes the block device, performs a delayed durable
 readback, and writes a root-only handoff journal before rebooting. The corrected
 cycle returned on v2 with the complete Ubuntu desktop health check passing.
 
+The Ubuntu-side production helper also passed physical forced-refusal drills
+for a corrupt selected-image hash, absent external power, and a mismatched
+protected recovery neighbor. Each fault was injected only in a private mount
+namespace; every real protected hash was rechecked after every refusal. The
+reusable acceptance harness is `tools/check_native_android_switch_refusals.sh`.
+See the [release refusal and recovery report](reports/release-refusal-recovery-gates-20260917.md).
+
 For a corrected Ubuntu BOOT generation, `tools/update_android_switch_payload.py`
 updates Android's private Ubuntu image and fixed root helper over an already
 authorized USB-debugging connection. It defaults to a no-change check. Its

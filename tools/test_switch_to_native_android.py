@@ -16,7 +16,9 @@ class SwitchToNativeAndroidTest(unittest.TestCase):
         subprocess.run(["sh", "-n", SOURCE], check=True)
 
     def test_pins_both_boot_images_and_writes_only_boot(self):
-        self.assertIn("79a9b1d56763cb6e3c113473eb783f6332fe79b054e3c67494c5094c6c382796", self.text)
+        self.assertIn("android_hash_file=$artifact/boot.sha256", self.text)
+        self.assertIn('test "${#android_boot}" = 64', self.text)
+        self.assertIn('check_hash "$android_boot" "$image" accepted-android-boot', self.text)
         self.assertIn("eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb", self.text)
         self.assertIn("of=/dev/sda19", self.text)
         self.assertNotIn("of=/dev/sda25", self.text)
@@ -32,6 +34,8 @@ class SwitchToNativeAndroidTest(unittest.TestCase):
     def test_has_no_write_check_mode_and_exact_authorization(self):
         self.assertIn("NATIVE_ANDROID_ENCRYPTED_INSTALLATION_READY_NO_CHANGES", self.text)
         self.assertIn("SWITCH SM-T630 FROM ACCEPTED UBUNTU TO ACCEPTED NATIVE ANDROID", self.text)
+        self.assertIn("--switch-and-reboot", self.text)
+        self.assertIn("t630-display power restart", self.text)
 
     def test_rolls_back_to_accepted_ubuntu_boot(self):
         self.assertIn("NATIVE_ANDROID_SWITCH_FAILED_RESTORING_UBUNTU", self.text)

@@ -13,7 +13,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-desktop-runtime"
-VERSION = "0.1.8"
+VERSION = "0.1.9"
 
 POSTINST = b"""#!/bin/sh
 set -e
@@ -26,6 +26,7 @@ fi
 FILES = {
     "usr/local/libexec/t630-app-grid": ("ubuntu/t630-app-grid.py", 0o755),
     "etc/polkit-1/rules.d/49-t630-sensorproxy.rules": ("ubuntu/49-t630-sensorproxy.rules", 0o644),
+    "etc/sudoers.d/t630-dualboot": ("ubuntu/t630-dualboot-sudoers", 0o440),
     "etc/udev/rules.d/71-t630-active-key.rules": ("ubuntu/71-t630-active-key.rules", 0o644),
     "etc/udev/rules.d/99-t630-input.rules": ("ubuntu/99-t630-input.rules", 0o644),
     "usr/local/bin/t630-app": ("ubuntu/t630-app", 0o755),
@@ -49,6 +50,7 @@ FILES = {
     "usr/local/libexec/t630-password": ("ubuntu/t630_password.py", 0o755),
     "usr/local/libexec/t630-rotation-controller": ("ubuntu/t630-rotation-controller.py", 0o755),
     "usr/local/libexec/t630-session-manager": ("ubuntu/t630-session-manager.py", 0o755),
+    "usr/local/libexec/t630-switch-dialog": ("ubuntu/t630-switch-dialog.py", 0o755),
     "usr/local/libexec/t630-user-app": ("ubuntu/t630-user-app", 0o755),
     "usr/local/libexec/t630-x11-recovery": ("ubuntu/t630-x11-recovery.py", 0o755),
     "usr/local/sbin/t630-desktop-autostart": ("ubuntu/t630-desktop-autostart", 0o755),
@@ -57,6 +59,7 @@ FILES = {
     "usr/local/sbin/t630-pen-touch-guard": ("ubuntu/t630-pen-touch-guard.py", 0o755),
     "usr/local/sbin/t630-red-button": ("ubuntu/t630-red-button.py", 0o755),
     "usr/local/sbin/t630-suspend": ("ubuntu/t630-suspend.py", 0o755),
+    "usr/local/sbin/t630-switch-to-native-android": ("tools/switch_to_native_android.sh", 0o755),
     "usr/local/share/t630/gnome-tablet-tools/extension.js": (
         "ubuntu/gnome-tablet-tools/extension.js", 0o644),
     "usr/local/share/t630/gnome-tablet-tools/metadata.json": (
@@ -86,7 +89,7 @@ def build(output: Path, epoch: int) -> str:
 Version: {VERSION}
 Architecture: all
 Maintainer: SM-T630 Ubuntu Port contributors
-Depends: t630-first-boot (= 0.1.2), t630-native-userspace (= 0.1.0), python3, python3-gi, gnome-shell, gnome-control-center, at-spi2-core, xdg-user-dirs, xwayland, xauth, x11-utils, xdotool, libglib2.0-bin, util-linux
+Depends: t630-first-boot (= 0.1.2), t630-native-userspace (= 0.1.0), python3, python3-gi, gnome-shell, gnome-control-center, at-spi2-core, xdg-user-dirs, xwayland, xauth, x11-utils, xdotool, libglib2.0-bin, util-linux, sudo, gdisk
 Section: admin
 Priority: optional
 Description: account-neutral Ubuntu desktop integration for Samsung SM-T630

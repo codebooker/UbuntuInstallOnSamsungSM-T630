@@ -116,6 +116,14 @@ export default class TabletKeyboard extends Extension {
         } catch (_) { /* The package dependency normally guarantees this app. */ }
     }
 
+    _openAndroidSwitch() {
+        try {
+            Gio.Subprocess.new(['/usr/local/bin/t630-gnome-run',
+                '/usr/local/libexec/t630-switch-dialog'],
+                Gio.SubprocessFlags.NONE);
+        } catch (_) { /* The guarded helper remains unavailable on unsupported installs. */ }
+    }
+
     enable() {
         this._settings = this.getSettings();
         this._waydroidTimers = new Set();
@@ -162,6 +170,12 @@ export default class TabletKeyboard extends Extension {
             toggleMode: false,
         });
         this._settingsLauncher.connect('clicked', () => this._openSettings());
+        this._androidLauncher = new QuickSettings.QuickToggle({
+            title: 'Restart into Android', iconName: 'system-reboot-symbolic',
+            toggleMode: false,
+        });
+        this._androidLauncher.subtitle = 'Keep Ubuntu files and open native Android';
+        this._androidLauncher.connect('clicked', () => this._openAndroidSwitch());
         this._brightness = new QuickSettings.QuickSlider({
             iconName: 'display-brightness-symbolic', iconLabel: 'Screen brightness',
         });
@@ -223,7 +237,8 @@ export default class TabletKeyboard extends Extension {
             });
         });
         this._powerIndicator.quickSettingsItems.push(
-            this._settingsLauncher, this._brightness, this._rotationLock, this._keepAwake, this._autoSuspend,
+            this._settingsLauncher, this._androidLauncher, this._brightness,
+            this._rotationLock, this._keepAwake, this._autoSuspend,
             this._flashlight, this._flashlightBrightness);
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._powerIndicator, 2);
         this._powerMenu = Main.panel.statusArea.quickSettings.menu;

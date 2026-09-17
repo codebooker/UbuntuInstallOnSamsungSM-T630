@@ -1,0 +1,2 @@
+# The logged-in tablet owner may request only the fully guarded Android switch.
+%t630-owner ALL=(root) NOPASSWD: /usr/local/sbin/t630-switch-to-native-android --switch-and-reboot

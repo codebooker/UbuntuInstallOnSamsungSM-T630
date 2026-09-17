@@ -43,7 +43,17 @@ class ReleaseArchiveTests(unittest.TestCase):
         temporary, root = self.root()
         try:
             status = root / "var/lib/dpkg/status"
-            status.write_text(status.read_text().replace("Version: 0.1.17", "Version: 0.1.16"))
+            release_version = next(
+                version for package, version, _digest in subject.EXPECTED.values()
+                if package == "t630-release-base"
+            )
+            status.write_text(
+                status.read_text().replace(
+                    f"Package: t630-release-base\nVersion: {release_version}",
+                    "Package: t630-release-base\nVersion: 0.0.0",
+                    1,
+                )
+            )
             with self.assertRaisesRegex(ValueError, "version mismatch"):
                 subject.validate_installed_root(root)
         finally:

@@ -1,18 +1,21 @@
 #!/bin/sh
-# Switch an already accepted encrypted native Android installation to stock BOOT.
+# Switch an accepted encrypted native Android installation to its pinned BOOT.
 set -eu
 export LC_ALL=C
 
 mode=${1:---check}
 artifact=/opt/t630/artifacts/native-android-stock
 image=$artifact/boot.img
+android_hash_file=$artifact/boot.sha256
 ubuntu_rollback=$artifact/ubuntu-dual-layout.transaction-rollback.img
 acceptance=/etc/t630/native-android-accepted
 authorization=$artifact/AUTHORIZE-NATIVE-ANDROID-SWITCH
 ubuntu_boot=eefb77383dc668926c6a2e95b7d1f862d96ab438ddcd5721c03e101df68fcbfb
-android_boot=79a9b1d56763cb6e3c113473eb783f6332fe79b054e3c67494c5094c6c382796
 
-case "$mode" in --check|--write) ;; *) echo "usage: $0 --check|--write" >&2; exit 2 ;; esac
+case "$mode" in
+    --check|--write|--switch-and-reboot) ;;
+    *) echo "usage: $0 --check|--write|--switch-and-reboot" >&2; exit 2 ;;
+esac
 fail() { echo "NATIVE_ANDROID_SWITCH_REFUSED: $*" >&2; exit 1; }
 check_hash() {
     expected=$1
@@ -67,12 +70,19 @@ test -z "$(dd if=/dev/sda10 bs=32 count=1 status=none | tr -d '\000')" ||
     fail "misc contains a boot command"
 
 test -d "$artifact" && test ! -L "$artifact" || fail "Android artifact directory absent"
-for path in "$image" "$ubuntu_rollback"; do
+for path in "$image" "$android_hash_file" "$ubuntu_rollback"; do
     test -f "$path" && test ! -L "$path" || fail "$path is absent or unsafe"
     test "$(stat -c %u "$path")" = 0 || fail "$path is not root-owned"
-    test "$(stat -c %s "$path")" = 100663296 || fail "$path size mismatch"
 done
-check_hash "$android_boot" "$image" stock-android-boot
+test "$(stat -c %s "$image")" = 100663296 || fail "$image size mismatch"
+test "$(stat -c %s "$ubuntu_rollback")" = 100663296 || fail "$ubuntu_rollback size mismatch"
+android_boot=$(cat "$android_hash_file")
+case "$android_boot" in
+    ''|*[!0-9a-f]*) fail "Android BOOT hash is malformed" ;;
+    *) ;;
+esac
+test "${#android_boot}" = 64 || fail "Android BOOT hash length mismatch"
+check_hash "$android_boot" "$image" accepted-android-boot
 check_hash "$ubuntu_boot" "$ubuntu_rollback" accepted-ubuntu-rollback
 check_hash "$ubuntu_boot" /dev/sda19 installed-ubuntu-boot
 test "$(cat /sys/class/power_supply/battery/capacity)" -ge 50 || fail "battery below 50 percent"
@@ -94,6 +104,9 @@ check_neighbors
 if test "$mode" = --check; then
     echo NATIVE_ANDROID_ENCRYPTED_INSTALLATION_READY_NO_CHANGES
     exit 0
+fi
+if test "$mode" = --switch-and-reboot; then
+    test -x /usr/local/bin/t630-display || fail "orderly restart client is unavailable"
 fi
 test -f "$authorization" && test ! -L "$authorization" || fail "authorization absent"
 test "$(stat -c %u "$authorization")" = 0 || fail "authorization is not root-owned"
@@ -127,3 +140,7 @@ check_neighbors
 committed=1
 sync
 echo NATIVE_ANDROID_ACCEPTED_BOOT_STAGED_READBACK_VERIFIED_RESTART_MANUALLY
+if test "$mode" = --switch-and-reboot; then
+    echo NATIVE_ANDROID_SWITCH_COMMITTED_REQUESTING_ORDERLY_RESTART
+    exec /usr/local/bin/t630-display power restart
+fi

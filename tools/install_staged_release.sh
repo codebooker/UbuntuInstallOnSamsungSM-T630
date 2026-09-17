@@ -125,7 +125,7 @@ if awk -F: '$3 >= 1000 && $3 < 60000 { found=1 } END { exit found ? 0 : 1 }' \
 fi
 package_state=$(run "$runtime/usr/bin/dpkg-query" --root="$target" -W \
     '-f=${db:Status-Status} ${Version}\n' t630-release-base)
-test "$package_state" = 'installed 0.1.17' || fail "release package state mismatch"
+test "$package_state" = 'installed 0.1.18' || fail "release package state mismatch"
 test ! -e "$target/etc/ssh/ssh_host_rsa_key" || fail "SSH host key leaked"
 test ! -e "$target/etc/NetworkManager/system-connections" ||
     test -z "$(find "$target/etc/NetworkManager/system-connections" \

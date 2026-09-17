@@ -87,7 +87,7 @@
    byte-for-byte. Writable camera state regenerates without a seed.
    The 2026-09-16 package refresh also removed stale exact dependencies left by
    incremental development. Component packages use compatible minimum versions,
-   while `t630-release-base` 0.1.17 remains the single exact-version lock for a
+   while `t630-release-base` 0.1.18 remains the single exact-version lock for a
    release. The live personalized root now passes `dpkg --audit` and
    `apt-get check` after a clean reboot; the login runtime rebuild is
    byte-identical. See the

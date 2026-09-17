@@ -103,6 +103,12 @@ class Controls(Gtk.Application):
         password_button = Gtk.Button(label='Set local password / enable sudo')
         password_button.connect('clicked',lambda _:self.launch('password'))
         outer.pack_start(password_button,False,False,0)
+        android_button = Gtk.Button(label='Restart into Android')
+        android_button.set_image(
+            Gtk.Image.new_from_icon_name('system-reboot-symbolic', Gtk.IconSize.DIALOG))
+        android_button.set_always_show_image(True)
+        android_button.connect('clicked', self.restart_into_android)
+        outer.pack_start(android_button, False, False, 0)
         self.refresh()
         GLib.timeout_add_seconds(5, self.refresh)
         self.window.show_all()
@@ -130,6 +136,18 @@ class Controls(Gtk.Application):
             self.message.set_text('Brightness adjusted for this session.')
         except (OSError, ValueError):
             self.message.set_text('Brightness could not be changed; current display stays on.')
+
+    def restart_into_android(self, _button):
+        try:
+            subprocess.Popen(
+                ['/usr/local/libexec/t630-switch-dialog'],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        except OSError:
+            self.message.set_text('Could not open the Android restart confirmation.')
 
     def refresh(self):
         if self.window is None:

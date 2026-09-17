@@ -36,7 +36,7 @@ full-screen GNOME desktop from internal storage.
 | Browser video acceleration | WebKit hardware selection verified; safe launcher blocked by the stock kernel's missing user-namespace support |
 | Cameras | Front and rear GNOME previews work at 720×480; rear exposure, autofocus, tone, and live color adjustment work; HD Snapshot and flash remain |
 | First-boot setup | Language/accessibility/keyboard/network/account/time-zone/privacy flow and packaged GDM password login implemented; full private bundle and unmounted read-only device gate passed, destructive clean-install acceptance remains |
-| Android applications | Waydroid's CPU-rendered UI is rejected; native stock Android now boots encrypted F2FS with Adreno acceleration beside the 64 GiB Ubuntu root, and the guarded Mac-assisted round trip passes |
+| Android applications | Waydroid's CPU-rendered UI is rejected; native stock Android boots encrypted F2FS with Adreno acceleration beside the 64 GiB Ubuntu root. Button-only switchers for both operating systems are implemented; final rooted-service and physical round-trip acceptance remain |
 
 The exact evidence and remaining limitations are in [STATUS.md](docs/STATUS.md).
 

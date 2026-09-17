@@ -78,11 +78,29 @@ match. It must never rewrite VBMETA during routine switching: Android's data
 encryption is tied to verified-boot state, and changing that state can make
 `/data` unreadable.
 
-Ubuntu can expose the operation through Tablet Controls and a narrow privileged
-helper. Android cannot write BOOT as an ordinary application; returning without
-a computer therefore requires a deliberately rooted Android installation and a
-small audited switcher. Until that application is ready, Download Mode plus the
-Mac remains the recovery route.
+The end-user interface is deliberately button-only:
+
+- Ubuntu exposes **Restart into Android** in Quick Settings and Tablet Controls.
+  A dark confirmation dialog calls one exact passwordless `sudo` command; its
+  sudoers rule cannot authorize a shell or any other helper argument.
+- Android exposes a standalone **Restart into Ubuntu** launcher. After its own
+  confirmation dialog, it calls one root-owned helper through Magisk. The helper
+  defaults to a read-only check and performs a write only with the exact
+  `--switch-and-reboot` argument.
+
+Neither path asks the owner to open a terminal or type a command. Both validate
+the model, build, installed layout, selected image, current BOOT, protected
+neighbors, battery state, and rollback image before changing anything. The
+Android button and its narrow rooted service are implemented and locally signed;
+physical installation and round-trip acceptance are still pending. Until that
+acceptance passes, Download Mode plus the Mac remains the recovery route.
+
+After Magisk patching, the Ubuntu-side artifact is the accepted patched Android
+BOOT rather than the factory BOOT. Its root-owned `boot.sha256` is checked before
+every switch. Android independently pins the currently installed patched BOOT
+hash before replacing it with Ubuntu. This preserves the Android service across
+round trips while keeping the untouched factory BOOT as the Download Mode
+recovery image.
 
 `tools/restore_ubuntu_boot_download_mode.sh` implements that temporary host
 route. Its default `--check` mode validates only local artifacts. The explicit
@@ -116,6 +134,12 @@ Ubuntu must verify the complete BOOT hash again after returning.
    reboot; recovery must remain reachable throughout.
 10. Only after repeated cold switches and forced-failure recovery should dual
     boot become part of the public installer.
+
+The Ubuntu and Android launchers do not contain firmware or private tablet
+state. `t630-os-switcher` declares no Android permissions and has no network
+permission. Its signing key and generated APK are local release artifacts, not
+committed to the repository. Root is confined to the fixed helper path; the app
+does not accept commands or paths from its UI.
 
 Gate 1 now has a physically accepted v3 image. Its init mounts no block device,
 its preflight has no write mode, and its exact Ubuntu `boot.img` is embedded as

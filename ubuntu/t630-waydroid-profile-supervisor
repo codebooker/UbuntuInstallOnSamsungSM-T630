@@ -1,0 +1,50 @@
+#!/bin/sh
+# Root-side profile reconciler. It never starts or unfreezes Android.
+set -eu
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
+test "$(id -u)" = 0
+test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
+owner=$(cat /etc/t630/owner)
+case "$owner" in
+    ''|*[!a-zA-Z0-9_-]*) echo 'Invalid selected owner.' >&2; exit 1 ;;
+esac
+owner_uid=$(id -u "$owner")
+test "$owner_uid" -ge 1000
+request=/run/user/$owner_uid/t630-waydroid-profile.request
+marker=/var/lib/waydroid/t630-software-profile.enabled
+lock=/run/t630-waydroid-profile-supervisor.lock
+
+exec 9>"$lock"
+flock -n 9 || exit 0
+applied=0
+previous=STOPPED
+while :; do
+    state=$(/usr/bin/lxc-info -P /var/lib/waydroid/lxc -n waydroid -sH 2>/dev/null || echo STOPPED)
+    if [ "$state" != "$previous" ]; then
+        applied=0
+        previous=$state
+    fi
+    if [ -e "$request" ] || [ -L "$request" ]; then
+        if [ -f "$request" ] && [ ! -L "$request" ] &&
+                [ "$(stat -c %u "$request")" = "$owner_uid" ]; then
+            applied=0
+        fi
+        rm -f "$request"
+    fi
+    if [ -e "$marker" ]; then
+        if [ ! -f "$marker" ] || [ -L "$marker" ] ||
+                [ "$(stat -c '%u:%a' "$marker")" != 0:644 ]; then
+            echo 'Unsafe Waydroid profile marker; refusing enforcement.' >&2
+        elif [ "$state" = RUNNING ] && [ "$applied" = 0 ]; then
+            if /usr/local/sbin/t630-waydroid-software-profile enforce; then
+                applied=1
+            fi
+        fi
+    else
+        applied=0
+    fi
+    sleep 2
+done

@@ -53,3 +53,26 @@ was restored to the normal nested-GNOME session.
 `t630-waydroid-software-profile`. Its first `apply` stores only the previous
 numeric width, height, and animation values in a root-only file. `restore`
 returns those values. Neither path reads Android accounts or application data.
+
+## Fullscreen persistence correction
+
+After GNOME true-fullscreen integration, a physical follow-up reproduced a
+performance regression: Android reported a 1920×1168 physical target and 1.0×
+window/transition animation scales even though the earlier profile had been
+accepted. CPU pressure reached a 20.59 ten-second average while SurfaceFlinger,
+Google Play, Settings, and a one-time GAPPS `dex2oat` job competed for the eight
+cores. Memory pressure remained negligible.
+
+Applying a 1024×623 Android display override and all three zero-animation
+settings live reduced the next ten-second CPU-pressure snapshot to 4.49. The
+fullscreen desktop remained at its physical size; only Android's CPU-rendered
+viewport was reduced. This established that the new lag was a lost profile,
+not a new GPU failure.
+
+Runtime 0.1.7 persists the accepted width and height in Waydroid's host
+configuration, records the prior configuration for rollback, and asks a
+single root-side supervisor to reconcile the profile whenever the full UI or
+an Android app launches. The supervisor never starts or unfreezes Android; it
+acts only when the container is already running, and reapplies only the display
+override and animation scales. It does not disable packages, inspect accounts,
+or modify app data.

@@ -30,7 +30,7 @@ Pinned development references:
 | Ubuntu Xwayland proximity source inspection | `2:23.2.6-1ubuntu0.8`; orig SHA256 `1c9a366b4e7ccadba0f9bd313c59eae12d23bd72543b22a26eaf8b20835cfc6d`, Debian patch SHA256 `00c7667cf0109ee79c60b196d63db7ecc8baf45ed1d65263d85fc122bd699aba`, DSC SHA256 `99174d7e4d6c46375bd5b978c05f325644f7c1d02f08fb2588803798944330a2`. Source inspection only; no replacement binary installed |
 | Waydroid source reviewed for container/session integration | `5a51271131bfca8b7ee75ed067d09b26460f3a7b` |
 | Waydroid host packages used for physical acceptance | `waydroid` 1.6.2, `lxc` 1:5.0.3-2ubuntu7.2, `python3-gbinder` 1.3.1 from the Waydroid Noble repository / Ubuntu 24.04 dependencies |
-| SM-T630 Waydroid integration package | `t630-waydroid-runtime` 0.1.6, reproducible package SHA256 `a592c95ad5d4627eceac05868e4dd3a25833c0b20f81156be2ba09ca037959ba` |
+| SM-T630 Waydroid integration package | `t630-waydroid-runtime` 0.1.7, reproducible package SHA256 `2ee6d4c414b9e811e6bdaef307dfc40714080bde9b0042c1454056d6fab065db` |
 | SM-T630 desktop integration package | `t630-desktop-runtime` 0.1.8, reproducible package SHA256 `da93be5ce334db43c00c47d9d97c8fd5e6b50e1d9d649a3f567a4021cc939672` |
 | SM-T630 exact-version base metapackage | `t630-release-base` 0.1.17, reproducible package SHA256 `07fafbcdc1303496134e2b72b68c1d0f2cb398574bb8a00431c4061aede7ef06` |
 | Official Waydroid ARM64 VANILLA image acceptance artifacts | `system.img` SHA256 `e9d0a498105feb5e00895066dee90d738b3961ba334416f26498e357ee966b2e`; MAINLINE `vendor.img` SHA256 `b18a05747db565c134db48031caeec3ce4bd9e0ce8f88ef9c679f3ef9e24e39a` |

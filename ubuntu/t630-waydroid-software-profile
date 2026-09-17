@@ -6,11 +6,14 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 export PATH
 
 state=/var/lib/waydroid/t630-software-profile.before
+enabled=/var/lib/waydroid/t630-software-profile.enabled
+config=/usr/local/libexec/t630-waydroid-profile-config
 action=${1:-status}
 
 test "$(id -u)" = 0
 test "$(cat /etc/t630-install-id)" = SM-T630-T630XXSBDZE3-Ubuntu-v1
 test -x /usr/bin/waydroid
+test -x "$config"
 
 android() {
     /usr/bin/waydroid shell -- "$@"
@@ -32,6 +35,23 @@ validate_value() {
     esac
 }
 
+validate_size() {
+    case "$1" in
+        reset) return 0 ;;
+        *x*)
+            width=${1%%x*}
+            height=${1#*x}
+            test "$width"x"$height" = "$1" || return 1
+            case "$width:$height" in
+                *[!0-9:]*|:*) return 1 ;;
+            esac
+            test "$width" -gt 0 && test "$height" -gt 0
+            return
+            ;;
+        *) return 1 ;;
+    esac
+}
+
 show_status() {
     printf 'display=%sx%s\n' \
         "$(read_property persist.waydroid.width)" \
@@ -43,6 +63,13 @@ show_status() {
     do
         printf '%s=%s\n' "$key" "$(read_setting "$key")"
     done
+    android wm size
+    "$config" status
+    if [ -e "$enabled" ]; then
+        echo 'persistent=enabled'
+    else
+        echo 'persistent=disabled'
+    fi
 }
 
 case "$action" in
@@ -53,12 +80,18 @@ case "$action" in
             window=$(read_setting window_animation_scale)
             transition=$(read_setting transition_animation_scale)
             animator=$(read_setting animator_duration_scale)
+            wm_size=$(android wm size | sed -n 's/^Override size: //p' | tail -1)
+            wm_size=${wm_size:-reset}
             for value in "$width" "$height" "$window" "$transition" "$animator"; do
                 validate_value "$value" || {
                     echo "Refusing to save an unexpected Waydroid value." >&2
                     exit 1
                 }
             done
+            validate_size "$wm_size" || {
+                echo "Refusing to save an unexpected Android display override." >&2
+                exit 1
+            }
             temporary=$(mktemp /var/lib/waydroid/.t630-software-profile.XXXXXX)
             chmod 0600 "$temporary"
             {
@@ -67,6 +100,7 @@ case "$action" in
                 printf 'WINDOW=%s\n' "$window"
                 printf 'TRANSITION=%s\n' "$transition"
                 printf 'ANIMATOR=%s\n' "$animator"
+                printf 'WM_SIZE=%s\n' "$wm_size"
             } >"$temporary"
             mv "$temporary" "$state"
         fi
@@ -75,22 +109,35 @@ case "$action" in
         android settings put global window_animation_scale 0.0
         android settings put global transition_animation_scale 0.0
         android settings put global animator_duration_scale 0.0
-        echo "Applied the 1024x623 zero-animation profile. Restart the Waydroid session."
+        android wm size 1024x623
+        "$config" apply
+        temporary=$(mktemp /var/lib/waydroid/.t630-software-profile.enabled.XXXXXX)
+        chmod 0644 "$temporary"
+        printf 'SM-T630 Waydroid software profile v1\n' >"$temporary"
+        mv "$temporary" "$enabled"
+        echo "Applied the persistent 1024x623 zero-animation profile."
         ;;
     restore)
         test -f "$state" || {
             echo "No saved pre-profile state exists." >&2
             exit 1
         }
+        test ! -L "$state"
+        test "$(stat -c '%u:%a' "$state")" = 0:600
         # The file is root-created, mode 0600, and contains only validated
         # numeric values, an empty property, or Android's literal null marker.
         . "$state"
+        WM_SIZE=${WM_SIZE:-reset}
         for value in "$WIDTH" "$HEIGHT" "$WINDOW" "$TRANSITION" "$ANIMATOR"; do
             validate_value "$value" || {
                 echo "Refusing an invalid saved Waydroid value." >&2
                 exit 1
             }
         done
+        validate_size "$WM_SIZE" || {
+            echo "Refusing an invalid saved Android display override." >&2
+            exit 1
+        }
         android setprop persist.waydroid.width "$WIDTH"
         android setprop persist.waydroid.height "$HEIGHT"
         if [ "$WINDOW" = null ]; then
@@ -108,14 +155,26 @@ case "$action" in
         else
             android settings put global animator_duration_scale "$ANIMATOR"
         fi
+        android wm size "$WM_SIZE"
+        "$config" restore
+        rm -f "$enabled"
         rm -f "$state"
         echo "Restored the pre-profile values. Restart the Waydroid session."
+        ;;
+    enforce)
+        test -f "$enabled" && test ! -L "$enabled"
+        test "$(stat -c '%u:%a' "$enabled")" = 0:644
+        android settings put global window_animation_scale 0.0
+        android settings put global transition_animation_scale 0.0
+        android settings put global animator_duration_scale 0.0
+        android wm size 1024x623
+        echo "Enforced the persistent Waydroid software profile."
         ;;
     status)
         show_status
         ;;
     *)
-        echo "Usage: t630-waydroid-software-profile {apply|restore|status}" >&2
+        echo "Usage: t630-waydroid-software-profile {apply|restore|status|enforce}" >&2
         exit 2
         ;;
 esac

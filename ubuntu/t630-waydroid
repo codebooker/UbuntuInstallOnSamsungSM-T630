@@ -23,4 +23,14 @@ export XDG_RUNTIME_DIR=$runtime
 export XDG_SESSION_TYPE=wayland
 export WAYLAND_DISPLAY=t630-gnome-0
 
+case "${1:-}:${2:-}" in
+    show-full-ui:|app:launch|session:start)
+        if [ -e /var/lib/waydroid/t630-software-profile.enabled ]; then
+            request=$XDG_RUNTIME_DIR/t630-waydroid-profile.request
+            rm -f "$request"
+            (umask 077; : >"$request")
+        fi
+        ;;
+esac
+
 exec "$real" "$@"

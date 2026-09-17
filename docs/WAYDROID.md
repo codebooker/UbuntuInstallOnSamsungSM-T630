@@ -58,11 +58,11 @@ Build and install this repository's integration package:
 
 ```sh
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_waydroid_runtime_deb.py
-sudo apt install ./output/t630-waydroid-runtime_0.1.6_all.deb
+sudo apt install ./output/t630-waydroid-runtime_0.1.7_all.deb
 ```
 
 That exact reproducible build has SHA-256
-`a592c95ad5d4627eceac05868e4dd3a25833c0b20f81156be2ba09ca037959ba`.
+`2ee6d4c414b9e811e6bdaef307dfc40714080bde9b0042c1454056d6fab065db`.
 
 Initialize the official ARM64 GAPPS image. The download is large and requires a
 working network connection:
@@ -188,8 +188,12 @@ janky-frame share fell from 43.54% to 31.76%. Touch and S Pen use the matching
 CPU-rendered Android desktop behave like native Adreno rendering.
 
 The first `apply` saves only the previous numeric display and animation values
-in a root-only file. It does not read accounts or application data. Restore the
-saved values with:
+in root-only files. Version 0.1.7 also writes the accepted dimensions into
+Waydroid's host configuration and reapplies the Android size override and zero
+animation scales whenever the full UI or an app launches. This prevents GNOME
+fullscreen or GAPPS setup from silently returning the CPU renderer to
+1920×1168. It does not read accounts or application data. Restore the saved
+values with:
 
 ```sh
 sudo t630-waydroid-software-profile restore

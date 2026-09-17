@@ -34,6 +34,7 @@ class WaydroidRuntimeTests(unittest.TestCase):
         self.assertIn("mount -t binder binder /dev/binderfs", text)
         self.assertIn("binder hwbinder vndbinder", text)
         self.assertIn("container start", text)
+        self.assertIn("t630-waydroid-profile-supervisor", text)
         self.assertIn("/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin", text)
         self.assertIn('command -v lxc-start', text)
 
@@ -44,11 +45,23 @@ class WaydroidRuntimeTests(unittest.TestCase):
         self.assertIn("WAYLAND_DISPLAY=t630-gnome-0", text)
         self.assertIn('exec "$real" "$@"', text)
         self.assertIn('if [ "$(id -u)" = 0 ]', text)
+        self.assertIn("t630-waydroid-profile.request", text)
+        self.assertIn("show-full-ui:|app:launch|session:start", text)
 
     def test_desktop_startup_prepares_waydroid_without_starting_android(self):
         startup = (ROOT / "ubuntu/t630-desktop-autostart").read_text()
         self.assertIn("/usr/local/sbin/t630-waydroid-prepare", startup)
         self.assertIn("/etc/t630/waydroid.disabled", startup)
+
+    def test_profile_supervisor_never_starts_or_unfreezes_android(self):
+        supervisor = ROOT / "ubuntu/t630-waydroid-profile-supervisor"
+        subprocess.run(["sh", "-n", supervisor], check=True)
+        text = supervisor.read_text()
+        self.assertIn("t630-waydroid-profile.request", text)
+        self.assertIn('"$state" = RUNNING', text)
+        self.assertIn("t630-waydroid-software-profile enforce", text)
+        self.assertNotIn("container start", text)
+        self.assertNotIn("lxc-unfreeze", text)
 
     def test_runtime_package_is_reproducible_and_pins_dependencies(self):
         source = ROOT / "tools/build_waydroid_runtime_deb.py"
@@ -78,6 +91,7 @@ class WaydroidRuntimeTests(unittest.TestCase):
             self.assertIn("waydroid (= 1.6.2)", control)
             self.assertIn("lxc (= 1:5.0.3-2ubuntu7.2)", control)
             self.assertIn("python3", control)
+            self.assertIn("Version: 0.1.7", control)
             with tarfile.open(
                 fileobj=io.BytesIO(members["data.tar.xz"]), mode="r:xz"
             ) as archive:
@@ -89,6 +103,14 @@ class WaydroidRuntimeTests(unittest.TestCase):
                     "./usr/local/sbin/t630-waydroid-software-profile"
                 )
                 self.assertEqual(profile.mode, 0o755)
+                supervisor = archive.getmember(
+                    "./usr/local/sbin/t630-waydroid-profile-supervisor"
+                )
+                self.assertEqual(supervisor.mode, 0o755)
+                config_helper = archive.getmember(
+                    "./usr/local/libexec/t630-waydroid-profile-config"
+                )
+                self.assertEqual(config_helper.mode, 0o755)
 
 
 if __name__ == "__main__":

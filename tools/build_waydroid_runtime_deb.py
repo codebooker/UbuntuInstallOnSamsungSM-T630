@@ -13,13 +13,17 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-waydroid-runtime"
-VERSION = "0.1.6"
+VERSION = "0.1.7"
 
 FILES = {
     "usr/local/bin/lxc-start": ("ubuntu/t630-waydroid-lxc-start", 0o755),
     "usr/local/bin/waydroid": ("ubuntu/t630-waydroid", 0o755),
+    "usr/local/libexec/t630-waydroid-profile-config": (
+        "ubuntu/t630-waydroid-profile-config.py", 0o755),
     "usr/local/sbin/t630-waydroid-prepare": (
         "ubuntu/t630-waydroid-prepare", 0o755),
+    "usr/local/sbin/t630-waydroid-profile-supervisor": (
+        "ubuntu/t630-waydroid-profile-supervisor", 0o755),
     "usr/local/sbin/t630-check-waydroid-gapps": (
         "tools/check_waydroid_gapps.py", 0o755),
     "usr/local/sbin/t630-waydroid-software-profile": (
@@ -53,7 +57,8 @@ Description: Waydroid integration for the Samsung SM-T630 Ubuntu port
  launcher required by the recovery-hosted Ubuntu filesystem, and the nested
  GNOME compositor environment used by Android application launchers. Includes
  a read-only GAPPS acceptance checker that suppresses account identifiers and
- a reversible profile for the accepted CPU-rendered display configuration.
+ a reversible, launch-persistent profile for the accepted CPU-rendered display
+ configuration.
 """.encode()
     control_archive = tar_bytes({
         "control": (control, 0o644),

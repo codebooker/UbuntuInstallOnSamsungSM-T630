@@ -99,6 +99,14 @@ reverse switch still ready. Download Mode plus a host remains the recovery route
 not the normal switching interface. See the
 [button-only round-trip report](reports/native-button-dualboot-20260917.md).
 
+For a corrected Ubuntu BOOT generation, `tools/update_android_switch_payload.py`
+updates Android's private Ubuntu image and fixed root helper over an already
+authorized USB-debugging connection. It defaults to a no-change check. Its
+explicit `--apply` path validates the exact Android model/build, encrypted data,
+currently installed rooted Android BOOT, old-or-current Ubuntu generation, and
+new payload hashes; it atomically replaces only files below `/data/adb/t630`.
+It never opens or writes a partition.
+
 After Magisk patching, the Ubuntu-side artifact is the accepted patched Android
 BOOT rather than the factory BOOT. Its root-owned `boot.sha256` is checked before
 every switch. Android independently pins the currently installed patched BOOT

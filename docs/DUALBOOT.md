@@ -84,6 +84,14 @@ a computer therefore requires a deliberately rooted Android installation and a
 small audited switcher. Until that application is ready, Download Mode plus the
 Mac remains the recovery route.
 
+`tools/restore_ubuntu_boot_download_mode.sh` implements that temporary host
+route. Its default `--check` mode validates only local artifacts. The explicit
+write mode requires the accepted 96 MiB Ubuntu BOOT hash, Heimdall 2.2.2, exact
+authorization text, a detected Download Mode device, and a freshly downloaded
+live PIT whose BOOT entry is identifier 19 with 24,576 4 KiB blocks. It then
+flashes only `BOOT`, without repartitioning or bypassing Heimdall's size check.
+Ubuntu must verify the complete BOOT hash again after returning.
+
 ## Required implementation gates
 
 1. Build a RAM-only maintenance image containing pinned ARM64 `e2fsck`,

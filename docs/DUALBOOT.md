@@ -21,7 +21,7 @@ The following facts were rechecked after the authorized storage transaction on
 - partition 34 starts at sector 21,880,832, occupies 134,217,728 sectors, and
   is the 64 GiB ext4 Ubuntu root labelled `linuxroot`;
 - partition 35 starts at sector 156,098,560, occupies 92,700,632 sectors, and
-  is the new 44.2 GiB native Android `userdata` extent;
+  is the stock-recovery-created 44.2 GiB F2FS Android `userdata` extent;
 - the Ubuntu filesystem is clean, has exactly 16,777,216 4 KiB blocks, and has
   approximately 27 GiB free;
 - Samsung's `super`, `recovery`, `vendor_boot`, DTBO, VBMETA, and bootloader
@@ -42,7 +42,7 @@ divides only the former final partition extent:
 | Partition | Installed extent in 512-byte sectors | Approximate capacity | Purpose |
 | --- | ---: | ---: | --- |
 | 34 `linuxroot` | 21,880,832–156,098,559 | 64 GiB | Existing Ubuntu ext4 root after an offline shrink |
-| 35 `userdata` | 156,098,560–248,799,191 | 44.2 GiB | Fresh native Android data |
+| 35 `userdata` | 156,098,560–248,799,191 | 44.2 GiB | Stock-recovery-created F2FS native Android data |
 
 Both starts are 1 MiB aligned. Immediately before the shrink, the maintenance
 image measured a 9,944,888-block minimum against the 16,777,216-block target.
@@ -148,9 +148,21 @@ geometry, unmounted storage, and pinned protected-partition hashes. It shrinks
 ext4 before touching GPT and arms automatic GPT rollback until the split has
 passed all checks. The final Ubuntu boot from `linuxroot` returned GNOME,
 Wi-Fi, the exact accepted BOOT hash, a clean package audit, and a valid GPT.
-Partition 35 remains intentionally unformatted pending the isolated stock
-recovery/Android initialization gate. See the
+See the
 [physical storage split report](reports/dualboot-storage-split-20260916.md).
+
+The stock-recovery portion of gate 8 now also passes physically. A non-wiping
+BCB preflight first proved the otherwise headless DZE3 recovery path and its
+automatic command clearing. A separately hashed and authorized wipe BCB then
+caused stock recovery to resolve `/data` by the `userdata` GPT name, create
+F2FS on p35 with Android quota/casefold/compression features, recreate ext4
+`metadata`, report a complete wipe, and reboot. Ubuntu returned from unchanged
+p34, all protected image hashes still matched, GPT verified, and a read-only
+F2FS check passed. See the
+[native Android storage report](reports/native-android-storage-init-20260916.md).
+The exact stock Android BOOT then passed its complete no-write gate and an
+atomic BOOT-only write/readback; first-boot display and Android setup acceptance
+are the remaining part of gate 8.
 
 ## Rejected shortcuts
 

@@ -31,8 +31,8 @@ Pinned development references:
 | Waydroid source reviewed for container/session integration | `5a51271131bfca8b7ee75ed067d09b26460f3a7b` |
 | Waydroid host packages used for physical acceptance | `waydroid` 1.6.2, `lxc` 1:5.0.3-2ubuntu7.2, `python3-gbinder` 1.3.1 from the Waydroid Noble repository / Ubuntu 24.04 dependencies |
 | SM-T630 Waydroid integration package | `t630-waydroid-runtime` 0.1.7, reproducible package SHA256 `2ee6d4c414b9e811e6bdaef307dfc40714080bde9b0042c1454056d6fab065db` |
-| SM-T630 desktop integration package | `t630-desktop-runtime` 0.1.15, reproducible package SHA256 `aea3a6a6a3b2da725790c5251896370063d4c42686ea3a53c827c431c0a41f5d` |
-| SM-T630 exact-version base metapackage | `t630-release-base` 0.1.24, reproducible package SHA256 `fd06b449eda5f329c683e4c24e52bcc777aefe1e14ca763cadbd47176cfb6daf` |
+| SM-T630 desktop integration package | `t630-desktop-runtime` 0.1.16, reproducible package SHA256 `908bd5be66fb0e847f415ba826cdbb68e02094da12ef448f6be56884db78b2fe` |
+| SM-T630 exact-version base metapackage | `t630-release-base` 0.1.25, reproducible package SHA256 `0a0adb9b72ef0d3a04ffe81e86a6e1a8121c9d3152cfd4f88a908b0d45b32bce` |
 | Official Waydroid ARM64 VANILLA image acceptance artifacts | `system.img` SHA256 `e9d0a498105feb5e00895066dee90d738b3961ba334416f26498e357ee966b2e`; MAINLINE `vendor.img` SHA256 `b18a05747db565c134db48031caeec3ce4bd9e0ce8f88ef9c679f3ef9e24e39a` |
 | Official Waydroid ARM64 GAPPS image acceptance artifacts | `lineage-20.0-20260403-GAPPS-waydroid_arm64-system.zip`, 1,326,285,880 bytes, SHA256 `c5e557605887664ab1da6c17ff0032317735a0425b8055ee9073fdbcd00899c2`; extracted `system.img` SHA256 `b21bb8508157fdd3fe0611d5770c9103403a4a0834f3713650ddcf25a6fb1578`; MAINLINE `vendor.img` SHA256 `b18a05747db565c134db48031caeec3ce4bd9e0ce8f88ef9c679f3ef9e24e39a` |
 | F-Droid physical acceptance artifact | 1.23.2 (versionCode 1023052), canonical `F-Droid.apk` SHA256 `985f5181d48bb6bafd54083a048b391271e0ab28385881cc41294fb01a222762` |

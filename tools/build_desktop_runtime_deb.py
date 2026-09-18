@@ -13,7 +13,7 @@ from build_first_boot_deb import ROOT, ar_member, tar_bytes
 
 
 PACKAGE = "t630-desktop-runtime"
-VERSION = "0.1.15"
+VERSION = "0.1.16"
 
 POSTINST = b"""#!/bin/sh
 set -e

@@ -45,11 +45,21 @@ After the owner installed Chrome in the already-running first session, the
 one-shot launcher integration had already run and Chrome opened without its
 Wayland/accessibility flags. Desktop 0.1.15 adds an owner-session watcher that
 idempotently regenerates the private launcher when Chrome is installed or
-updated later; release-base 0.1.24 pins that correction for bundle v6.
+updated later; release-base 0.1.24 pins that correction for bundle v6. A Chrome
+153 follow-up found that an already-running background process could still
+ignore the regenerated launcher and that the unqualified accessibility switch
+could expose only empty AT-SPI frames. Desktop 0.1.16 uses Chrome's explicit
+`on-screen` accessibility mode and retires incompatible background processes;
+release-base 0.1.25 pins that correction for the next sealed bundle.
 Bundle v6 then passed the complete clean-root build and seven-entry seal. Its
 1,124,525,634-byte root archive has SHA256
 `c226a6afa266c34713bf7de106d70ba94e8137374706cb0d52bce70b5537e728`;
 the expanded repository suite passes 543 tests with four intentional skips.
+Bundle v7 repeats the complete Ubuntu Base build with desktop 0.1.16 and
+release-base 0.1.25. Its 1,124,532,229-byte root archive has SHA256
+`0ba5af631964cb96006b38bb54cadcc2f1c1bf0c856ab7eb9a708df3aa693053`;
+all seven published checksums and all six payload manifest records verify. The
+repository suite now passes 544 tests with four intentional skips.
 
 ## Remaining physical gate
 

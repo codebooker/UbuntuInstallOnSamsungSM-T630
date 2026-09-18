@@ -16,12 +16,14 @@ MARKER = "# Managed by t630-chrome-ime; regenerated from the system launcher.\n"
 FLAGS = (
     "--enable-wayland-ime",
     "--wayland-text-input-version=3",
-    # Chrome otherwise publishes only empty top-level AT-SPI frames until a
-    # screen reader connects. The owner-session OSK watcher needs editable
-    # focus, not page contents, and this switch makes that state available.
-    "--force-renderer-accessibility",
+    # Keep the accessibility tree mode fixed to the smallest bundle intended
+    # for on-screen interaction.  The unqualified switch can be downgraded by
+    # Chrome after startup and then exposes only empty top-level AT-SPI frames.
+    "--force-renderer-accessibility=on-screen",
+    "--enable-features=AccessibilityOnScreenAXMode",
 )
 EXECUTABLE = "Exec=/usr/bin/google-chrome-stable"
+CHROME_BINARY = "/opt/google/chrome/chrome"
 
 
 def patched_launcher(text: str) -> str:
@@ -40,20 +42,21 @@ def patched_launcher(text: str) -> str:
     return MARKER + "".join(lines)
 
 
-def synchronize_launcher() -> None:
+def synchronize_launcher() -> bool:
     data_home = Path(os.environ["XDG_DATA_HOME"])
     target = data_home / "applications/google-chrome.desktop"
     if not SOURCE.is_file():
         if target.is_file() and target.read_text(errors="replace").startswith(MARKER):
             target.unlink()
-        return
+            return True
+        return False
     try:
         payload = patched_launcher(SOURCE.read_text(encoding="utf-8"))
     except FileNotFoundError:
-        return
+        return False
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.is_file() and target.read_text(encoding="utf-8") == payload:
-        return
+        return False
     descriptor, temporary_name = tempfile.mkstemp(prefix=".google-chrome.", dir=target.parent)
     temporary = Path(temporary_name)
     try:
@@ -64,10 +67,44 @@ def synchronize_launcher() -> None:
             stream.flush()
             os.fsync(stream.fileno())
         temporary.replace(target)
+        return True
     finally:
         if descriptor >= 0:
             os.close(descriptor)
         temporary.unlink(missing_ok=True)
+
+
+def incompatible_chrome_pids(proc: Path = Path("/proc")) -> list[int]:
+    """Return this user's main Chrome processes missing required switches."""
+    result: list[int] = []
+    for entry in proc.iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            status = (entry / "status").read_text(errors="replace")
+            uid_line = next(line for line in status.splitlines() if line.startswith("Uid:"))
+            if int(uid_line.split()[1]) != os.getuid():
+                continue
+            arguments = (entry / "cmdline").read_bytes().split(b"\0")
+        except (FileNotFoundError, PermissionError, StopIteration, ValueError):
+            continue
+        decoded = [argument.decode(errors="replace") for argument in arguments if argument]
+        if not decoded or decoded[0] != CHROME_BINARY or any(
+            argument.startswith("--type=") for argument in decoded
+        ):
+            continue
+        if any(flag not in decoded for flag in FLAGS):
+            result.append(int(entry.name))
+    return result
+
+
+def terminate_incompatible_chrome() -> None:
+    """Retire a pre-fix background process so the managed launcher takes effect."""
+    for pid in incompatible_chrome_pids():
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            pass
 
 
 def main() -> int:
@@ -75,6 +112,7 @@ def main() -> int:
     if sys.argv[1:] not in ([], ["--watch"]):
         raise SystemExit("usage: t630-chrome-ime [--watch]")
     synchronize_launcher()
+    terminate_incompatible_chrome()
     if not watch:
         return 0
     running = True
@@ -88,6 +126,7 @@ def main() -> int:
     while running:
         time.sleep(2)
         synchronize_launcher()
+        terminate_incompatible_chrome()
     return 0
 
 

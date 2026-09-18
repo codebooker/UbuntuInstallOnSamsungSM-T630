@@ -77,6 +77,30 @@ all seven published checksums and all six independently recomputed payload
 size/hash records verify. The repository suite passes 545 tests with four
 intentional skips.
 
+Physical app-drawer acceptance then distinguished process startup from visible
+presentation: v8's replacement Chrome was alive and AT-SPI-visible, but the
+watcher had inherited the parent Weston socket before nested GNOME started.
+The resulting full-screen Chrome surface existed underneath GNOME and could not
+be reached by touch. Desktop 0.1.20 selects `t630-gnome-0` whenever its socket
+exists, requests a new window, and asks the Tablet Controls extension to
+activate Chrome and close the stale app-grid overview after the replacement,
+while retaining the inherited display during early startup. Release-base
+0.1.29 pins those corrections; a clean replacement on the physical tablet
+produced a main Chrome window on nested GNOME.
+
+The current GNOME 46 session does not hot-reload extension source, so its
+already-loaded version could exercise only the new watcher's safe overview
+fallback. That physical path passed the exact failure sequence: overview open,
+unflagged Chrome launch, incompatible process retirement, compatible nested
+replacement, and overview closed. The version-9 Tablet Controls activation
+method remains a next-session acceptance gate. Bundle v9 completed a fresh
+Ubuntu Base build with desktop 0.1.20 and release-base 0.1.29. Its
+1,124,530,073-byte root archive has SHA256
+`fa8005a6a6475c2bf9f27914c4504953b0e89860c6c2c605c0a737780801d335`;
+all seven published checksums and all six independently recomputed payload
+size/hash records verify. The repository suite passes 546 tests with four
+intentional skips.
+
 ## Remaining physical gate
 
 Stock recovery must initialize only p35 and Android encryption metadata, after

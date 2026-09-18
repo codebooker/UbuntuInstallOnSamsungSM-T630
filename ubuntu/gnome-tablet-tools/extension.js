@@ -13,6 +13,9 @@ const KEYBOARD_DBUS_XML = `<node>
   <interface name="org.gnome.Shell.Extensions.T630TabletTools">
     <method name="ShowKeyboard"/>
     <method name="HideKeyboard"/>
+    <method name="PresentChrome">
+      <arg name="presented" direction="out" type="b"/>
+    </method>
     <method name="GetKeyboardVisible">
       <arg name="visible" direction="out" type="b"/>
     </method>
@@ -80,6 +83,15 @@ export default class TabletKeyboard extends Extension {
     HideKeyboard() {
         if (Main.keyboard.visible)
             Main.keyboard.close();
+    }
+
+    PresentChrome() {
+        const app = Shell.AppSystem.get_default().lookup_app('google-chrome.desktop');
+        if (!app)
+            return false;
+        Main.overview.hide();
+        app.activate();
+        return true;
     }
 
     GetKeyboardVisible() {

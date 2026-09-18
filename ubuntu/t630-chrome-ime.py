@@ -25,6 +25,32 @@ FLAGS = (
 )
 EXECUTABLE = "Exec=/usr/bin/google-chrome-stable"
 CHROME_BINARY = "/opt/google/chrome/chrome"
+NESTED_DISPLAY = "t630-gnome-0"
+HIDE_OVERVIEW = (
+    "/usr/bin/gdbus",
+    "call",
+    "--session",
+    "--dest",
+    "org.gnome.Shell",
+    "--object-path",
+    "/org/gnome/Shell",
+    "--method",
+    "org.freedesktop.DBus.Properties.Set",
+    "org.gnome.Shell",
+    "OverviewActive",
+    "<false>",
+)
+PRESENT_CHROME = (
+    "/usr/bin/gdbus",
+    "call",
+    "--session",
+    "--dest",
+    "org.gnome.Shell",
+    "--object-path",
+    "/org/gnome/Shell/Extensions/T630TabletTools",
+    "--method",
+    "org.gnome.Shell.Extensions.T630TabletTools.PresentChrome",
+)
 
 
 def patched_launcher(text: str) -> str:
@@ -99,15 +125,60 @@ def incompatible_chrome_pids(proc: Path = Path("/proc")) -> list[int]:
     return result
 
 
+def launch_environment() -> dict[str, str]:
+    """Target managed GNOME once its private Wayland socket is available."""
+    environment = os.environ.copy()
+    runtime = environment.get("XDG_RUNTIME_DIR")
+    if runtime and (Path(runtime) / NESTED_DISPLAY).is_socket():
+        # This watcher starts before nested GNOME and therefore inherits the
+        # parent Weston display.  A replacement launched with that inheritance
+        # is alive but hidden underneath GNOME's full-screen root surface.
+        environment["WAYLAND_DISPLAY"] = NESTED_DISPLAY
+        environment["GDK_BACKEND"] = "wayland"
+    return environment
+
+
 def launch_compatible_chrome() -> None:
-    """Start a detached instance carrying the managed owner-session switches."""
+    """Start one visible, detached instance with the managed switches."""
     subprocess.Popen(
-        ["/usr/bin/google-chrome-stable", *FLAGS],
+        ["/usr/bin/google-chrome-stable", "--new-window", *FLAGS],
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         start_new_session=True,
+        env=launch_environment(),
     )
+    # The original icon activation belongs to the process just retired. Wait
+    # briefly for Shell to associate the replacement window, then have the
+    # tablet extension activate that exact app and close the stale overview.
+    for _attempt in range(10):
+        time.sleep(0.25)
+        try:
+            result = subprocess.run(
+                PRESENT_CHROME,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                timeout=3,
+                check=False,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            break
+        if result.returncode == 0 and b"true" in result.stdout:
+            return
+    # Retain a narrow fallback for an extension upgrade in the current login
+    # session; the new interface becomes available on the next Shell start.
+    try:
+        subprocess.run(
+            HIDE_OVERVIEW,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=3,
+            check=False,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
 
 
 def replace_incompatible_chrome() -> None:

@@ -75,15 +75,49 @@ class ChromeImeTests(unittest.TestCase):
             self.assertEqual(module.incompatible_chrome_pids(proc), [10])
 
     def test_compatible_relaunch_is_detached_and_exact(self):
-        with mock.patch.object(module.subprocess, "Popen") as popen:
+        inherited = {
+            "XDG_RUNTIME_DIR": "/run/user/1000",
+            "WAYLAND_DISPLAY": "/run/user/0/wayland-0",
+        }
+        with mock.patch.dict(module.os.environ, inherited, clear=True), mock.patch.object(
+            module.Path, "is_socket", return_value=True
+        ), mock.patch.object(module.subprocess, "Popen") as popen, mock.patch.object(
+            module.subprocess, "run"
+        ) as run, mock.patch.object(module.time, "sleep"):
+            run.return_value = mock.Mock(returncode=0, stdout=b"(true,)\n")
+            environment = module.launch_environment()
             module.launch_compatible_chrome()
+        self.assertEqual(environment["WAYLAND_DISPLAY"], "t630-gnome-0")
+        self.assertEqual(environment["GDK_BACKEND"], "wayland")
         popen.assert_called_once_with(
-            ["/usr/bin/google-chrome-stable", *module.FLAGS],
+            ["/usr/bin/google-chrome-stable", "--new-window", *module.FLAGS],
             stdin=module.subprocess.DEVNULL,
             stdout=module.subprocess.DEVNULL,
             stderr=module.subprocess.DEVNULL,
             start_new_session=True,
+            env={
+                **inherited,
+                "WAYLAND_DISPLAY": "t630-gnome-0",
+                "GDK_BACKEND": "wayland",
+            },
         )
+        run.assert_called_once_with(
+            module.PRESENT_CHROME,
+            stdin=module.subprocess.DEVNULL,
+            stdout=module.subprocess.PIPE,
+            stderr=module.subprocess.DEVNULL,
+            timeout=3,
+            check=False,
+        )
+
+    def test_relaunch_keeps_inherited_display_before_nested_socket_exists(self):
+        with mock.patch.dict(
+            module.os.environ, {"WAYLAND_DISPLAY": "/run/user/0/wayland-0"}, clear=True
+        ):
+            self.assertEqual(
+                module.launch_environment(),
+                {"WAYLAND_DISPLAY": "/run/user/0/wayland-0"},
+            )
 
     def test_watch_mode_is_available(self):
         source = SOURCE.read_text()

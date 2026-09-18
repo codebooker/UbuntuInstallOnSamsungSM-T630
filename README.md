@@ -93,8 +93,8 @@ verifier, RAM staging, read-only preparation, and typed authorization gates; do
 not improvise those phases from individual lab scripts unless you can recover
 the tablet independently.
 
-The current private v5 bundle carries the physically accepted Chrome
-on-screen-keyboard bridge and the factory-origin partition path. Its identity
+The current private v6 bundle carries the physically accepted Chrome
+on-screen-keyboard bridge, its late-install watcher, and the factory-origin partition path. Its identity
 audit, full offline rehearsal, deterministic archive read-back, and complete
 checksum seal passed. A fresh physical run restored stock Android first,
 created the split from the factory GPT, installed Ubuntu only to `linuxroot`,

@@ -21,9 +21,9 @@ EXPECTED = {
     "t630-first-boot_0.1.3_all.deb": (
         "t630-first-boot", "0.1.3",
         "e3a8bab2dfcd98c7a86f3cd66387036e764a3f20101fead460bf228a97700403"),
-    "t630-desktop-runtime_0.1.14_all.deb": (
-        "t630-desktop-runtime", "0.1.14",
-        "e9004d8aa91fdc43cccc4d28d91ba8612486a9300a7c411f90e3282b64d41172"),
+    "t630-desktop-runtime_0.1.15_all.deb": (
+        "t630-desktop-runtime", "0.1.15",
+        "aea3a6a6a3b2da725790c5251896370063d4c42686ea3a53c827c431c0a41f5d"),
     "t630-hardware-runtime_0.1.6_all.deb": (
         "t630-hardware-runtime", "0.1.6",
         "a0864399a0211e474128f1b84529e1dd2a47a0417b526193bbb2bd77bb59c02b"),
@@ -57,12 +57,12 @@ EXPECTED = {
     "t630-stock-assets_1.0.2+dze3_arm64.deb": (
         "t630-stock-assets", "1.0.2+dze3",
         "7bfa16d266592116bddae1c2a23c607585802a1e9b2c05905bc97e25210f0efe"),
-    "t630-release-base_0.1.23_arm64.deb": (
-        "t630-release-base", "0.1.23",
-        "84324b8ca1081bcd9939a4d1ddfcf7f185314de3d464738d5e163a5bd4e1a823"),
+    "t630-release-base_0.1.24_arm64.deb": (
+        "t630-release-base", "0.1.24",
+        "fd06b449eda5f329c683e4c24e52bcc777aefe1e14ca763cadbd47176cfb6daf"),
 }
 INSTALL_ORDER = tuple(name for name in EXPECTED if not name.startswith("t630-release-base_"))
-META_PACKAGE = "t630-release-base_0.1.23_arm64.deb"
+META_PACKAGE = "t630-release-base_0.1.24_arm64.deb"
 
 
 def digest(path: Path) -> str:

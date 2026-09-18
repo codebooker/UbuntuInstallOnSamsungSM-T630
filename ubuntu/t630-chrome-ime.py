@@ -5,7 +5,10 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import signal
+import sys
 import tempfile
+import time
 
 
 SOURCE = Path("/usr/share/applications/google-chrome.desktop")
@@ -37,15 +40,20 @@ def patched_launcher(text: str) -> str:
     return MARKER + "".join(lines)
 
 
-def main() -> int:
+def synchronize_launcher() -> None:
     data_home = Path(os.environ["XDG_DATA_HOME"])
     target = data_home / "applications/google-chrome.desktop"
     if not SOURCE.is_file():
         if target.is_file() and target.read_text(errors="replace").startswith(MARKER):
             target.unlink()
-        return 0
-    payload = patched_launcher(SOURCE.read_text(encoding="utf-8"))
+        return
+    try:
+        payload = patched_launcher(SOURCE.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return
     target.parent.mkdir(parents=True, exist_ok=True)
+    if target.is_file() and target.read_text(encoding="utf-8") == payload:
+        return
     descriptor, temporary_name = tempfile.mkstemp(prefix=".google-chrome.", dir=target.parent)
     temporary = Path(temporary_name)
     try:
@@ -60,6 +68,26 @@ def main() -> int:
         if descriptor >= 0:
             os.close(descriptor)
         temporary.unlink(missing_ok=True)
+
+
+def main() -> int:
+    watch = sys.argv[1:] == ["--watch"]
+    if sys.argv[1:] not in ([], ["--watch"]):
+        raise SystemExit("usage: t630-chrome-ime [--watch]")
+    synchronize_launcher()
+    if not watch:
+        return 0
+    running = True
+
+    def stop(_signum: int, _frame: object) -> None:
+        nonlocal running
+        running = False
+
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
+    while running:
+        time.sleep(2)
+        synchronize_launcher()
     return 0
 
 

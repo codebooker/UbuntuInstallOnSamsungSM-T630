@@ -4,8 +4,9 @@ import argparse
 import hashlib
 from pathlib import Path
 
-# Reviewed after adding the owner-scoped Chrome editable-focus OSK bridge.
-BASE_SHA = 'edcdeff039f0f77d69ebf87a7e414c978e0f510023b14499e41f700985e8b915'
+# Reviewed after adding the owner-scoped Chrome editable-focus OSK bridge and
+# its late-install launcher watcher. The pressure trial remains opt-in.
+BASE_SHA = '02f9aec44db2ea7b7784eb3db6086c3e603ae58210d9fef7a258f8ba15e31791'
 PREPARE = '''if [ "${T630_PEN_METADATA_TRIAL:-0}" = 1 ]; then
     /usr/bin/python3 /usr/local/libexec/t630-pen-x11-metadata --prepare
 fi

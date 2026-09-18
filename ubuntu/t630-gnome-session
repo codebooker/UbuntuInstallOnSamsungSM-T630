@@ -90,6 +90,7 @@ power_pid=
 rotation_pid=
 session_manager_pid=
 chrome_osk_pid=
+chrome_ime_pid=
 cleanup() {
     trap - EXIT INT TERM
     if [ -n "$shell_pid" ]; then kill -TERM "$shell_pid" 2>/dev/null || true; fi
@@ -99,12 +100,18 @@ cleanup() {
     if [ -n "$rotation_pid" ]; then kill -TERM "$rotation_pid" 2>/dev/null || true; fi
     if [ -n "$session_manager_pid" ]; then kill -TERM "$session_manager_pid" 2>/dev/null || true; fi
     if [ -n "$chrome_osk_pid" ]; then kill -TERM "$chrome_osk_pid" 2>/dev/null || true; fi
+    if [ -n "$chrome_ime_pid" ]; then kill -TERM "$chrome_ime_pid" 2>/dev/null || true; fi
     kill -TERM "$xwayland_pid" 2>/dev/null || true
     wait "$xwayland_pid" 2>/dev/null || true
     rm -f "$XAUTHORITY"
 }
 trap cleanup EXIT
 trap 'exit 0' INT TERM
+if [ -x /usr/local/libexec/t630-chrome-ime ]; then
+    /usr/local/libexec/t630-chrome-ime --watch \
+        >"$XDG_RUNTIME_DIR/t630-chrome-ime.log" 2>&1 &
+    chrome_ime_pid=$!
+fi
 if [ -x /usr/local/libexec/t630-session-manager ]; then
     /usr/local/libexec/t630-session-manager >"$XDG_RUNTIME_DIR/t630-session-manager.log" 2>&1 &
     session_manager_pid=$!

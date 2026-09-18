@@ -41,6 +41,16 @@ Bundle v5 contains `t630-desktop-runtime` 0.1.14 and `t630-release-base`
 Every seal entry verifies, and the repository suite passes 535 tests with four
 intentional skips.
 
+After the owner installed Chrome in the already-running first session, the
+one-shot launcher integration had already run and Chrome opened without its
+Wayland/accessibility flags. Desktop 0.1.15 adds an owner-session watcher that
+idempotently regenerates the private launcher when Chrome is installed or
+updated later; release-base 0.1.24 pins that correction for bundle v6.
+Bundle v6 then passed the complete clean-root build and seven-entry seal. Its
+1,124,525,634-byte root archive has SHA256
+`c226a6afa266c34713bf7de106d70ba94e8137374706cb0d52bce70b5537e728`;
+the expanded repository suite passes 543 tests with four intentional skips.
+
 ## Remaining physical gate
 
 Stock recovery must initialize only p35 and Android encryption metadata, after

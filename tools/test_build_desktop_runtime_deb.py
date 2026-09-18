@@ -50,7 +50,7 @@ class DesktopRuntimePackageTests(unittest.TestCase):
                 control = control_archive.extractfile("./control").read().decode()
                 postinst = control_archive.extractfile("./postinst").read().decode()
             self.assertIn("Package: t630-desktop-runtime\n", control)
-            self.assertIn("Version: 0.1.16", control)
+            self.assertIn("Version: 0.1.17", control)
             self.assertIn("t630-first-boot (= 0.1.3)", control)
             self.assertIn("t630-native-userspace (= 0.1.0)", control)
             self.assertIn("gnome-control-center", control)

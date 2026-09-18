@@ -59,7 +59,23 @@ Bundle v7 repeats the complete Ubuntu Base build with desktop 0.1.16 and
 release-base 0.1.25. Its 1,124,532,229-byte root archive has SHA256
 `0ba5af631964cb96006b38bb54cadcc2f1c1bf0c856ab7eb9a708df3aa693053`;
 all seven published checksums and all six payload manifest records verify. The
-repository suite now passes 544 tests with four intentional skips.
+repository suite passed 544 tests with four intentional skips. Physical launch
+from GNOME's cached pre-correction desktop entry then exposed a regression: the
+watcher retired the incompatible Chrome process but did not replace it, so the
+tap appeared to do nothing.
+
+Desktop 0.1.17 turns that retirement into an atomic compatibility replacement:
+it terminates only the owner's incompatible Chrome main process, waits for it
+to exit, and launches Chrome with the required Wayland IME, text-input-v3, and
+explicit on-screen accessibility flags. The exact stale-launch path was
+reproduced on the tablet; the watcher replaced it with a compatible process,
+AT-SPI exposed the editable address bar, and GNOME reported the on-screen
+keyboard visible. Bundle v8 pins this fix with release-base 0.1.26. Its
+1,124,529,333-byte root archive has SHA256
+`e13d6391bebe3f5c4ce32cf41a19397f2912e4a0c7525712785711681bc080f9`;
+all seven published checksums and all six independently recomputed payload
+size/hash records verify. The repository suite passes 545 tests with four
+intentional skips.
 
 ## Remaining physical gate
 

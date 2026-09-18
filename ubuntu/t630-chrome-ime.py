@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import signal
+import subprocess
 import sys
 import tempfile
 import time
@@ -98,13 +99,33 @@ def incompatible_chrome_pids(proc: Path = Path("/proc")) -> list[int]:
     return result
 
 
-def terminate_incompatible_chrome() -> None:
-    """Retire a pre-fix background process so the managed launcher takes effect."""
-    for pid in incompatible_chrome_pids():
+def launch_compatible_chrome() -> None:
+    """Start a detached instance carrying the managed owner-session switches."""
+    subprocess.Popen(
+        ["/usr/bin/google-chrome-stable", *FLAGS],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+
+
+def replace_incompatible_chrome() -> None:
+    """Replace a pre-fix background process instead of making a tap disappear."""
+    pids = incompatible_chrome_pids()
+    if not pids:
+        return
+    for pid in pids:
         try:
             os.kill(pid, signal.SIGTERM)
         except (ProcessLookupError, PermissionError):
             pass
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline and any(Path(f"/proc/{pid}").exists() for pid in pids):
+        time.sleep(0.1)
+    if any(Path(f"/proc/{pid}").exists() for pid in pids):
+        return
+    launch_compatible_chrome()
 
 
 def main() -> int:
@@ -112,7 +133,7 @@ def main() -> int:
     if sys.argv[1:] not in ([], ["--watch"]):
         raise SystemExit("usage: t630-chrome-ime [--watch]")
     synchronize_launcher()
-    terminate_incompatible_chrome()
+    replace_incompatible_chrome()
     if not watch:
         return 0
     running = True
@@ -126,7 +147,7 @@ def main() -> int:
     while running:
         time.sleep(2)
         synchronize_launcher()
-        terminate_incompatible_chrome()
+        replace_incompatible_chrome()
     return 0
 
 

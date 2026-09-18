@@ -225,7 +225,7 @@ separately:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_desktop_runtime_deb.py
 ```
 
-This creates `output/t630-desktop-runtime_0.1.16_all.deb`. It depends on the
+This creates `output/t630-desktop-runtime_0.1.17_all.deb`. It depends on the
 matching first-boot package and contains the desktop launcher, login/session
 glue, input mappings, rotation, display controls, guarded suspend, and Tablet
 Controls extension source. It also depends on GNOME Settings, supplies the
@@ -417,7 +417,7 @@ release-set metapackage:
 SOURCE_DATE_EPOCH=1700000000 python3 tools/build_release_meta_deb.py
 ```
 
-This creates `output/t630-release-base_0.1.25_arm64.deb`. It contains no device
+This creates `output/t630-release-base_0.1.26_arm64.deb`. It contains no device
 payload; its exact-version dependencies prevent a fresh root from mixing
 incompatible first-boot, desktop, hardware, login, native, sensor, pd-mapper,
 camera, or DZE3 stock-asset revisions. The camera package's redistributable
@@ -630,7 +630,7 @@ type `ERASE SM-T630 LINUXROOT` exactly. Only then does it create a one-time RAM
 token and invoke `--apply`. Apply formats only the validated 64 GiB `linuxroot`
 at `sda34`, explicitly revalidates Android `userdata` at `sda35`, and extracts with
 numeric ownership, ACLs, and xattrs, rejects identity/account/network leakage,
-requires `t630-release-base` 0.1.25, unmounts, and runs read-only `e2fsck`.
+requires `t630-release-base` 0.1.26, unmounts, and runs read-only `e2fsck`.
 Failures after format stay in recovery with the bundle available for diagnosis;
 the same boot cannot silently retry. Success still requires an explicit reboot.
 It never writes BOOT or another partition.

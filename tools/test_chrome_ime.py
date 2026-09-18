@@ -74,6 +74,17 @@ class ChromeImeTests(unittest.TestCase):
             process(13, own + 1, [module.CHROME_BINARY])
             self.assertEqual(module.incompatible_chrome_pids(proc), [10])
 
+    def test_compatible_relaunch_is_detached_and_exact(self):
+        with mock.patch.object(module.subprocess, "Popen") as popen:
+            module.launch_compatible_chrome()
+        popen.assert_called_once_with(
+            ["/usr/bin/google-chrome-stable", *module.FLAGS],
+            stdin=module.subprocess.DEVNULL,
+            stdout=module.subprocess.DEVNULL,
+            stderr=module.subprocess.DEVNULL,
+            start_new_session=True,
+        )
+
     def test_watch_mode_is_available(self):
         source = SOURCE.read_text()
         self.assertIn('["--watch"]', source)

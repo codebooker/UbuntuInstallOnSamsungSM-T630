@@ -72,15 +72,21 @@ class ReleaseAssemblyTests(unittest.TestCase):
         self.assertIn("t630-polkit-runtime_0.1.0_arm64.deb", assembly.EXPECTED)
         self.assertIn("t630-login-runtime_0.1.2_arm64.deb", assembly.EXPECTED)
         self.assertIn("t630-first-boot_0.1.3_all.deb", assembly.EXPECTED)
-        self.assertIn("t630-desktop-runtime_0.1.13_all.deb", assembly.EXPECTED)
+        self.assertIn("t630-desktop-runtime_0.1.14_all.deb", assembly.EXPECTED)
         self.assertIn("t630-camera-runtime_0.1.7_arm64.deb", assembly.EXPECTED)
         self.assertEqual(
-            assembly.META_PACKAGE, "t630-release-base_0.1.22_arm64.deb")
+            assembly.META_PACKAGE, "t630-release-base_0.1.23_arm64.deb")
 
     def test_missing_packages_fail_closed(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaisesRegex(ValueError, "missing or unsafe"):
                 assembly.validate_packages(Path(directory))
+
+    def test_install_uses_target_nss_via_chroot(self):
+        text = SOURCE.read_text()
+        self.assertIn('["chroot", root, "/usr/bin/dpkg", "--unpack"', text)
+        self.assertIn(".t630-release-packages", text)
+        self.assertNotIn('["dpkg", f"--root={root}"', text)
 
 
 if __name__ == "__main__":

@@ -50,7 +50,7 @@ class DesktopRuntimePackageTests(unittest.TestCase):
                 control = control_archive.extractfile("./control").read().decode()
                 postinst = control_archive.extractfile("./postinst").read().decode()
             self.assertIn("Package: t630-desktop-runtime\n", control)
-            self.assertIn("Version: 0.1.13", control)
+            self.assertIn("Version: 0.1.14", control)
             self.assertIn("t630-first-boot (= 0.1.3)", control)
             self.assertIn("t630-native-userspace (= 0.1.0)", control)
             self.assertIn("gnome-control-center", control)
@@ -122,6 +122,11 @@ class DesktopRuntimePackageTests(unittest.TestCase):
             self.assertIn("usr/local/libexec/t630-first-boot-rotation", names)
             self.assertFalse(any(name.startswith("home/") for name in names))
             self.assertFalse(any("first-boot-profile.json" in name for name in names))
+            switcher = (builder.ROOT / "tools/switch_to_native_android.sh").read_text()
+            self.assertIn(
+                "9d3e15453eb2fd1058365dd8fc99199fd2ad6f44a53de22b92f01f06d90a747e",
+                switcher,
+            )
 
     def test_every_payload_source_is_tracked_and_not_a_symlink(self):
         for source, _mode in builder.FILES.values():

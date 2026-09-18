@@ -25,11 +25,18 @@ check_hash() {
     label=$3
     echo "$expected  $path" | sha256sum -c - >/dev/null || fail "$label hash mismatch"
 }
+check_vbmeta() {
+    actual=$(sha256sum "$1" | awk '{print $1}')
+    case "$actual" in
+        a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225|9d3e15453eb2fd1058365dd8fc99199fd2ad6f44a53de22b92f01f06d90a747e) ;;
+        *) fail "vbmeta hash mismatch" ;;
+    esac
+}
 check_neighbors() {
     check_hash 2b6901f8341de3b76fbcabc69bf0229683d503f233eafd580b4d602392ff74f5 /dev/block/by-name/recovery recovery
     check_hash fbebd763c17c05bc162776a6e9abd86fc386aa0ef58ccfdaa6cb9b13a6a0c72f /dev/block/by-name/vendor_boot vendor_boot
     check_hash f9111b7a566b0a7342ec4d8f14cee53dc465a272d42596f774c0519d6e89fc57 /dev/block/by-name/dtbo dtbo
-    check_hash a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225 /dev/block/by-name/vbmeta vbmeta
+    check_vbmeta /dev/block/by-name/vbmeta
 }
 
 test "$(id -u)" = 0 || fail "Magisk root authorization is required"

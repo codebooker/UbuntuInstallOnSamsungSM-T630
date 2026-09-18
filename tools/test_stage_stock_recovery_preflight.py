@@ -18,6 +18,8 @@ class StageStockRecoveryPreflightTest(unittest.TestCase):
     def test_pins_non_wiping_bcb_and_misc_backup(self):
         self.assertIn("b0b0993da05a79506348c702de750e300e866532b20a6024c2e85aa5350e0957", self.text)
         self.assertIn("HOST_SAVED_MISC_SHA256", self.text)
+        self.assertIn("misc_hash=$(sed -n", self.text)
+        self.assertIn('validate_digest "$misc_hash" misc', self.text)
         self.assertIn("live-misc", self.text)
         self.assertIn("BOOT STOCK RECOVERY FOR READ ONLY DUALBOOT PREFLIGHT", self.text)
         self.assertNotIn("--wipe_data", self.text)
@@ -46,6 +48,8 @@ class StageStockRecoveryPreflightTest(unittest.TestCase):
         self.assertIn("PARTNAME=linuxroot", self.text)
         self.assertIn("PARTNAME=userdata", self.text)
         self.assertIn("92700632", self.text)
+        self.assertIn("a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225", self.text)
+        self.assertIn("9d3e15453eb2fd1058365dd8fc99199fd2ad6f44a53de22b92f01f06d90a747e", self.text)
 
 
 if __name__ == "__main__":

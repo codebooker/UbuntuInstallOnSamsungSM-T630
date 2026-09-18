@@ -3,6 +3,12 @@
 set -eu
 export LC_ALL=C
 
+mode=${1:---check}
+case "$mode" in
+    --check|--stage) ;;
+    *) echo "usage: $0 --check|--stage" >&2; exit 2 ;;
+esac
+
 candidate=/tmp/t630-recovery-wipe-data-bcb.bin
 misc_backup=/tmp/t630-misc-before-recovery.bin
 misc_marker=/tmp/HOST-VERIFIED-MISC-BACKUP
@@ -12,8 +18,6 @@ authorization=/tmp/AUTHORIZE-STOCK-RECOVERY-WIPE
 misc=/dev/sda10
 userdata=/dev/sda35
 bcb_hash=bb26630239e7af8c098b4b0ed44074e29181ad4f7b28f73e726913afad948c89
-misc_hash=7c3277fd24046b110002c2a4f02fbbecfc4dedbd0ef1e5b39abe48c5128c9b17
-metadata_hash=7b3509a9165c9ec966ae06e7937997d283db8ddd0c478283446981fe847ee4ab
 
 fail() { echo "STOCK_RECOVERY_WIPE_REFUSED: $*" >&2; exit 1; }
 check_hash() {
@@ -22,6 +26,22 @@ check_hash() {
     label=$3
     printf '%s  %s\n' "$expected" "$path" | sha256sum -c - >/dev/null ||
         fail "$label hash mismatch"
+}
+check_vbmeta() {
+    actual=$(sha256sum "$1" | awk '{print $1}')
+    case "$actual" in
+        a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225|9d3e15453eb2fd1058365dd8fc99199fd2ad6f44a53de22b92f01f06d90a747e) ;;
+        *) fail "vbmeta hash mismatch" ;;
+    esac
+}
+validate_digest() {
+    value=$1
+    label=$2
+    case "$value" in
+        ''|*[!0-9a-f]*) fail "$label digest is malformed" ;;
+        *) ;;
+    esac
+    test "${#value}" = 64 || fail "$label digest length mismatch"
 }
 tail_hash() {
     dd if="$1" bs=2048 skip=1 status=none | sha256sum | awk '{print $1}'
@@ -75,8 +95,7 @@ check_hash fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f /dev
 check_hash 2b6901f8341de3b76fbcabc69bf0229683d503f233eafd580b4d602392ff74f5 /dev/sda20 recovery
 check_hash fbebd763c17c05bc162776a6e9abd86fc386aa0ef58ccfdaa6cb9b13a6a0c72f /dev/sda21 vendor_boot
 check_hash f9111b7a566b0a7342ec4d8f14cee53dc465a272d42596f774c0519d6e89fc57 /dev/sda22 dtbo
-check_hash a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225 /dev/sde19 vbmeta
-check_hash "$metadata_hash" /dev/sda25 live-metadata
+check_vbmeta /dev/sde19
 sgdisk --verify /dev/sda >/tmp/t630-gpt-before-recovery-wipe.txt 2>&1 ||
     fail "GPT verification failed"
 grep -q 'No problems found' /tmp/t630-gpt-before-recovery-wipe.txt ||
@@ -90,17 +109,27 @@ done
 test "$(stat -c %s "$candidate")" = 2048 || fail "BCB size mismatch"
 check_hash "$bcb_hash" "$candidate" candidate-bcb
 test "$(stat -c %s "$misc_backup")" = 1048576 || fail "misc backup size mismatch"
+misc_hash=$(sed -n 's/^HOST_SAVED_MISC_SHA256=//p' "$misc_marker")
+validate_digest "$misc_hash" misc
 check_hash "$misc_hash" "$misc_backup" host-misc-backup
 test "$(cat "$misc_marker")" = "HOST_SAVED_MISC_SHA256=$misc_hash" ||
     fail "misc verification marker invalid"
 check_hash "$misc_hash" "$misc" live-misc
 test "$(stat -c %s "$metadata_backup")" = 16777216 || fail "metadata backup size mismatch"
+metadata_hash=$(sed -n 's/^HOST_SAVED_METADATA_SHA256=//p' "$metadata_marker")
+validate_digest "$metadata_hash" metadata
 check_hash "$metadata_hash" "$metadata_backup" host-metadata-backup
 test "$(cat "$metadata_marker")" = "HOST_SAVED_METADATA_SHA256=$metadata_hash" ||
     fail "metadata verification marker invalid"
+check_hash "$metadata_hash" /dev/sda25 live-metadata
 test "$(cat "$authorization")" = \
     'INITIALIZE SM-T630 NATIVE ANDROID USERDATA WITH STOCK RECOVERY' ||
     fail "authorization token invalid"
+
+if test "$mode" = --check; then
+    echo STOCK_RECOVERY_WIPE_READY_NO_CHANGES
+    exit 0
+fi
 
 original_tail=$(tail_hash "$misc_backup")
 bcb_changed=0

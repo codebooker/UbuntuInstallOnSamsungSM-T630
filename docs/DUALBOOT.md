@@ -214,6 +214,15 @@ Wi-Fi, the exact accepted BOOT hash, a clean package audit, and a valid GPT.
 See the
 [physical storage split report](reports/dualboot-storage-split-20260916.md).
 
+The release path also now covers a wiped factory starting point rather than
+requiring the older Ubuntu ext4 layout. The separate
+`maintenance/apply-stock-wipe-dualboot-split` gate accepts only the exact wiped
+DZE3 factory geometry, saves and host-verifies a complete GPT backup, creates
+the 64 GiB `linuxroot` and 44.2 GiB `userdata` entries without formatting
+either, and leaves formatting p34 to the sealed Ubuntu installer. This path
+completed physically through the ownerless first-boot UI; see the
+[factory-baseline reinstall report](reports/factory-baseline-reinstall-20260917.md).
+
 The stock-recovery portion of gate 8 now also passes physically. A non-wiping
 BCB preflight first proved the otherwise headless DZE3 recovery path and its
 automatic command clearing. A separately hashed and authorized wipe BCB then
@@ -223,6 +232,20 @@ F2FS on p35 with Android quota/casefold/compression features, recreate ext4
 p34, all protected image hashes still matched, GPT verified, and a read-only
 F2FS check passed. See the
 [native Android storage report](reports/native-android-storage-init-20260916.md).
+
+For a fresh blank p35, the host coordinator first saves complete `misc` and
+`metadata` images into a new mode-0700 directory and verifies their serial
+downloads. Its default path runs the complete no-write recovery gate:
+
+```sh
+python3 tools/initialize_native_android_userdata.py \
+  --backup-dir /private/new/t630-android-init-backups
+```
+
+The destructive form additionally requires the exact authorization sentence
+printed by the read-only run. It stages only the standard 2 KiB recovery BCB;
+the operator must still use Ubuntu's orderly restart path. Stock recovery—not
+the host helper—resolves and initializes the partition named `userdata`.
 The exact stock Android BOOT then passed its complete no-write gate and an
 atomic BOOT-only write/readback; first-boot display and Android setup acceptance
 subsequently passed as well. Android mounted encrypted F2FS `/data` through a

@@ -30,10 +30,10 @@ class StageStockRecoveryWipeTest(unittest.TestCase):
         self.assertIn("HOST_SAVED_METADATA_SHA256", self.text)
         self.assertIn("host-misc-backup", self.text)
         self.assertIn("host-metadata-backup", self.text)
-        self.assertIn(
-            "7b3509a9165c9ec966ae06e7937997d283db8ddd0c478283446981fe847ee4ab",
-            self.text,
-        )
+        self.assertIn("validate_digest \"$misc_hash\" misc", self.text)
+        self.assertIn("validate_digest \"$metadata_hash\" metadata", self.text)
+        self.assertNotIn("misc_hash=7c3277", self.text)
+        self.assertNotIn("metadata_hash=7b3509", self.text)
 
     def test_writes_only_misc_bcb_and_verifies_tail(self):
         self.assertIn('of="$misc" bs=2048 count=1 conv=notrunc,fsync', self.text)
@@ -41,6 +41,14 @@ class StageStockRecoveryWipeTest(unittest.TestCase):
         self.assertNotIn("of=/dev/sda25", self.text)
         self.assertNotIn("of=/dev/sda34", self.text)
         self.assertNotIn("of=/dev/sda35", self.text)
+
+    def test_defaults_to_read_only_check_before_the_first_write(self):
+        self.assertIn('mode=${1:---check}', self.text)
+        self.assertIn('--check|--stage', self.text)
+        self.assertIn('STOCK_RECOVERY_WIPE_READY_NO_CHANGES', self.text)
+        check_gate = self.text.index('if test "$mode" = --check; then')
+        first_write = self.text.index('of="$misc" bs=2048 count=1')
+        self.assertLess(check_gate, first_write)
 
     def test_validates_target_and_ubuntu_partition(self):
         self.assertIn('PARTNAME=linuxroot', self.text)
@@ -56,6 +64,8 @@ class StageStockRecoveryWipeTest(unittest.TestCase):
     def test_pins_all_protected_images(self):
         for device in ("/dev/sda19", "/dev/sda20", "/dev/sda21", "/dev/sda22", "/dev/sde19"):
             self.assertIn(device, self.text)
+        self.assertIn("a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225", self.text)
+        self.assertIn("9d3e15453eb2fd1058365dd8fc99199fd2ad6f44a53de22b92f01f06d90a747e", self.text)
 
 
 if __name__ == "__main__":

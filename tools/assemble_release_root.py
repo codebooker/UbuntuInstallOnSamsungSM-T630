@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import stat
 import subprocess
 
@@ -20,9 +21,9 @@ EXPECTED = {
     "t630-first-boot_0.1.3_all.deb": (
         "t630-first-boot", "0.1.3",
         "e3a8bab2dfcd98c7a86f3cd66387036e764a3f20101fead460bf228a97700403"),
-    "t630-desktop-runtime_0.1.13_all.deb": (
-        "t630-desktop-runtime", "0.1.13",
-        "ed7b3ad710cd2bfea1dbe28c971c8544704bfbf789977c420c03bbeaf50f29da"),
+    "t630-desktop-runtime_0.1.14_all.deb": (
+        "t630-desktop-runtime", "0.1.14",
+        "e9004d8aa91fdc43cccc4d28d91ba8612486a9300a7c411f90e3282b64d41172"),
     "t630-hardware-runtime_0.1.6_all.deb": (
         "t630-hardware-runtime", "0.1.6",
         "a0864399a0211e474128f1b84529e1dd2a47a0417b526193bbb2bd77bb59c02b"),
@@ -56,12 +57,12 @@ EXPECTED = {
     "t630-stock-assets_1.0.2+dze3_arm64.deb": (
         "t630-stock-assets", "1.0.2+dze3",
         "7bfa16d266592116bddae1c2a23c607585802a1e9b2c05905bc97e25210f0efe"),
-    "t630-release-base_0.1.22_arm64.deb": (
-        "t630-release-base", "0.1.22",
-        "84ce91801bb57479f9b54873c4eb4ffcb0a16fc44165b11f4d779d99186b2f46"),
+    "t630-release-base_0.1.23_arm64.deb": (
+        "t630-release-base", "0.1.23",
+        "84324b8ca1081bcd9939a4d1ddfcf7f185314de3d464738d5e163a5bd4e1a823"),
 }
 INSTALL_ORDER = tuple(name for name in EXPECTED if not name.startswith("t630-release-base_"))
-META_PACKAGE = "t630-release-base_0.1.22_arm64.deb"
+META_PACKAGE = "t630-release-base_0.1.23_arm64.deb"
 
 
 def digest(path: Path) -> str:
@@ -127,11 +128,34 @@ def install(root: Path, packages: Path) -> None:
     if os.geteuid() != 0:
         raise PermissionError("offline package installation requires root")
     root = validate_root(root)
-    package_paths = [str(packages / name) for name in INSTALL_ORDER]
-    subprocess.run(["dpkg", f"--root={root}", "--unpack", *package_paths], check=True)
-    subprocess.run(["dpkg", f"--root={root}", "--configure", "-a"], check=True)
-    subprocess.run(["dpkg", f"--root={root}", "--install",
-                    str(packages / META_PACKAGE)], check=True)
+    packages = packages.resolve(strict=True)
+    # dpkg --root still resolves statoverride owners through the build host's
+    # NSS database. A minimal/reproducible build container therefore rejects
+    # legitimate target users such as geoclue. Stage the already hash-checked
+    # DEBs inside the offline root and run dpkg in a real chroot instead.
+    staging = root / "tmp/.t630-release-packages"
+    if staging.exists() or staging.is_symlink():
+        raise ValueError("temporary release-package path already exists")
+    staging.mkdir(mode=0o700)
+    try:
+        for name in EXPECTED:
+            target = staging / name
+            shutil.copyfile(packages / name, target)
+            target.chmod(0o600)
+        inside = "/tmp/.t630-release-packages"
+        package_paths = [f"{inside}/{name}" for name in INSTALL_ORDER]
+        subprocess.run(
+            ["chroot", root, "/usr/bin/dpkg", "--unpack", *package_paths],
+            check=True)
+        subprocess.run(
+            ["chroot", root, "/usr/bin/dpkg", "--configure", "-a"],
+            check=True)
+        subprocess.run(
+            ["chroot", root, "/usr/bin/dpkg", "--install",
+             f"{inside}/{META_PACKAGE}"],
+            check=True)
+    finally:
+        shutil.rmtree(staging)
     if (root / "etc/t630-install-id").read_text().strip() != INSTALL_ID:
         raise RuntimeError("installed device marker mismatch")
     failures = audit(root)

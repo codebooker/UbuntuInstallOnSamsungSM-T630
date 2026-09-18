@@ -93,10 +93,13 @@ verifier, RAM staging, read-only preparation, and typed authorization gates; do
 not improvise those phases from individual lab scripts unless you can recover
 the tablet independently.
 
-The current private v4 bundle additionally carries the physically accepted
-Chrome on-screen-keyboard bridge. Its identity audit, full offline rehearsal,
-deterministic archive read-back, and complete checksum seal passed on the
-tablet.
+The current private v5 bundle carries the physically accepted Chrome
+on-screen-keyboard bridge and the factory-origin partition path. Its identity
+audit, full offline rehearsal, deterministic archive read-back, and complete
+checksum seal passed. A fresh physical run restored stock Android first,
+created the split from the factory GPT, installed Ubuntu only to `linuxroot`,
+and reached the owner-creation UI; reinitializing the blank Android partition
+and repeating the button-only round trip are the current final device gates.
 
 ## Repository layout
 

@@ -64,7 +64,14 @@ printf '%s  %s\n' "$boot_hash" /dev/sda19 | sha256sum -c - >/dev/null ||
 printf '%s  %s\n' 2b6901f8341de3b76fbcabc69bf0229683d503f233eafd580b4d602392ff74f5 /dev/sda20 | sha256sum -c - >/dev/null || fail "recovery mismatch"
 printf '%s  %s\n' fbebd763c17c05bc162776a6e9abd86fc386aa0ef58ccfdaa6cb9b13a6a0c72f /dev/sda21 | sha256sum -c - >/dev/null || fail "vendor_boot mismatch"
 printf '%s  %s\n' f9111b7a566b0a7342ec4d8f14cee53dc465a272d42596f774c0519d6e89fc57 /dev/sda22 | sha256sum -c - >/dev/null || fail "dtbo mismatch"
-printf '%s  %s\n' a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225 /dev/sde19 | sha256sum -c - >/dev/null || fail "vbmeta mismatch"
+vbmeta_hash=$(sha256sum /dev/sde19 | awk '{print $1}')
+case "$vbmeta_hash" in
+    # Accepted pre-factory-restore development VBMETA.
+    a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225) ;;
+    # Full-partition hash after the exact T630XXSBDZE3 factory restore.
+    9d3e15453eb2fd1058365dd8fc99199fd2ad6f44a53de22b92f01f06d90a747e) ;;
+    *) fail "vbmeta mismatch" ;;
+esac
 
 if [ ! -e "$runtime" ]; then
     mkdir -m 0700 "$runtime"
@@ -110,7 +117,8 @@ set -o pipefail
 tar_failed=0
 gzip -dc "$stage/t630-release-rootfs.tar.gz" |
     run "$runtime/usr/bin/tar" --numeric-owner --same-owner --acls --xattrs \
-        '--xattrs-include=*' -xpf - -C "$target" || tar_failed=1
+        '--xattrs-include=*' --warning=no-timestamp -xpf - -C "$target" ||
+    tar_failed=1
 if [ "$tar_failed" -ne 0 ]; then
     sync
     umount "$target" || true
@@ -131,7 +139,7 @@ if awk -F: '$3 >= 1000 && $3 < 60000 { found=1 } END { exit found ? 0 : 1 }' \
 fi
 package_state=$(run "$runtime/usr/bin/dpkg-query" --root="$target" -W \
     '-f=${db:Status-Status} ${Version}\n' t630-release-base)
-test "$package_state" = 'installed 0.1.22' || fail "release package state mismatch"
+test "$package_state" = 'installed 0.1.23' || fail "release package state mismatch"
 test ! -e "$target/etc/ssh/ssh_host_rsa_key" || fail "SSH host key leaked"
 test ! -e "$target/etc/NetworkManager/system-connections" ||
     test -z "$(find "$target/etc/NetworkManager/system-connections" \

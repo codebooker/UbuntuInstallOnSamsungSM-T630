@@ -47,6 +47,8 @@ class SwitchToNativeAndroidTest(unittest.TestCase):
             self.assertIn(device, self.text)
         self.assertIn("156098560", self.text)
         self.assertIn("92700632", self.text)
+        self.assertIn("a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225", self.text)
+        self.assertIn("9d3e15453eb2fd1058365dd8fc99199fd2ad6f44a53de22b92f01f06d90a747e", self.text)
 
 
 if __name__ == "__main__":

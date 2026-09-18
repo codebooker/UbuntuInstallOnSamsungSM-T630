@@ -65,6 +65,8 @@ class AndroidSwitcherTest(unittest.TestCase):
         self.assertIn("ro.boot.boot_recovery", source)
         for partition in ("recovery", "vendor_boot", "dtbo", "vbmeta"):
             self.assertIn(f"by-name/{partition}", source)
+        self.assertIn("a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225", source)
+        self.assertIn("9d3e15453eb2fd1058365dd8fc99199fd2ad6f44a53de22b92f01f06d90a747e", source)
 
     def test_helper_flushes_and_journals_durable_boot_handoff(self):
         source = (ROOT / "android-switcher/switch-to-ubuntu.sh").read_text()

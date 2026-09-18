@@ -15,7 +15,6 @@ host_marker=/tmp/HOST-VERIFIED-MISC-BACKUP
 authorization=/tmp/AUTHORIZE-STOCK-RECOVERY-PREFLIGHT
 misc=/dev/sda10
 bcb_hash=b0b0993da05a79506348c702de750e300e866532b20a6024c2e85aa5350e0957
-misc_hash=7c3277fd24046b110002c2a4f02fbbecfc4dedbd0ef1e5b39abe48c5128c9b17
 
 fail() { echo "STOCK_RECOVERY_PREFLIGHT_REFUSED: $*" >&2; exit 1; }
 check_hash() {
@@ -24,6 +23,22 @@ check_hash() {
     label=$3
     printf '%s  %s\n' "$expected" "$device" | sha256sum -c - >/dev/null ||
         fail "$label hash mismatch"
+}
+check_vbmeta() {
+    actual=$(sha256sum "$1" | awk '{print $1}')
+    case "$actual" in
+        a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225|9d3e15453eb2fd1058365dd8fc99199fd2ad6f44a53de22b92f01f06d90a747e) ;;
+        *) fail "vbmeta hash mismatch" ;;
+    esac
+}
+validate_digest() {
+    value=$1
+    label=$2
+    case "$value" in
+        ''|*[!0-9a-f]*) fail "$label digest is malformed" ;;
+        *) ;;
+    esac
+    test "${#value}" = 64 || fail "$label digest length mismatch"
 }
 tail_hash() {
     dd if="$1" bs=2048 skip=1 status=none | sha256sum | awk '{print $1}'
@@ -65,7 +80,7 @@ check_hash fdc824381f5280e8135b61de33205f7b73c98c4edde8421d8f1eb6fdf051f45f /dev
 check_hash 2b6901f8341de3b76fbcabc69bf0229683d503f233eafd580b4d602392ff74f5 /dev/sda20 recovery
 check_hash fbebd763c17c05bc162776a6e9abd86fc386aa0ef58ccfdaa6cb9b13a6a0c72f /dev/sda21 vendor_boot
 check_hash f9111b7a566b0a7342ec4d8f14cee53dc465a272d42596f774c0519d6e89fc57 /dev/sda22 dtbo
-check_hash a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225 /dev/sde19 vbmeta
+check_vbmeta /dev/sde19
 sgdisk --verify /dev/sda >/tmp/t630-gpt-before-recovery.txt 2>&1 || fail "GPT verification failed"
 grep -q 'No problems found' /tmp/t630-gpt-before-recovery.txt || fail "GPT problems reported"
 
@@ -76,6 +91,8 @@ done
 test "$(stat -c %s "$candidate")" = 2048 || fail "BCB size mismatch"
 check_hash "$bcb_hash" "$candidate" candidate-bcb
 test "$(stat -c %s "$backup")" = 1048576 || fail "misc backup size mismatch"
+misc_hash=$(sed -n 's/^HOST_SAVED_MISC_SHA256=//p' "$host_marker")
+validate_digest "$misc_hash" misc
 check_hash "$misc_hash" "$backup" host-misc-backup
 test "$(cat "$host_marker")" = "HOST_SAVED_MISC_SHA256=$misc_hash" ||
     fail "host verification marker invalid"

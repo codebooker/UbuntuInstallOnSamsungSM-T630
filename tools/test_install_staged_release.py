@@ -34,6 +34,12 @@ class StagedInstallerTests(unittest.TestCase):
         self.assertIn('fail "linuxroot is mounted"', text)
         self.assertIn('fail "linuxroot has block holders"', text)
         self.assertNotIn('device=/dev/sda35', text)
+        self.assertIn(
+            "a36c6c50bf35438c6ab20fb8d1b7630c1cbda8c272dfdda3abcce2082890e225",
+            text)
+        self.assertIn(
+            "9d3e15453eb2fd1058365dd8fc99199fd2ad6f44a53de22b92f01f06d90a747e",
+            text)
 
     def test_root_validation_precedes_success(self):
         text = SCRIPT.read_text(encoding="utf-8")
